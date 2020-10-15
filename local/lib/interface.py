@@ -480,7 +480,7 @@ class Form:
         pos = list(pos)
 
         # check if the surface has been rotated
-        is_rotated = bool(self.dev_rotation[0] != 0 or self.dev_rotation[1] != 0)
+        is_rotated = any(self.dev_rotation)
 
         if not center:
             self.set_pos_attr(pos, scale=scale, compensate_rotation=is_rotated)
