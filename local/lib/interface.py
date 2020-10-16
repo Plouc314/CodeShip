@@ -191,6 +191,7 @@ class Form:
 
     Methods:
         - display : display the instance on the Interface's screen
+        - delete : for when the instance is no longer used, increase performance
         - set_pos : set a new position for the object
         - set_dim_pos : set new position and dimension, keep the same surface
         - set_surf : set a new surface, can be a pygame surface or a numpy.ndarray
@@ -207,6 +208,7 @@ class Form:
     rs_marge_text = 5
     dev_rotation = (0,0)
     dim_object = None
+    
     def __init__(self, dim, pos, color=C.WHITE, *, rescale=True, scale_pos=True, 
                 scale_dim=True, center=False, surface=None, with_font=False, marge=False):
         
@@ -225,6 +227,12 @@ class Form:
         if rescale:
             # add every gui obj to interface to be able to rezise gui objs auto
             Interface.gui_objects.append(self)
+
+    def delete(self):
+        '''
+        Remove the instance from Interface's references, it won't be resized anymore.
+        '''
+        Interface.gui_objects.remove(self)
 
     def set_surf(self, surface=None, with_font=False):
         '''
@@ -410,33 +418,38 @@ class Form:
         else:
             self.high_color = dark_color
 
-    def display_margin(self):
-        pygame.draw.line(self.screen, self.MARGE_COLOR, self.TOPLEFT   , self.TOPRIGHT   , self.rs_marge_width)
-        pygame.draw.line(self.screen, self.MARGE_COLOR, self.TOPLEFT   , self.BOTTOMLEFT , self.rs_marge_width)
-        pygame.draw.line(self.screen, self.MARGE_COLOR, self.TOPRIGHT  , self.BOTTOMRIGHT, self.rs_marge_width)
-        pygame.draw.line(self.screen, self.MARGE_COLOR, self.BOTTOMLEFT, self.BOTTOMRIGHT, self.rs_marge_width)
+    def display_margin(self, surface):
+        pygame.draw.line(surface, self.MARGE_COLOR, self.TOPLEFT   , self.TOPRIGHT   , self.rs_marge_width)
+        pygame.draw.line(surface, self.MARGE_COLOR, self.TOPLEFT   , self.BOTTOMLEFT , self.rs_marge_width)
+        pygame.draw.line(surface, self.MARGE_COLOR, self.TOPRIGHT  , self.BOTTOMRIGHT, self.rs_marge_width)
+        pygame.draw.line(surface, self.MARGE_COLOR, self.BOTTOMLEFT, self.BOTTOMRIGHT, self.rs_marge_width)
 
-    def display(self, *, pos=None, marge=False):
-        '''Display form
+    def display(self, *, surface=None, pos=None, marge=False):
+        '''
+        Display the Form
         
         Arguments:
+            surface : can specify the surface to display on, by the default: the window screen
             pos : can specify position where the form is displayed
             marge : if the marges are also displayed
         '''
 
-        if pos:
-            pos = rl(pos)
-        else:
+        if surface is None:
+            surface = self.screen
+
+        if pos is None:
             pos = rl(self.pos)
+        else:
+            pos = rl(pos)
         
         # order of display : 1) font 2) main 3) marge
         if self.surf['font']:
-            self.screen.blit(self.surf['font'], pos)
+            surface.blit(self.surf['font'], pos)
 
-        self.screen.blit(self.surf['main'], pos)
+        surface.blit(self.surf['main'], pos)
         
         if marge:
-            self.display_margin()
+            self.display_margin(surface)
     
     def on_it(self):
         '''Return if the mouse is on the surface'''
@@ -452,9 +465,27 @@ class Form:
         self.BOTTOMLEFT = rl(self.pos[0], self.pos[1]+self.dim[1])
         self.BOTTOMRIGHT = rl(self.pos[0]+self.dim[0],self.pos[1]+self.dim[1])
 
-    @property
-    def center(self):
-        return [round(self.TOPLEFT[0] + self.dim[0]/2), round(self.TOPLEFT[1] + self.dim[1]/2)]
+    def get_center(self, scale=False, fp=5):
+        '''
+        Return the position of the center of the form
+
+        Arguments:
+            - scale : if the center is scaled to the current window dimension
+            - fp : the floating point
+        '''
+        x, y = self.surf['main'].get_rect().center
+        x, y = self.dim_object.inv_scale((x,y))
+        # patch rotation deviation
+        x -= self.dev_rotation[0]
+        y -= self.dev_rotation[1]
+        # add position -> get absolute position
+        x += self.unscaled_pos[0]
+        y += self.unscaled_pos[1]
+
+        if scale:
+            x,y = self.dim_object.scale((x,y))
+
+        return [x,y]
 
     def rescale_surf(self):
         '''Rescale the surf attribute to the current dimension'''
@@ -565,8 +596,7 @@ class Cadre(Form):
             self.surf['main'].set_colorkey(self.COLOR)
 
     def display(self):
-        super().display()
-        self.display_margin()
+        super().display(marge=True)
 
 class Button(Form):
     ''' 
@@ -635,9 +665,7 @@ class Button(Form):
             self.highlight()
         
         # display the surf
-        super().display()
-        
-        self.display_margin()
+        super().display(marge=True)
         
         # dusplay the text with marges
         if self.text: # check that there is text
@@ -680,13 +708,15 @@ class TextBox(Form):
             self.MARGE_COLOR = self.high_color
 
     def set_text(self, text):
+        ''' Set the text of the TextBox'''
         self.text = text
         self.lines = text.split('\n')
 
     def display(self):
-        super().display()
-        if self.as_marge:
-            self.display_margin()
+        '''
+        Display the TextBox
+        '''
+        super().display(marge=self.as_marge)
 
         # split the box in n part for n lines
         y_line = round(self.dim[1]/len(self.lines))

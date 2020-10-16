@@ -1,12 +1,13 @@
 import pygame
 import numpy as np
 import itertools
-from block import Block, Energie, Shield, Turret, Engine
+from block import Block, Generator, Shield, Turret, Engine
 from lib.interface import Interface, Form, C
+from geometry import get_deg, get_rad
 from spec import Spec
 
-# grid: 1=base, 2=energie, 3=shield, 4=turret
-map_block = {1:Block, 2:Energie, 3:Shield, 4: Turret, 5: Engine}
+# grid: 1=base, 2=generator, 3=shield, 4=turret
+map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
 
 
 class Ship:
@@ -14,21 +15,21 @@ class Ship:
     has_blocks = False
     color = C.BLUE
 
-    blocks_priority = ['Energie', 'Engine', 'Shield', 'Turret', 'Block']
+    blocks_priority = ['Generator', 'Engine', 'Shield', 'Turret', 'Block']
 
     def __init__(self, color=None):
         
         # movement vectors
         self.speed = 0
         self.acc = 0
-        self.orien = 0
+        self.orien = 0 # rad
         self.circular_speed = 0
         self.circular_acc = 0
         self.mass = 0
         self.pos = np.array([0,0], dtype='int32')
 
         # blocks
-        self.typed_blocks = {'Block':[], 'Energie':[], 'Engine':[], 'Shield':[], 'Turret':[]}
+        self.typed_blocks = {'Block':[], 'Generator':[], 'Engine':[], 'Shield':[], 'Turret':[]}
 
         if color:
             self.color = color
@@ -95,6 +96,7 @@ class Ship:
 
                 # create the blocks
                 block = map_block [ grid[x,y] ] ((x,y), color=self.color)
+                block.ship = self
 
                 self.blocks[n_block] = block
         
@@ -111,18 +113,41 @@ class Ship:
         for block in self.blocks.values():
             self.typed_blocks[block.name].append(block)
 
-    def del_block(self, index):
+    def update_block(self, block=None, index=None):
+        '''
+        Update one block of the ship form surface,  
+        given the block object or its index, compile it and blit it on the ship surface
+        '''
+        if index:
+            block = self.blocks[index]
+
+        pos = block.coord * Spec.SIZE_BLOCK
+        surf = block.compile()
+
+        self.form.surf['original'].blit(surf, pos)
+        self.form.set_surf(surface=self.form.surf['original'])
+
+    def update_signal(self, block=None, index=None):
+        '''
+        Update one signal of the ship form surface,  
+        given the block object or its index, blit its signal on the ship surface
+        '''
+        if index:
+            block = self.blocks[index]
+
+        pos = Spec.SIZE_BLOCK * block.coord + Spec.POS_SIGNAL
+        signal = block.get_signal_form()
         
-        # remove block from dict
-        self.blocks.pop(index, None)
+        # blit signal surf on form's surface
+        signal.display(surface=self.form.surf['original'], pos=pos)
 
-        # remove block index on grid
-        self.blocks_grid = np.where(self.blocks_grid == index, 0, self.blocks_grid)
+        self.form.set_surf(surface=self.form.surf['original'])
 
-    def compile(self, angle:int = None):
+
+    def compile(self):
         '''
         Compile all the blocks of the ship into one surface.  
-        Can rotate the surface before compile it.  
+        Set all signals. 
         '''
         # create a surface that contains all the blocks
         dim_surf = Spec.DIM_BLOCK * Spec.SIZE_GRID_SHIP
@@ -136,19 +161,31 @@ class Ship:
 
             # add block to surface
             surface.blit(block_surf, pos)
-        
-        if angle:
-            surface = pygame.transform.rotate(surface, angle)
 
         # create Form object with created surface
         self.form = Form(dim_surf, self.pos, surface=surface)
+
+        self.set_signals()
     
+    def set_signals(self):
+        '''
+        Set the signal of all the blocks of the ship.  
+        Update the ship form surface.  
+        '''
+        for block in self.blocks.values():
+            
+            # don't display basic block signal -> it's useless
+            if block.name == 'Block':
+                continue
+                
+            self.update_signal(block)
+
     def rotate(self, angle: float):
         '''
         Rotate the ship of a given angle (rad).  
         '''
         # converts the angle into radian
-        angle = round(-angle * 180 / np.pi)
+        angle = -get_deg(angle)
 
         self.form.rotate(angle)
 
@@ -157,7 +194,19 @@ class Ship:
         self.form.display()
     
     def run(self):
-        pass
+        '''
+        Execute all the ship's method that need to be executed during a frame.
+        '''
+        self.control_power_level()
+        self.update_turrets()
+        self.update_state()
+
+    def update_turrets(self):
+        '''
+        Update all the turrets of the ships.
+        '''
+        for turret in self.typed_blocks['Turret']:
+            turret.update_state()
 
     def update_state(self):
         '''
@@ -168,7 +217,7 @@ class Ship:
         self.compute_acc()
         self.compute_speed()
         self.compute_circular_speed()
-
+        
         self.orien += self.circular_speed
         self.rotate(self.orien)
 
@@ -185,8 +234,8 @@ class Ship:
         '''Update the circular speed of the ship'''
         self.circular_speed += self.circular_acc
 
-        if self.circular_speed > Spec.MAX_CIRCULAR_SPEED:
-            self.circular_speed = Spec.MAX_CIRCULAR_SPEED
+        if abs(self.circular_speed) > Spec.MAX_CIRCULAR_SPEED:
+            self.circular_speed = np.sign(self.circular_speed) * Spec.MAX_CIRCULAR_SPEED
 
     def set_circular_acc(self, value: int):
         '''
@@ -210,30 +259,39 @@ class Ship:
         # compute acceleration
         self.acc = (total_force - 2 * self.speed) / self.mass
 
-
-    def control_power_level(self):
+    def get_power_level(self):
         '''
-        Check that there is enough power to feed all the blocks.  
-        If not, deactivate blocks randomly (according to the blocks priority) until there is enough power.
+        Return the power level of the ship.  
+        The power level is the sum of all the power outputs.
         '''
         power_level = 0
 
         for block in self.blocks.values():
             power_level += block.get_power_output()
         
+        return power_level
+
+    def control_power_level(self):
+        '''
+        Check that there is enough power to feed all the blocks.  
+        If not, deactivate blocks randomly (according to the blocks priority) until there is enough power.
+        '''
+        power_level = self.get_power_level()
+        
         if power_level >= 0:
             return
         
         else:
             # disable blocks until the power level is positive
-            # goes trough every type except the Energie blocks
+            # goes trough every type except the Generator blocks
             for block_type in self.blocks_priority[:0:-1]:
                 # shuffle the blocks
-                blocks = np.random.shuffle(self.typed_blocks[block_type])
-                
+                blocks = self.typed_blocks[block_type].copy()
+                np.random.shuffle(blocks)
+
                 for block in blocks:
                     block.is_active = False
 
-                    if power_level >= 0:
+                    if self.get_power_level() >= 0:
                         return
     

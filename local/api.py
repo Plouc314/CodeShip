@@ -1,5 +1,9 @@
 from ship import Ship as BaseShip
-from block import Block as BaseBlock, Energie as BaseEnergie, Shield as BaseShield, Turret as BaseTurret
+from block import (Block as BaseBlock, 
+                Generator as BaseGenerator, 
+                Shield as BaseShield, 
+                Turret as BaseTurret)
+
 
 class API:
 
@@ -32,7 +36,7 @@ class Block:
         '''Return the power output of the block.'''
         return API.ship.blocks[self.key].get_power_output()
 
-class Energie(Block):
+class Generator(Block):
 
     def __init__(self, key):
         super().__init__(key)
@@ -47,7 +51,7 @@ class Turret(Block):
     def __init__(self, key):
         super().__init__(key)
 
-block_map = {'Block':Block, 'Energie':Energie, 'Shield':Shield, 'Turret':Turret}
+block_map = {'Block':Block, 'Generator':Generator, 'Shield':Shield, 'Turret':Turret}
 
 class Ship:
 
