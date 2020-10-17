@@ -167,8 +167,12 @@ class Turret(Block):
         super().__init__(coord, color=color)
 
         self.power_output = -Spec.POWER_CONS
-        self.orien = 0 # rad
+        self.orien = 0 # deg
         self.fire_delay = 0 # timer
+
+        # in deg -> makes calculations easier
+        self.target_angle = 0 # deg
+        self.circular_speed = 0 # deg
 
         # blit the turret image on the surface -> can resize the image
         self.surf['original'].blit(img_turret, (Spec.DIM_BLOCK-Spec.DIM_TURRET)//2)
@@ -176,15 +180,34 @@ class Turret(Block):
     
     def update_state(self):
         '''
-        Update the turret's fire delay timer
+        Update the turret's fire delay timer,  
+        rotate the turret according to its circular speed.
         '''
+        # update timer
         self.fire_delay += 1
 
-    def rotate(self, angle: float):
+        # update orientation
+        if self.circular_speed != 0:
+            self.orien += self.circular_speed
+
+            if self.orien < 0:
+                self.orien += 360
+
+            # check if the orientation is near to the target_angle
+            low = self.target_angle - Spec.TURRET_MAX_SPEED
+            high = self.target_angle + Spec.TURRET_MAX_SPEED
+
+            if low <= self.orien <= high: # orien in bounds
+                self.orien = self.target_angle
+                self.circular_speed = 0
+
+        self.rotate_surf(self.orien)
+
+    def rotate_surf(self, angle: float):
         '''
-        Rotate the turret of a given angle (deg)
+        Rotate the turret surface of a given angle (deg)
         '''
-        self.orien = get_rad(angle)
+        self.orien = angle
 
         # rotate the turret image, then blit on the surf
         img = pygame.transform.rotate(img_turret, angle)
@@ -203,6 +226,24 @@ class Turret(Block):
         self.ship.update_block(self)
         self.ship.update_signal(self)
 
+    def rotate(self, angle: float):
+        '''
+        In game method.  
+        Rotate the turret (at a certain speed) until reaching the target angle (deg).
+        '''
+        self.target_angle = angle
+
+        # select the smallest path to the angle
+        orien = get_deg(self.orien)
+        
+        path1 = abs(orien - angle)
+        path2 = 360 - abs(orien - angle)
+
+        if path1 < path2:
+            self.circular_speed = Spec.TURRET_MAX_SPEED
+        else:
+            self.circular_speed = -Spec.TURRET_MAX_SPEED
+
     def compute_bullet_pos(self):
         '''
         Compute the position where the bullet should appear on the screen
@@ -215,7 +256,7 @@ class Turret(Block):
 
         # compute dif turret
         cannon_length = Spec.SIZE_TURRET//2
-        angle = -self.orien + self.ship.orien
+        angle = -get_rad(self.orien) + self.ship.orien
 
         x = np.cos(angle) * cannon_length
         y = np.sin(angle) * cannon_length
@@ -242,9 +283,9 @@ class Turret(Block):
         pos = self.compute_bullet_pos()
         
         # compute bullet orientation
-        orien = -self.ship.orien + self.orien
+        orien = -self.ship.orien + get_rad(self.orien)
 
-        return Bullet(pos, orien)
+        return Bullet(self.ship.team, pos, orien)
 
     def fire(self):
         '''

@@ -200,6 +200,7 @@ class Form:
         - on_it : return if the mouse is on the Form's surface
         - rotate : rotate the surface of a given angle
         - compile : return  a pygame.Surface object of the instance
+        - get_mask : return a pygame.mask.Mask object of the instance
     '''
     screen = None
     MARGE_WIDTH = 4
@@ -313,7 +314,20 @@ class Form:
         if self.surf['font'] and rotate_font:
             self.surf['font'] = pygame.transform.rotate(pygame.Surface(rl(self.dim), pygame.SRCALPHA), angle)
             self.surf['font'].fill(self.COLOR)
-        
+
+    def get_mask(self, *, scale=True, with_marge=False, with_font=False):
+        '''
+        Return a pygame.mask.Mask object of the Form.
+
+        Arguments:
+            - scale : if the created mask is scaled to the current window's dimension
+            - with_marge : if the marges are included in the mask
+            - with_font : if the font is included in the mask
+        '''
+        surf = self.compile(scale=scale, with_marge=with_marge, with_font=with_font, extend_dim=with_marge)
+
+        return pygame.mask.from_surface(surf)
+
     def set_dim_attr(self, dim, *, scale=False, update_original=True, update_surf=True):
         dim = list(dim)
         if scale:
@@ -537,44 +551,63 @@ class Form:
         self.set_pos_attr(pos, scale=scale_pos, update_original=update_original)
         self.set_corners()
 
-    def compile(self, *, with_marge=True, with_font=True, extend_dim=False):
+    def compile(self, *, scale=False, with_marge=True, with_font=True, extend_dim=False):
         '''
         Compile all the elements of the instance into one pygame.Surface object.  
         Return a pygame.Surface object.  
 
         Arguments:
+            - scale : if created surface is scaled to the current window's dimension
             - with_marge : if the marges are added to the surface
             - with_font : when the instance has a font (custom surface), if True: add the font to the surface
             - extend_dim : if True & with_marge=True, adapt the surface's dimension to fit in the entire marges
         '''
+        # adapt every value / surface according to scale parameter
+        if scale:
+            dim_attr = self.dim
+            marge_width = self.rs_marge_width
+            surf_main = self.surf['main']
+        
+            if with_font:
+                surf_font = self.surf['font']
+
+        else:
+            dim_attr = self.unscaled_dim
+            marge_width = self.MARGE_WIDTH
+            surf_main = self.surf['original']
+
+            if with_font:
+                # create font surf
+                surf_font = pygame.Surface(rl(self.unscaled_dim))
+                surf_font.fill(self.COLOR)
 
         # create the base - a transparent surface
         if with_marge and extend_dim:
             # take the marge width into account to create the base surface
-            dim = (self.unscaled_dim[0] + self.MARGE_WIDTH, self.unscaled_dim[1] + self.MARGE_WIDTH)
-            dif_pos = self.MARGE_WIDTH//2 # put all the elements according to the extended surface
+            dim = (dim_attr[0] + marge_width, dim_attr[1] + marge_width)
+            dif_pos = marge_width//2 # put all the elements according to the extended surface
         else:
-            dim = self.unscaled_dim
+            dim = dim_attr
             dif_pos = 0
         
         surface = pygame.Surface(dim, pygame.SRCALPHA)
 
         if self.surf['font'] != None and with_font:
-            surface.blit(self.surf['font'], (dif_pos, dif_pos))
+            surface.blit(surf_font, (dif_pos, dif_pos))
         
-        surface.blit(self.surf['original'], (dif_pos, dif_pos))
+        surface.blit(surf_main, (dif_pos, dif_pos))
 
         if with_marge: # display every marge
             # create corners
             topleft = (dif_pos, dif_pos)
-            topright = (self.unscaled_dim[0] + dif_pos, dif_pos)
-            bottomleft = ((dif_pos, self.unscaled_dim[1] + dif_pos))
-            bottomright = ((self.unscaled_dim[0] + dif_pos, self.unscaled_dim[1] + dif_pos))
+            topright = (dim_attr[0] + dif_pos, dif_pos)
+            bottomleft = ((dif_pos, dim_attr[1] + dif_pos))
+            bottomright = ((dim_attr[0] + dif_pos, dim_attr[1] + dif_pos))
             # draw the marge
-            pygame.draw.line(surface, self.MARGE_COLOR, topleft   , topright   , self.MARGE_WIDTH)
-            pygame.draw.line(surface, self.MARGE_COLOR, topleft   , bottomleft , self.MARGE_WIDTH)
-            pygame.draw.line(surface, self.MARGE_COLOR, topright  , bottomright, self.MARGE_WIDTH)
-            pygame.draw.line(surface, self.MARGE_COLOR, bottomleft, bottomright, self.MARGE_WIDTH)
+            pygame.draw.line(surface, self.MARGE_COLOR, topleft   , topright   , marge_width)
+            pygame.draw.line(surface, self.MARGE_COLOR, topleft   , bottomleft , marge_width)
+            pygame.draw.line(surface, self.MARGE_COLOR, topright  , bottomright, marge_width)
+            pygame.draw.line(surface, self.MARGE_COLOR, bottomleft, bottomright, marge_width)
 
         return surface
 

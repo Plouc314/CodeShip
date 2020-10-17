@@ -17,5 +17,4 @@ def get_cartesian(r, alpha):
     return np.array([x,y])
 
 def get_length(vect):
-    '''ll'''
     return np.sqrt(vect[0]**2 + vect[1]**2)

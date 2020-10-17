@@ -10,23 +10,42 @@ from ship import Ship
 from bulletsystem import BulletSystem
 import time, random
 
-ship = Ship.from_grid(np.array([
+ship1 = Ship.from_grid(1, np.array([
     [0,1,1,0],
     [1,4,4,1],
     [3,2,2,3],
     [1,5,5,1],
 ])[::-1])
 
+ship2 = Ship.from_grid(2, np.array([
+    [0,1,1,0],
+    [1,4,4,1],
+    [3,2,2,3],
+    [1,5,5,1],
+])[::-1])
 
-ship.compile()
+ship1.compile()
+ship2.compile()
 
-ship.pos[:] = (0,1000)
+ship1.pos[:] = (0,1000)
+ship2.pos[:] = (2000,1000)
 
-ship.circular_speed = -0.0025
+ship2.orien = np.pi
+ship2.rotate_surf(np.pi)
 
-energies = ship.typed_blocks['Generator']
-#energies[0].is_active = False
-#energies[1].is_active = False
+ship2.circular_speed = 0.05
+
+BulletSystem.set_ships((ship1, ship2))
+
+gens = ship1.typed_blocks['Engine']
+
+for gen in gens:
+    gen.activation_per = 0
+
+gens = ship2.typed_blocks['Engine']
+
+for gen in gens:
+    gen.activation_per = 0
 
 i = 0
 
@@ -36,22 +55,25 @@ while Interface.running:
 
     pressed, event = Interface.run()
     
-    ship.run()
+    ship1.run()
+    ship2.run()
 
-    ship.display()
+    ship1.display()
+    ship2.display()
+    
     BulletSystem.display()
 
     BulletSystem.run()
 
-
-    ship.typed_blocks['Turret'][0].fire()
+    ship1.typed_blocks['Turret'][0].fire()
+    ship1.typed_blocks['Turret'][1].fire()
 
     if pressed[pygame.K_SPACE]:
         if i % 10  == 0:
             #energies = ship.typed_blocks['Generator']
             #random.choice(energies).is_active = False
         
-            ship.typed_blocks['Turret'][0].rotate(37)
+            ship1.typed_blocks['Turret'][0].rotate(320)
         i += 1
 
     t_frame = time.time() - st

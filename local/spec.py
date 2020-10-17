@@ -10,6 +10,7 @@ class Spec:
     DIM_BULLET = np.array([20,20], dtype='int16')
     DIM_BLOCK_MARGE = 10
     
+    # signal
     DIM_SIGNAL = np.array([20,20], dtype='int16')
     POS_SIGNAL = np.array([10,10], dtype='int16')
 
@@ -19,8 +20,8 @@ class Spec:
     DIM_SHIP = SHAPE_GRID_SHIP * DIM_BLOCK[0]
 
     # ship movement
-    MAX_CIRCULAR_ACC = 0.00025
-    MAX_CIRCULAR_SPEED = 0.05
+    MAX_CIRCULAR_ACC = 0.00025 # rad
+    MAX_CIRCULAR_SPEED = 0.05 # rad
 
     # block caracteristics
     HP_BLOCK = 100
@@ -28,7 +29,14 @@ class Spec:
     POWER_CONS = 10
     POWER_CONS_MOTOR = 20
     MOTOR_POWER = 10
-    TURRET_FIRE_DELAY = 10
+    TURRET_FIRE_DELAY = 20
+    TURRET_MAX_SPEED = 2 # deg
 
+    # bullet
     DAMAGE_BULLET = 10
-    SPEED_BULLET = 50
+    SPEED_BULLET = 40
+    
+    # explosion
+    DIM_MAX_EXPL = np.array([60,60], dtype='int16')
+    DIM_MIN_EXPL = np.array([20,20], dtype='int16')
+    TIME_EXPL = 3 # frame

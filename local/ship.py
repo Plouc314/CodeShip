@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 from block import Block, Generator, Shield, Turret, Engine
 from lib.interface import Interface, Form, C
-from geometry import get_deg, get_rad
+from geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
 
 # grid: 1=base, 2=generator, 3=shield, 4=turret
@@ -17,8 +17,10 @@ class Ship:
 
     blocks_priority = ['Generator', 'Engine', 'Shield', 'Turret', 'Block']
 
-    def __init__(self, color=None):
+    def __init__(self, team, color=None):
         
+        self.team = team
+
         # movement vectors
         self.speed = 0
         self.acc = 0
@@ -35,26 +37,46 @@ class Ship:
             self.color = color
 
     @classmethod
-    def from_grid(cls, grid, color=None):
+    def from_grid(cls, team, grid, color=None):
         '''
         Create a ship given a grid representing the ship (see block map).
         '''
         if color == None:
             color = cls.color
         
-        ship = cls(color)
+        ship = cls(team, color)
         ship.set_blocks(grid)
 
         return ship
     
     @classmethod
-    def from_file(cls, filename, color=None):
+    def from_file(cls, team, filename, color=None):
         '''
         Create a ship given a .npy filename.
         '''
         grid = np.load(filename)
 
-        return cls.from_grid(grid)
+        return cls.from_grid(grid, team, color=color)
+
+    def get_block_by_coord(self, coord):
+        '''
+        Return the block with the corresponding coord
+        '''
+        for block in self.blocks.values():
+            if np.all(block.coord == coord):
+                return block
+
+    def get_scaled_pos(self):
+        '''
+        Return the position scaled to the current window's dimension
+        '''
+        return np.array(self.form.pos)
+
+    def get_mask(self):
+        '''
+        Return the pygame.mask.Mask object of the ship.
+        '''
+        return self.form.get_mask()
 
     def set_color(self):
         '''Set the color of the ship'''
@@ -180,9 +202,9 @@ class Ship:
                 
             self.update_signal(block)
 
-    def rotate(self, angle: float):
+    def rotate_surf(self, angle: float):
         '''
-        Rotate the ship of a given angle (rad).  
+        Rotate the ship's surface of a given angle (rad).  
         '''
         # converts the angle into radian
         angle = -get_deg(angle)
@@ -219,7 +241,8 @@ class Ship:
         self.compute_circular_speed()
         
         self.orien += self.circular_speed
-        self.rotate(self.orien)
+        
+        self.rotate_surf(self.orien)
 
         x = np.cos(self.orien) * self.speed + self.pos[0]
         y = np.sin(self.orien) * self.speed + self.pos[1]
@@ -295,3 +318,48 @@ class Ship:
                     if self.get_power_level() >= 0:
                         return
     
+    def get_coord(self, pos):
+        '''
+        Given a position, return the coordinates of the corresponding block.
+        '''
+        # get distance to center of ship
+        center = np.array(self.form.get_center(scale=True))
+        dif_center, alpha = get_polar(pos - center)
+        alpha -= self.orien
+
+        # inv scale the dif center -> compare to none rotated/scaled dimensions
+        dif_center = Interface.dim.inv_scale(dif_center)
+
+        # get not scaled/rotated pos from center
+        pos = get_cartesian(dif_center, alpha)
+
+        # add center to position 
+        relative_center = np.array([
+            self.form.unscaled_dim[0]//2,
+            self.form.unscaled_dim[1]//2,
+        ])
+        pos += relative_center
+
+        # get coord from position
+        coord = np.floor(pos / Spec.SIZE_BLOCK)
+
+        # when coord is out of bounds -> replace to the limits
+        coord = np.where(coord < 0, 0, coord)
+        
+        max_coord = Spec.SIZE_GRID_SHIP
+        coord = np.where(coord >= max_coord, max_coord-1, coord)
+
+        return coord
+
+    def handeln_collision(self, bullet, intersect):
+        '''
+        Handeln collision with a bullet.
+        '''
+        # get coord of touched block
+        coord = self.get_coord(intersect)
+
+        block = self.get_block_by_coord(coord)
+
+        if block:
+            block.is_active = False
+        
