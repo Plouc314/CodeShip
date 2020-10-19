@@ -1,8 +1,8 @@
 import pygame
 import numpy as np
 from lib.interface import Form, C, Delayer
-from bulletsystem import Bullet, BulletSystem
-from geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
+from game.bulletsystem import Bullet, BulletSystem
+from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
 
 

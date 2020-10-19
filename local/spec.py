@@ -1,6 +1,9 @@
 import numpy as np
 
 class Spec:
+
+    ### game ###
+
     # block dimension
     SIZE_BLOCK = 100
     SIZE_TURRET = 80
@@ -40,3 +43,14 @@ class Spec:
     DIM_MAX_EXPL = np.array([60,60], dtype='int16')
     DIM_MIN_EXPL = np.array([20,20], dtype='int16')
     TIME_EXPL = 3 # frame
+
+
+    ### ui ###
+
+    CENTER_X = 1600
+    CENTER_Y = 800
+
+    POS_TITLE = np.array([1400, 100], dtype='int16')
+    DIM_TITLE = np.array([400,100], dtype='int16')
+
+    DIM_BIG_BUTTON = np.array([320,80], dtype='int16')

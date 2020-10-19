@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 from lib.interface import Interface, Form, C
-from geometry import get_deg, get_rad
+from game.geometry import get_deg, get_rad
 from spec import Spec
 
 img_bullet = pygame.image.load('imgs/bullet.png')

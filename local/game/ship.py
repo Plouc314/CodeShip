@@ -1,9 +1,9 @@
 import pygame
 import numpy as np
 import itertools
-from block import Block, Generator, Shield, Turret, Engine
+from game.block import Block, Generator, Shield, Turret, Engine
 from lib.interface import Interface, Form, C
-from geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
+from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
 
 # grid: 1=base, 2=generator, 3=shield, 4=turret

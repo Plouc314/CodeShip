@@ -650,9 +650,9 @@ class Button(Form):
         - display
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, centered=True, font=Font.f(50), 
-                    surface=None, surf_font_color=None, scale_dim=True, scale_pos=True, highlight=True):
+                    surface=None, with_font=False, scale_dim=True, scale_pos=True, highlight=True):
         
-        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, surface=surface, surf_font_color=surf_font_color, marge=True)
+        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, surface=surface, with_font=with_font, marge=True)
 
         self.text = text
         
@@ -945,7 +945,7 @@ class Interface:
         # create screen in full screen dimension: resize to specified dim
 
         infoObject = pygame.display.Info()
-        fullscreen_dim = rl(cls.dim.scale((infoObject.current_w, infoObject.current_h), factor=.96))
+        fullscreen_dim = rl(cls.dim.scale((infoObject.current_w, infoObject.current_h), factor=1))
 
         cls.screen = pygame.display.set_mode(fullscreen_dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
         cls.screen.fill(cls.font_color)
@@ -958,7 +958,7 @@ class Interface:
         InputText.cursor_deco.delay = round(FPS/2) # 2 times a sec
 
         cls.set_screen(cls.screen)
-        Form.dim_object = cls.dim # set dimension to rescale pos, dim in Font.__init__
+        Form.dim_object = cls.dim # set dimension to rescale pos, dim in Form.__init__
         Font.interface = cls # must be set this way as Interface is declared after Font
 
         cls.x_padding = Form((0,0),(0,0),cls.font_color, rescale=False)
