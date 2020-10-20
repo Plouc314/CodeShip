@@ -1,12 +1,15 @@
 
 class Spec:
-    HEADER = 64
-    BUFSIZE = 4096
+
+    ### COMM ###
+
     PORT = 5050
     IP_PUBLIC = '188.62.158.181'
     IP_HOST = '127.0.0.1'
     ADDR_PUBLIC = (IP_PUBLIC, PORT)
     ADDR_SERVER = ('', PORT)
-    FORMAT = 'utf-8'
-    CONNECT_MSG = "!CONNECT"
-    DISCONNECT_MSG = "!DISCONNECT"
+
+    ### MSG ###
+
+    SEP_MAIN = '|'
+    SEP_CONTENT = ','

@@ -2,6 +2,17 @@ import numpy as np
 
 class Spec:
 
+    ### comm ###
+
+    PORT = 5050
+    IP_PUBLIC = '188.62.158.181'
+    IP_HOST = '127.0.0.1'
+    ADDR_HOST = (IP_HOST, PORT)
+    ADDR_PUBLIC = (IP_PUBLIC, PORT)
+    
+    SEP_MAIN = '|'
+    SEP_CONTENT = ','
+
     ### game ###
 
     # block dimension
@@ -53,4 +64,6 @@ class Spec:
     POS_TITLE = np.array([1400, 100], dtype='int16')
     DIM_TITLE = np.array([400,100], dtype='int16')
 
+    DIM_MEDIUM_TEXT = np.array([400,60], dtype='int16')
     DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
+    DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')

@@ -4,9 +4,15 @@ from lib.interface import Interface, Form, C
 from game.geometry import get_deg, get_rad
 from spec import Spec
 
-img_bullet = pygame.image.load('imgs/bullet.png')
+# load images
+folder = "game/imgs/"
+
+img_bullet = pygame.image.load(folder + 'bullet.png')
 img_bullet = pygame.transform.rotate(img_bullet, -90)
 img_bullet = pygame.transform.scale(img_bullet, Spec.DIM_BULLET)
+
+img_expl = pygame.image.load(folder + 'explosion.png')
+img_expl = pygame.transform.scale(img_expl, Spec.DIM_MAX_EXPL)
 
 class Bullet(Form):
     '''
@@ -47,8 +53,6 @@ class Bullet(Form):
 
         self.set_pos((x,y))
 
-img_expl = pygame.image.load('imgs/explosion.png')
-img_expl = pygame.transform.scale(img_expl, Spec.DIM_MAX_EXPL)
 
 class Explosion(Form):
     '''

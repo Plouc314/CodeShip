@@ -71,14 +71,21 @@ class ServerUDP:
             if msg == Spec.CONNECT_MSG:
                 self.last_ip = address[0]
                 self.on_connection(address)
-    
+
             else:
-                # call client on_message method
+                # call transfert msg to client
                 ip = address[0]
 
                 if ip in self.clients.keys():
                     client = self.clients[ip]
-                    client.on_message(msg)
+
+                    if msg == Spec.DISCONNECT_MSG:
+                        client.on_disconnect()
+                        # remove client
+                        self.clients.pop(ip)
+                    else:
+                        client.on_message(msg)
+
                 else:
                     ErrorServer.call("Invalid IP address: " + ip)
 
@@ -126,6 +133,14 @@ class ClientUDP:
         To be implemented.  
         '''
         raise NotImplementedError("on_message method must be implemented.")
+
+    @staticmethod
+    def on_disconnect():
+        '''
+        Disconnect, called when the client has sent a disconnect message.  
+        To be implemented.    
+        '''
+        raise NotImplementedError("on_disconnect method must be implemented.")
 
     def send(self, msg):
         '''

@@ -1,26 +1,10 @@
 import socket, threading, time
-from udp import ServerUDP, ClientUDP
+from tcp.server import Server
+from db.db import DataBase
+from spec import Spec
 
-PORT = 5050
+server = Server()
+DataBase.load()
 
-server = ServerUDP(PORT)
-
-clients = []
-
-class Client(ClientUDP):
-
-    def __init__(self, addr):
-        super().__init__(addr)
-
-    def on_message(self, msg):
-        print("MESSAGE:", msg)
-        self.send("Hello you")
-
-def on_connection(addr):
-    client = Client(addr)
-    clients.append(client)
-
-server.on_connection = on_connection
 
 server.run()
-
