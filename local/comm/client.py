@@ -1,3 +1,4 @@
+import threading
 from lib.tcp import ClientTCP
 from spec import Spec
 
@@ -14,14 +15,30 @@ class Client(ClientTCP):
             'rsg': None, # response sign up
         }
 
+    def connect(self):
+        '''
+        Try to connect to the server.  
+        Also launch the run loop.  
+        Return True if the connection succeeds.
+        '''
+        is_connected = super().connect()
+
+        if is_connected:
+            # launch run loop
+            self._thread = threading.Thread(target=self.run)
+            self._thread.start()
+
+        return is_connected
+
     def on_message(self, msg):
         '''
         Split the identifier and content of the message.  
         Call the method linked to the identifier.
         '''
+        print('[SERVER]',msg)
         identifier, content = msg.split(Spec.SEP_MAIN)
 
-        self.identifiers[identifier] = content
+        self.in_data[identifier] = content
 
     def send_login(self, username, password):
         '''

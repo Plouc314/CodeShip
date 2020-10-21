@@ -47,13 +47,14 @@ class Client(ClientTCP):
         '''
         username, password = content.split(Spec.SEP_CONTENT)
 
-        # check that the password is correct
-        if DataBase.get_password(username) == password:
-            # log in
-            self._log_client(username)
+        # check that the username exists and that the password is correct
+        if DataBase.is_username(username):
+            if DataBase.get_password(username) == password:
+                # log in
+                self._log_client(username)
 
-            msg = f'rlg{Spec.SEP_MAIN}1'
-            self.send(msg)
+                msg = f'rlg{Spec.SEP_MAIN}1'
+                self.send(msg)
         
         else:
             # can't log in

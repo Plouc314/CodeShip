@@ -4,13 +4,13 @@ from spec import Spec
 
 class ErrorServer:
 
-    @classmethod
+    @staticmethod
     def call(traceback, id=None, warning=False):
         
         if warning:
-            call_type = "WARNING"
+            call_type = "[WARNING]"
         else:
-            call_type = "ERROR"
+            call_type = "[ERROR]"
 
         if id == None:
             call_info = "|TCP|"
@@ -188,7 +188,7 @@ class ClientTCP:
             if self._n_blank == self._blank_threshold:
                 self._disconnect()
                 self.on_disconnect()
-                ErrorServer.warn("Connection closed.", self.call_id, warning=True)
+                ErrorServer.call("Connection closed.", self.call_id, warning=True)
             return
 
         try:

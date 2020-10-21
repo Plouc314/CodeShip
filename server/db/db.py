@@ -14,14 +14,22 @@ class DataBase:
     @classmethod
     def add_user(cls, username, password):
         '''
-        Add a new user to the dataframe, if the username is already taken return false.  
+        Try to add a new user to the dataframe.  
+        Return if the username could be added.
         '''
-        if username in cls.df.index.values:
+        if cls.is_username(username):
             return False
         
         cls.df.loc[username,:] = [password]
         return True
     
+    @classmethod
+    def is_username(cls, username):
+        '''
+        Return if the given username exist in the database.
+        '''
+        return username in cls.df.index.values
+
     @classmethod
     def get_password(cls, username):
         '''

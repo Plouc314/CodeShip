@@ -3,7 +3,7 @@ from time import sleep
 
 class ErrorClient:
 
-    @classmethod
+    @staticmethod
     def call(traceback, warning=False):
         
         if warning:
@@ -22,8 +22,22 @@ class Spec:
 
 
 class ClientTCP:
+    '''
+    ClientTCP manage the sending and receiving of the messages to a server.
 
-    def __init__(self, addr):
+    Arguments:
+        - addr : the address, (ip, port)
+        - connect : if the client try to connect to the server in the __init__ method.
+    
+    Methods:
+        - run : Loop that wait for messages from the server.
+        - connect : Try to connect to the server.
+        - disconnect : Disconnect from the server.
+        - send : Send a message to the server.
+        - on_message : Method executed when receiving a message, to be implemented.
+    '''
+
+    def __init__(self, addr, connect=True):
 
         self.addr = tuple(addr)
         self.ip = addr[0]
@@ -31,7 +45,18 @@ class ClientTCP:
         self.connected = True
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect(self.addr)
+        self.connect()
+
+    def connect(self):
+        '''
+        Try to connect to the server.  
+        Return True if the connection succeeds.
+        '''
+        try:
+            self._socket.connect(self.addr)
+            return True
+        except:
+            return False
 
     def run(self):
         '''
@@ -42,9 +67,10 @@ class ClientTCP:
 
         while self.connected:
 
-            msg = self.receive_msg()
+            msg = self.receive()
 
-            self.on_message(msg)
+            if msg != None:
+                self.on_message(msg)
     
     def disconnect(self):
         '''
@@ -91,7 +117,7 @@ class ClientTCP:
         '''
         msg_length = self._socket.recv(Spec.HEADER).decode(Spec.FORMAT)
         
-        if msg_length == None:
+        if msg_length == None or msg_length == '':
             return
 
         try:

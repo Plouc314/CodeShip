@@ -67,3 +67,5 @@ class Spec:
     DIM_MEDIUM_TEXT = np.array([400,60], dtype='int16')
     DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
     DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')
+
+    
