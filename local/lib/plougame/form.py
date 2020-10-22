@@ -287,7 +287,7 @@ class Form:
             self.display_margin(surface)
     
     def on_it(self):
-        '''Return if the mouse is on the surface'''
+        '''Return if the mouse is on the surface (not rotated)'''
         mouse_pos = pygame.mouse.get_pos()
         if mouse_pos[0] > self.TOPLEFT[0] and mouse_pos[0] < self.TOPRIGHT[0]:
             if mouse_pos[1] > self.TOPLEFT[1] and mouse_pos[1] < self.BOTTOMLEFT[1]:

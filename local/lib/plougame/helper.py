@@ -11,7 +11,7 @@ def center_text(dim_box, font, text, *, ignore_exception=True):
     width, height = font.size(text)
     if width > dim_box[0] or height > dim_box[1]:
         if not ignore_exception:
-            raise ValueError(error_msg)
+            raise ValueError("Dimension too small for text.")
         
     x_marge = int((dim_box[0] - width)/2)
     y_marge = int((dim_box[1] - height)/2)

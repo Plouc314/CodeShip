@@ -83,8 +83,37 @@ class Button(Form):
                     self.surf['main'] = pygame.transform.scale(self.surf['original'], rl(self.dim))
             else:
                 self.surf['main'].fill(self.COLOR)
-                
-    def display(self):
+
+    def display_text(self, text=None):
+        '''
+        Display the text of the instance.  
+        If text is specified, display it instead of `self.text`.
+        '''
+        if text == None:
+            text = self.text
+
+        if text == '':
+            return
+        
+        # get marges
+        x_marge, y_marge = center_text(self.dim, self.font['font'], text)
+        
+        if not self.centered:
+            x_marge = self.rs_marge_text
+        
+        # create font
+        font_text = self.font['font'].render(text, True, self.text_color)
+        
+        # display font
+        pos = rl(self.pos[0] + x_marge, self.pos[1] + y_marge)
+
+        self.screen.blit(font_text, pos)
+
+    def display(self, text=None):
+        '''
+        Display the main surface, the marges and the text.  
+        If a text is specified, display it instead of `self.text`.
+        '''
         # if highlight actived, handeln highlight color changes
         if self.highlighted:
             self.highlight()
@@ -92,13 +121,7 @@ class Button(Form):
         # display the surf
         super().display(marge=True)
         
-        # dusplay the text with marges
-        if self.text: # check that there is text
-            x_marge, y_marge = center_text(self.dim, self.font['font'], self.text)
-            if not self.centered:
-                x_marge = self.rs_marge_text
-            font_text = self.font['font'].render(self.text,True,self.text_color)
-            self.screen.blit(font_text,rl(self.pos[0]+x_marge,self.pos[1]+y_marge))
+        self.display_text(text=text)
 
 class TextBox(Form):
     ''' 
@@ -128,6 +151,7 @@ class TextBox(Form):
         self.text_color = text_color
         self.set_corners()
         self.as_marge = marge
+       
         if marge:
             self.set_highlight_color()
             self.MARGE_COLOR = self.high_color
@@ -145,11 +169,15 @@ class TextBox(Form):
 
         # split the box in n part for n lines
         y_line = round(self.dim[1]/len(self.lines))
+        
         for i, line in enumerate(self.lines):
             x_marge, y_marge = center_text((self.dim[0],y_line), self.font['font'], line)
+        
             if not self.centered:
                 x_marge = self.rs_marge_text
+        
             font_text = self.font['font'].render(line,True,self.text_color)
+        
             self.screen.blit(font_text,rl(self.pos[0]+x_marge,self.pos[1]+i*y_line+y_marge))
 
 get_input_deco = Delayer(Spec.TEXT_DELAY)
@@ -162,20 +190,20 @@ class InputText(Button):
     Inherited from Button.
 
     Arguments:
-        - text_color : color of the text
-        - centered : if the text is centered
-        - limit : the limit of character that can be entered
-        - cache : if the input is hidden (with $ )
-        - text : the text that is present at the beginning
-        - pretext : text that disapear when the surface is clicked
+    - text_color : color of the text
+    - centered : if the text is centered
+    - limit : the limit of character that can be entered
+    - cache : if the input is hidden (with $ )
+    - text : the text that is present at the beginning
+    - pretext : text that disapear when the surface is clicked
     
     Methods:
-        - pushed : Return if the surface has been clicked
-        - run : Get input ( execute once by frame )
-        - display
+    - pushed : Return if the surface has been clicked
+    - run : Get input ( execute once by frame )
+    - display
     '''
     CURSOR_WIDTH = 2
-    bool_cursor = True
+    is_cursor_displayed = True
     
     def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, centered=False, font=Font.f(30),
                     limit=None, cache=False, scale_dim=True, scale_pos=True, pretext=None):
@@ -183,25 +211,38 @@ class InputText(Button):
         super().__init__(dim, pos, color, text_color=text_color, centered=centered, font=font, scale_dim=scale_dim, scale_pos=scale_pos)
         
         self.active = False
+        self.highlighted = True
         self.cursor_place = len(text)
         self.limit = limit # max char
-        self.cache = cache # if true text -> ***
+        self.cache = cache # if true text -> $$$
+        
+        self.is_pretext = False
         self.pretext = pretext # if something: add a text that disapear when active
-        # text: text that is display
-        # content: text that is input
+
         self.set_text(text, with_pretext=self.pretext)
-    
+
+    def get_text(self):
+        ''' Return the text '''
+        return self.text
+
     def set_text(self, text, with_pretext=False):
-        text = str(text)
-        self.content = text
-        self.cursor_place = len(text)
-        if with_pretext:
-            self.text = self.pretext
-        else:
-            if self.cache:
-                self.text = '$' * len(self.content)
-            else:
-                self.text = self.content
+        '''
+        Set the text.  
+        If `with_pretext=True`, set the pretext.
+        '''
+        self.text = str(text)
+        self.cursor_place = len(self.text)
+
+        self.is_pretext = with_pretext
+
+    def reset_text(self):
+        '''
+        Reset the text, if has a pretext: set it.
+        '''
+        self.text = ''
+        self.cursor_place = 0
+
+        self.is_pretext = True
 
     @get_input_deco
     def is_moving_left(self, pressed):
@@ -213,90 +254,173 @@ class InputText(Button):
         if pressed[pygame.K_RIGHT]:
             return True
 
-    @get_input_deco
-    def get_input(self, events, pressed):
-        self.active = True
-        
-        # check for end active
+    def check_text_length(self):
+        '''
+        If a limit is specified, check that the text is not longer that the limit.  
+        Check that the text fit in the instance dimension.  
+        If it is, remove the last char.
+        '''
+        # check for limit
+        if self.limit != None:
+            if len(self.text) > self.limit:
+                self.text = self.text[:-1]
+                self.cursor_place -= 1
+                return
+
+        # check that the text fit in dim
+        try:
+            center_text(self.dim, self.font['font'], self.text,  ignore_exception=False)
+        except ValueError:
+            self.text = self.text[:-1]
+            self.cursor_place -= 1
+
+    def is_still_active(self, pressed, events):
+        '''
+        Return if the instance is still active.
+        '''
+        # check if RETURN is pressed
         if pressed[pygame.K_RETURN]:
             self.active = False
-            self.highlighted = False
             return False
+        
+        # check if a click outside the instance's surface is made
         elif not self.on_it():
             pushed = False
+            
             for event in events:
                 if event.type == pygame.MOUSEBUTTONUP:
                     pushed =  True 
+            
             if pushed:
                 self.active = False
-                self.highlighted = False
                 return False
+        
+        return True
+
+    def manage_new_char(self, pressed):
+        '''
+        If a character has been pressed, add it to the text at the correct location.  
+        Return True if a character has been added.
+        '''
+        key = get_pressed_key(pressed)
+        
+        if key == None:
+            return False
+        
+        else:
+            self.text = self.text[:self.cursor_place] + key + self.text[self.cursor_place:]
+            self.cursor_place += 1
+            
+            self.check_text_length()
+                
+            return True
+
+    def manage_char_deletion(self, pressed):
+        '''
+        If the backspace key has been pressed, update the text at the correct location.  
+        Return True if a character has been deleted.
+        '''
+        if pressed[pygame.K_BACKSPACE]:
+            self.text = self.text[:self.cursor_place-1] + self.text[self.cursor_place:]
+            self.cursor_place -= 1
+            return True
+
+    def manage_cursor_change(self, pressed):
+        '''
+        Manage the changes of positions of the cursor.  
+        Return True if the cursor moved.
+        '''
+        if self.is_moving_left(pressed):
+            
+            if self.cursor_place > 0:
+                self.cursor_place -= 1
+                return True
+        
+        if self.is_moving_right(pressed):
+            
+            if self.cursor_place < len(self.text):
+                self.cursor_place += 1
+                return True
+
+    @get_input_deco
+    def get_input(self, events, pressed):
+        '''
+        Manage the input of the instance.  
+        Check for end of `self.active`.
+        Get character input, manage cursor position.  
+        '''
+        
+        if not self.is_still_active(pressed, events):
+            return False
 
         # check for new char
-        key = get_pressed_key(pressed)
-        if key:
-            self.content = self.content[:self.cursor_place] + key + self.content[self.cursor_place:]
-            self.cursor_place += 1
-            if self.limit:
-                if len(self.content) > self.limit:
-                    self.content = self.content[:-1]
-                    self.cursor_place -= 1
-                
-            try:
-                center_text(self.dim, self.font['font'], self.content,  execption=True)
-            except ValueError:
-                self.content = self.content[:-1]
-                self.cursor_place -= 1
+        if self.manage_new_char(pressed):
             return True
         
         # check for char deletion
-        if pressed[pygame.K_BACKSPACE]:
-            self.content = self.content[:self.cursor_place-1] + self.content[self.cursor_place:]
-            self.cursor_place -= 1
+        if self.manage_char_deletion(pressed):
             return True
     
         # check for cursor change
-        if self.is_moving_left(pressed):
-            if self.cursor_place > 0:
-                self.cursor_place -= 1
-        
-        if self.is_moving_right(pressed):
-            if self.cursor_place < len(self.content):
-                self.cursor_place += 1
-
-        if self.cache:
-            self.text = '$' * len(self.content)
-        else:
-            self.text = self.content
+        if self.manage_cursor_change(pressed):
+            return True
 
         return False
     
     def display_text_cursor(self):
+        '''
+        Display the cursor at the correct location.
+        '''
+        # get text dim until cursor position
         width, height = self.font['font'].size(self.text[:self.cursor_place])
+        
+        # get marges
         x_marge, y_marge = center_text(self.dim, self.font['font'], self.text[:self.cursor_place])
         if not self.centered:
             x_marge = self.rs_marge_text
 
-        bottom_pos = rl(self.TOPLEFT[0] + x_marge + width, self.BOTTOMLEFT[1]-y_marge)
-        top_pos = rl(self.TOPLEFT[0] + x_marge + width, self.TOPLEFT[1]+y_marge)
+        # get cursor pos
+        x = self.TOPLEFT[0] + width + x_marge
+        y_top = self.TOPLEFT[1] + y_marge
+        y_bottom = self.BOTTOMLEFT[1] - y_marge
+
+        top_pos = rl(x, y_top)
+        bottom_pos = rl(x, y_bottom)
         
-        if self.bool_cursor:
+        if self.is_cursor_displayed:
             pygame.draw.line(self.screen, C.BLACK, top_pos, bottom_pos, self.CURSOR_WIDTH)
+    
         self.change_cursor_state()
 
     @cursor_deco
     def change_cursor_state(self):
-        self.bool_cursor = not self.bool_cursor
+        ''' Make the cursor blink '''
+        self.is_cursor_displayed = not self.is_cursor_displayed
         return True
 
     def run(self, events, pressed):
+        
         if self.pushed(events):
             self.active = True
             # if pretext, remove pretext
-            if self.pretext:
-                self.set_text(self.content)
+            self.is_pretext = False
         
         if self.active:
-            self.highlighted = True
-            self.display_text_cursor()
             self.get_input(events, pressed)
+
+    def display(self):
+
+        # set string to be displayed
+        if self.is_pretext:
+            string = self.pretext
+
+        elif self.cache:
+            string = '$' * len(self.text)
+
+        else:
+            string = self.text
+
+        super().display(text=string)
+        
+        if self.active:
+            self.display_text_cursor()
