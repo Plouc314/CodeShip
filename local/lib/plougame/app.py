@@ -13,7 +13,9 @@ class Application:
     def __init__(self, pages):
         
         self._active_page = pages[0][0]
-        self._pages_history = []
+        self._pages_history = [self._active_page]
+
+        self._frame_funcs = []
 
         self._pages = {}
     
@@ -31,11 +33,12 @@ class Application:
 
         self._pages[name] = page
     
-    def change_page(self, name):
+    def change_page(self, name, state=None):
         '''
-        Change the active page.
+        Change the active page.  
+        If state is specified, set the state of the new page.
         '''
-        self._check_valid_name(name)
+        self._check_valid_page(name)
 
         # update the pages history
         # check if we go back of one page
@@ -49,6 +52,13 @@ class Application:
             self._pages_history.append(name)
 
         self._active_page = name
+
+        if state == None:
+            # exec page on_change_page function
+            self._pages[name]._on_change_page()
+
+        else:
+            self._pages[name].change_state(state)
 
     def go_back(self):
         '''
@@ -70,15 +80,24 @@ class Application:
         '''
         Return the page with the given name.
         '''
-        self._check_valid_name(name)
+        self._check_valid_page(name)
 
         return self._pages[name]
+
+    def add_frame_function(self, func):
+        '''
+        Add a function that will be executed every frame.
+        '''
+        self._frame_funcs.append(func)
 
     def react_events(self, pressed, events):
         '''
         React to the user input of the current frame.
         '''
         self._look_for_call()
+
+        for func in self._frame_funcs:
+            self._safe_exec_func(func)
 
         self._pages[self._active_page].react_events(pressed, events)
 
@@ -93,22 +112,28 @@ class Application:
         Check if the active page has set a call.  
         If it is the case, change of page.
         '''
-        if self._active_page._call == None:
+        page = self._pages[self._active_page]
+
+
+        if page._call == None:
             return
         
-        if self._active_page._call == 'back':
+        if page._call == 'back':
             # go back of one page
             self.go_back()
         
         else:
-            name = self._active_page._call
+            name = page._call
 
-            self._check_valid_name(name)
+            self._check_valid_page(name)
             
             # go to the specified page
             self.change_page(name)
+        
+        # reset call
+        page._call = None
 
-    def _check_valid_name(self, name):
+    def _check_valid_page(self, name):
         ''' 
         Return if name in pages, if not raise error.  
         '''
@@ -116,3 +141,12 @@ class Application:
             return True
         else:
             KeyError(f"There is no page named: '{name}'")
+    
+    def _safe_exec_func(self, func):
+        '''
+        Try the given function.
+        '''
+        try:
+            func()
+        except:
+            raise RuntimeError(f"There was an error in given function: {func.__name__}")

@@ -64,8 +64,13 @@ class Spec:
     POS_TITLE = np.array([1400, 100], dtype='int16')
     DIM_TITLE = np.array([400,100], dtype='int16')
 
+    DIM_BIG_TEXT = np.array([400,80], dtype='int16')
     DIM_MEDIUM_TEXT = np.array([400,60], dtype='int16')
+
     DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
     DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')
 
-    
+    # page names
+    PAGE_MENU = "menu"
+    PAGE_CONN = "conn"
+    PAGE_FRIENDS = "friends"

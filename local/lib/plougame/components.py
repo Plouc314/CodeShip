@@ -5,20 +5,25 @@ from .aux import Font, C
 from .spec import Specifications as Spec
 
 class Cadre(Form):
+    '''
+    Cadre object, like an Form with marges with the exception that it can be transparent.
+    '''
+
     def __init__(self, dim, pos, color=C.WHITE, *, set_transparent=False, scale_dim=True, scale_pos=True):
         
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=True)
         
-        self.set_corners()
-        self.is_transparent = set_transparent
+        self._is_transparent = set_transparent
+        
         if set_transparent:
-            self.surf['main'].set_colorkey(color)
+            self._surf['main'].set_colorkey(color)
 
-    def rescale_surf(self):
+    def _rescale_surf(self):
         # overwrite rescale method to keep the cadre transparent when rescaling
-        super().rescale_surf()
-        if self.is_transparent:
-            self.surf['main'].set_colorkey(self.COLOR)
+        super()._rescale_surf()
+        
+        if self._is_transparent:
+            self._surf['main'].set_colorkey(self.color)
 
     def display(self):
         super().display(marge=True)
@@ -67,22 +72,22 @@ class Button(Form):
         '''
         if self.on_it():
             # check if custom surf & font or normal unicolor
-            if self.surf['type'] == 'custom':
-                if self.surf['font']: # check if has a font
-                    self.surf['font'].fill(self.high_color)
+            if self._surf['type'] == 'custom':
+                if self._surf['font']: # check if has a font
+                    self._surf['font'].fill(self._high_color)
                 else:
-                    self.surf['main'].fill(self.high_color)
+                    self._surf['main'].fill(self._high_color)
             else:
-                self.surf['main'].fill(self.high_color)
+                self._surf['main'].fill(self._high_color)
         else:
             # check if custom surf
-            if self.surf['type'] == 'custom':
-                if self.surf['font']: # check if has a font
-                    self.surf['font'].fill(self.COLOR)
+            if self._surf['type'] == 'custom':
+                if self._surf['font']: # check if has a font
+                    self._surf['font'].fill(self.color)
                 else:
-                    self.surf['main'] = pygame.transform.scale(self.surf['original'], rl(self.dim))
+                    self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
             else:
-                self.surf['main'].fill(self.COLOR)
+                self._surf['main'].fill(self.color)
 
     def display_text(self, text=None):
         '''
@@ -96,16 +101,16 @@ class Button(Form):
             return
         
         # get marges
-        x_marge, y_marge = center_text(self.dim, self.font['font'], text)
+        x_marge, y_marge = center_text(self._sc_dim, self.font['font'], text)
         
         if not self.centered:
-            x_marge = self.rs_marge_text
+            x_marge = self._rs_marge_text
         
         # create font
         font_text = self.font['font'].render(text, True, self.text_color)
         
         # display font
-        pos = rl(self.pos[0] + x_marge, self.pos[1] + y_marge)
+        pos = rl(self._sc_pos[0] + x_marge, self._sc_pos[1] + y_marge)
 
         self.screen.blit(font_text, pos)
 
@@ -154,7 +159,7 @@ class TextBox(Form):
        
         if marge:
             self.set_highlight_color()
-            self.MARGE_COLOR = self.high_color
+            self.marge_color = self._high_color
 
     def set_text(self, text):
         ''' Set the text of the TextBox'''
@@ -168,17 +173,17 @@ class TextBox(Form):
         super().display(marge=self.as_marge)
 
         # split the box in n part for n lines
-        y_line = round(self.dim[1]/len(self.lines))
+        y_line = round(self._sc_dim[1]/len(self.lines))
         
         for i, line in enumerate(self.lines):
-            x_marge, y_marge = center_text((self.dim[0],y_line), self.font['font'], line)
+            x_marge, y_marge = center_text((self._sc_dim[0],y_line), self.font['font'], line)
         
             if not self.centered:
-                x_marge = self.rs_marge_text
+                x_marge = self._rs_marge_text
         
             font_text = self.font['font'].render(line,True,self.text_color)
         
-            self.screen.blit(font_text,rl(self.pos[0]+x_marge,self.pos[1]+i*y_line+y_marge))
+            self.screen.blit(font_text,rl(self._sc_pos[0]+x_marge,self._sc_pos[1]+i*y_line+y_marge))
 
 get_input_deco = Delayer(Spec.TEXT_DELAY)
 cursor_deco = Delayer(Spec.CURSOR_DELAY)
@@ -269,7 +274,7 @@ class InputText(Button):
 
         # check that the text fit in dim
         try:
-            center_text(self.dim, self.font['font'], self.text,  ignore_exception=False)
+            center_text(self._sc_dim, self.font['font'], self.text,  ignore_exception=False)
         except ValueError:
             self.text = self.text[:-1]
             self.cursor_place -= 1
@@ -375,9 +380,9 @@ class InputText(Button):
         width, height = self.font['font'].size(self.text[:self.cursor_place])
         
         # get marges
-        x_marge, y_marge = center_text(self.dim, self.font['font'], self.text[:self.cursor_place])
+        x_marge, y_marge = center_text(self._sc_dim, self.font['font'], self.text[:self.cursor_place])
         if not self.centered:
-            x_marge = self.rs_marge_text
+            x_marge = self._rs_marge_text
 
         # get cursor pos
         x = self.TOPLEFT[0] + width + x_marge
@@ -424,3 +429,21 @@ class InputText(Button):
         
         if self.active:
             self.display_text_cursor()
+
+
+class ScrollList(Form):
+
+    WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
+
+    def __init__(self, dim, pos, elements, *, color=C.WHITE, 
+                    scale_dim=True, scale_pos=True):
+        
+        super().__init__(dim, pos, color=color, marge=True,
+                scale_pos=scale_pos, scale_dim=scale_dim)
+        
+        self._elements = list(elements)
+
+        # y dimension of all elements (unscaled)
+        self._tot_y = sum((element._unsc_pos[1] for element in self._elements))
+
+

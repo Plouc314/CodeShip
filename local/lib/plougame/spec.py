@@ -1,8 +1,14 @@
 
 class Specifications:
+    
+    # time
     FPS = 30
     TEXT_DELAY = FPS // 10
     CURSOR_DELAY = FPS // 2
+
+    MARGE_WIDTH = 4
+    MARGE_TEXT = 5
+    WIDTH_SCROLL_BAR = 10
 
     @classmethod
     def set_fps(cls, fps):

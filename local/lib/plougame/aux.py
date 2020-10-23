@@ -30,12 +30,14 @@ class Dimension:
         else:
             f = cls.f
 
-        if type(x) == list or type(x) == tuple:
+        if type(x) == float or type(x) == int:
+            x = round(x*f, fp)
+        
+        else:
             x = list(x)
             for i in range(len(x)):
                 x[i] = round(x[i]*f, fp)
-        else:
-            x = round(x*f, fp)
+            
         return x
 
     @classmethod

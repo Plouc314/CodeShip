@@ -5,7 +5,6 @@ from .aux import Dimension, Font, C
 from .helper import rl
 from .spec import Specifications as Spec
 
-warning_msg = 'interface.py - WARNING: '
 
 class Interface:
     '''
@@ -53,7 +52,7 @@ class Interface:
         cls.set_screen(cls.screen)
 
         # set references to Form object
-        Form.interface = cls
+        Form._interface = cls
         Form.screen = cls.screen
 
         cls.x_padding = Form((0,0),(0,0),cls.font_color, rescale=False)
@@ -83,7 +82,7 @@ class Interface:
                 obj.on_resize(Dimension.f)
                 cls.resize_objects.append(obj)
             else:
-                print(warning_msg + 'resizable objects must have an on_resize(self, scale_factor) method')
+                print('WARNING: resizable objects must have an on_resize(self, scale_factor) method')
 
     @classmethod
     def rescale(cls, new_dim):
@@ -110,8 +109,15 @@ class Interface:
 
         # resize every objects
         for gui_obj in cls.gui_objects:
-            gui_obj.set_dim_pos(gui_obj.unscaled_dim, gui_obj.unscaled_pos, scale_pos=True, scale_dim=True, update_original=False)
             
+            # resize dimension
+            gui_obj.set_dim_pos(gui_obj.unscaled_dim, gui_obj.unscaled_pos, 
+                        scale_pos=True, scale_dim=True, update_original=False)
+            
+            # resize marges
+            gui_obj._rs_marge_width = Dimension.E(gui_obj.MARGE_WIDTH)
+            gui_obj._rs_marge_text = Dimension.E(gui_obj.MARGE_TEXT)
+
             # rezise existing fonts
             if hasattr(gui_obj, 'font'):
                 fontsize = gui_obj.font['size']

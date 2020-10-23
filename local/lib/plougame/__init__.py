@@ -13,4 +13,5 @@ from .components import TextBox, Button, InputText
 from .aux import Font, C
 from .spec import Specifications
 
-from .page import Page
+from .page import Page, SubPage
+from .app import Application

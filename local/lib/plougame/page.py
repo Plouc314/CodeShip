@@ -1,3 +1,4 @@
+from .aux import Dimension
 from .components import Button, InputText
 
 class Page:
@@ -22,6 +23,7 @@ class Page:
     - set_in_state_func: Set a function to be executed when entering the state
     - set_out_state_func: Set a function to be executed when getting out of the state
     - change_page: Set a call for an Application object to change the current page
+    - change_display_state: Set if a component is displayed, independently of the active state
     '''
 
     def __init__(self, states, components, active_states='none'):
@@ -39,6 +41,7 @@ class Page:
         self._call = None
 
         self._components = {}
+        self._subpages = {}
         self._buttons = {}
         self._inputs = {}
 
@@ -77,7 +80,10 @@ class Page:
 
         # update the states history
         # check if we go back of one state
-        if len(self._states_history) < 2:
+        if self._states_history[-1] == new_state:
+            pass
+
+        elif len(self._states_history) < 2:
             self._states_history.append(new_state)
 
         elif self._states_history[-2] == new_state:
@@ -117,6 +123,7 @@ class Page:
         Change the active state to be the one before the current.  
         So if we pass from `state1` to `state2` and call `go_back`, we will be at `state1`.
         '''
+        
         # check if can go back
         if len(self._states_history) < 2:
             # set a call -> go back of one page
@@ -132,7 +139,8 @@ class Page:
 
     def add_component(self, name, obj, active_states=None):
         '''
-        Add a component to the page.
+        Add a component to the page.  
+        The component can be a subclass of one of these: SubPage, Form, Cadre, TextBox, Button, InputText
 
         Arguments:
         - name: the name of the component  
@@ -148,13 +156,18 @@ class Page:
         # add attribute to the component
         comp_info = {
             'object': obj,
-            'active states': active_states
+            'active states': active_states,
+            'displayed': False
         }
         
         self._components[name] = comp_info
 
+        # look if component is a subpage
+        if type(comp_info['object']) == SubPage:
+            self._subpages[name] = comp_info
+
         # look if object that react to events
-        if type(comp_info['object']) == Button:
+        elif type(comp_info['object']) == Button:
             
             # add butto func attr
             comp_info['func'] = None
@@ -211,6 +224,16 @@ class Page:
                 if not state in comp_info['active states']:
                     comp_info['active states'].append(state)
 
+    def change_display_state(self, name, is_displayed):
+        '''
+        Set if the component will be displayed, independently of the active state.
+        '''
+        self._check_valid_name(name)
+
+        comp_info = self._components[name]
+
+        comp_info['displayed'] = is_displayed
+
     def get_text(self, name):
         '''
         Return the text of an InputText component.
@@ -233,6 +256,11 @@ class Page:
         '''
         React to the user input of the current frame.  
         '''
+        # run subpages
+        for sub_info in self._get_active_comps(self._subpages):
+
+            sub_info['object'].react_events(pressed, events)
+
         # run inputs
         for inp_info in self._get_active_comps(self._inputs):
 
@@ -244,6 +272,23 @@ class Page:
             if butt_info['object'].pushed(events) and butt_info['func'] != None:
                 # execute button's when-pushed function
                 butt_info['func']()
+
+    def display(self):
+        '''
+        Display all components in the active state.  
+        Display all components that were manualy set to be displayed.
+        '''
+        for comp_info in self._components.values():
+
+            if self._active_state in comp_info['active states'] or comp_info['displayed']:
+                comp_info['object'].display()
+
+    def _on_change_page(self):
+        '''
+        Executed when this page become the active page.
+        '''
+        # call change_state -> reset_inputs, exec in_state func
+        self.change_state(self._active_state)
 
     def _reset_inputs_text(self, state):
         '''
@@ -288,9 +333,52 @@ class Page:
         else:
             raise ValueError(f"There is no state named: '{state}'.")
 
-    def display(self):
+
+class SubPage(Page):
+
+    def __init__(self, states, components, pos, active_states='none'):
+
+        super().__init__(states, components, active_states=active_states)
+
+        self.set_pos(pos)
+    
+    def set_pos(self, pos, is_scaled=False):
         '''
-        Display all components to display, in the order in which they were given.
+        Set the position of the SubPage.  
+
+        Arguments:
+        - pos: the position
+        - is_scaled: if the given position is scaled
         '''
-        for comp_info in self._get_active_comps():
-            comp_info['object'].display()
+
+        if is_scaled:
+            self._sc_pos = list(pos)
+            self._unsc_pos = Dimension.inv_scale(pos)
+        
+        else:
+            self._unsc_pos = list(pos)
+            self._sc_pos = Dimension.scale(pos)
+    
+    def display(self, dif_pos=None):
+        '''
+        Display all components in the active state.  
+        Display all components that were manualy set to be displayed.  
+        Take the position into account to display everything.  
+        if dif_pos is specified, the origin position will be `position + dif_pos`
+        '''
+
+        for comp_info in self._components.values():
+
+            if self._active_state in comp_info['active states'] or comp_info['displayed']:
+            
+                if type(comp_info['object']) == SubPage:
+                    comp_info['object'].display(dif_pos=self._sc_pos)
+
+                else:
+                    pos = (
+                        self._sc_pos[0] + comp_info['object'].pos[0],
+                        self._sc_pos[1] + comp_info['object'].pos[1],
+                    )
+                
+                    comp_info['object'].display(pos=pos)
+        
