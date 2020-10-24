@@ -48,6 +48,24 @@ def rl(*args):
         args[i] = round(args[i])
     return args
 
+def get_dark_color(color):
+    dark_color = []
+    for i in range(3):
+        if color[i] >= 20:
+            dark_color.append(color[i] - 20)
+        else:
+            dark_color.append(0)
+    return dark_color
+
+def get_light_color(color):
+    light_color = []
+    for i in range(3):
+        if color[i] <= 235:
+            light_color.append(color[i] + 20)
+        else:
+            light_color.append(255)
+    return light_color
+
 class Delayer:
     '''
     Creates decorators,

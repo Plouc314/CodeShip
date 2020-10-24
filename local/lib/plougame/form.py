@@ -1,5 +1,5 @@
 import pygame
-from .helper import mean, rl
+from .helper import mean, rl, get_dark_color, get_light_color
 from .aux import Dimension, Font, C
 from .spec import Specifications as Spec
 
@@ -46,7 +46,7 @@ class Form:
         self._rs_marge_text = Dimension.E(self.MARGE_TEXT)
 
         if marge: # has to be done after set_surf -> must have a surf set
-            self.set_highlight_color()
+            self._set_high_color()
             self.marge_color = self._high_color
 
         if rescale:
@@ -251,29 +251,18 @@ class Form:
         self.color = color
         
         if marge:
-            self.set_highlight_color()
+            self._set_high_color()
             self.marge_color = self._high_color
 
-    def set_highlight_color(self):
+    def _set_high_color(self):
         '''
         Set the color taken by the marges and the object when highlighted.
         '''
-
         if mean(self.color) < 130:
-            self._high_color = []
-            for i in range(3):
-                if self.color[i] <= 235:
-                    self._high_color.append(self.color[i] + 20)
-                else:
-                    self._high_color.append(255)
+            self._high_color = get_light_color(self.color)
         
         else:
-            self._high_color = []
-            for i in range(3):
-                if self.color[i] >= 20:
-                    self._high_color.append(self.color[i] - 20)
-                else:
-                    self._high_color.append(0)
+            self._high_color = get_dark_color(self.color)
 
     def display_margin(self, surface):
         pygame.draw.line(surface, self.marge_color, self.TOPLEFT   , self.TOPRIGHT   , self._rs_marge_width)

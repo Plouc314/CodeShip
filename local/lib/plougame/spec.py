@@ -8,7 +8,7 @@ class Specifications:
 
     MARGE_WIDTH = 4
     MARGE_TEXT = 5
-    WIDTH_SCROLL_BAR = 10
+    WIDTH_SCROLL_BAR = 40
 
     @classmethod
     def set_fps(cls, fps):

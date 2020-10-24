@@ -9,7 +9,7 @@ pygame.init()
 
 from .interface import Interface
 from .form import Form
-from .components import TextBox, Button, InputText
+from .components import TextBox, Button, InputText, ScrollList
 from .aux import Font, C
 from .spec import Specifications
 

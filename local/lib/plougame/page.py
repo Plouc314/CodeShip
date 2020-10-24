@@ -1,5 +1,5 @@
 from .aux import Dimension
-from .components import Button, InputText
+from .components import Button, InputText, ScrollList
 
 class Page:
     '''
@@ -44,6 +44,7 @@ class Page:
         self._subpages = {}
         self._buttons = {}
         self._inputs = {}
+        self._scrolls = {}
 
         if active_states == 'none':
             active_states = []
@@ -175,6 +176,9 @@ class Page:
         
         elif type(comp_info['object']) == InputText:
             self._inputs[name] = comp_info
+        
+        elif type(comp_info['object']) == ScrollList:
+            self._scrolls[name] = comp_info
 
     def add_button_logic(self, name, func):
         '''
@@ -265,6 +269,11 @@ class Page:
         for inp_info in self._get_active_comps(self._inputs):
 
             inp_info['object'].run(events, pressed)
+
+        # run scroll lists
+        for scroll_info in self._get_active_comps(self._scrolls):
+
+            scroll_info['object'].run(events, pressed)
 
         # run buttons
         for butt_info in self._get_active_comps(self._buttons):
