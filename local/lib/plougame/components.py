@@ -1,7 +1,7 @@
 import pygame
 from .form import Form
 from .helper import Delayer, center_text, get_pressed_key, rl, get_dark_color, get_light_color
-from .aux import Font, C
+from .aux import Dimension, Font, C
 from .spec import Specifications as Spec
 
 class Cadre(Form):
@@ -9,7 +9,8 @@ class Cadre(Form):
     Cadre object, like an Form with marges with the exception that it can be transparent.
     '''
 
-    def __init__(self, dim, pos, color=C.WHITE, *, set_transparent=False, scale_dim=True, scale_pos=True):
+    def __init__(self, dim, pos, color=C.WHITE, *, set_transparent=False, 
+                scale_dim=True, scale_pos=True):
         
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=True)
         
@@ -46,18 +47,21 @@ class Button(Form):
         - pushed : Return if the surface has been clicked
         - display
     '''
-    def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, centered=True, font=Font.f(50), 
-                    surface=None, with_font=False, scale_dim=True, scale_pos=True, highlight=True):
+    def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK,
+                centered=True, font=Font.f(50), surface=None, with_font=False,
+                scale_dim=True, scale_pos=True, highlight=True):
         
-        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, surface=surface, with_font=with_font, marge=True)
+        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, 
+                        surface=surface, with_font=with_font, marge=True)
 
         self._text = text
-        
         self.text_color = text_color
-        self.set_corners()
         self.highlighted = highlight
         self.centered = centered
         self.font = font
+        self._logic = None
+
+        self._set_corners()
 
     def pushed(self, events):
         '''Return True if the object was clicked'''
@@ -70,7 +74,20 @@ class Button(Form):
         ''' Return the text '''
         return self._text
 
-    def highlight(self):
+    def set_logic(self, func):
+        '''
+        Set the function which will be called when `pushed` returns True.
+        '''
+        self._logic = func
+
+    def run(self, events, pressed):
+        '''
+        React to the user input, execute the given logic function if given.
+        '''
+        if not self._logic is None and self.pushed(events):
+            self._logic()
+
+    def _highlight(self):
         '''
         Set the highlight color on surf, if custom surf with font: set highlight on surf font
         '''
@@ -93,7 +110,7 @@ class Button(Form):
             else:
                 self._surf['main'].fill(self.color)
 
-    def display_text(self, text=None, surface=None):
+    def display_text(self, text=None, surface=None, pos=None):
         '''
         Display the text of the instance.  
         If text is specified, display it instead of attribute text.  
@@ -101,6 +118,9 @@ class Button(Form):
         '''
         if surface == None:
             surface = self.screen
+
+        if pos == None:
+            pos = self._sc_pos
 
         if text == None:
             text = self._text
@@ -118,11 +138,11 @@ class Button(Form):
         font_text = self.font['font'].render(text, True, self.text_color)
         
         # display font
-        pos = rl(self._sc_pos[0] + x_marge, self._sc_pos[1] + y_marge)
+        pos = rl(pos[0] + x_marge, pos[1] + y_marge)
 
         surface.blit(font_text, pos)
 
-    def display(self, text=None, surface=None):
+    def display(self, text=None, surface=None, pos=None):
         '''
         Display the main surface, the marges and the text.  
         If a text is specified, display it instead of attribute text.  
@@ -130,12 +150,12 @@ class Button(Form):
         '''
         # if highlight actived, handeln highlight color changes
         if self.highlighted:
-            self.highlight()
+            self._highlight()
         
         # display the surf
-        super().display(marge=True, surface=surface)
+        super().display(marge=True, surface=surface, pos=pos)
         
-        self.display_text(text=text, surface=surface)
+        self.display_text(text=text, surface=surface, pos=pos)
 
 class TextBox(Form):
     ''' 
@@ -163,9 +183,10 @@ class TextBox(Form):
         self.font = font
         self.lines = text.split('\n')
         self.text_color = text_color
-        self.set_corners()
         self.as_marge = marge
        
+        self._set_corners()
+
         if marge:
             self._set_high_color()
             self.marge_color = self._high_color
@@ -179,13 +200,16 @@ class TextBox(Form):
         self._text = text
         self.lines = text.split('\n')
 
-    def display_lines_text(self, surface=None):
+    def display_lines_text(self, surface=None, pos=None):
         '''
         Display the text, can be on multiple lines.  
         If a surface is specified, display on it, else display on the screen.
         '''
         if surface == None:
             surface = self.screen
+
+        if pos == None:
+            pos = self._sc_pos
 
         # split the box in n part for n lines
         y_line = round(self._sc_dim[1]/len(self.lines))
@@ -198,16 +222,16 @@ class TextBox(Form):
         
             font_text = self.font['font'].render(line,True,self.text_color)
         
-            surface.blit(font_text,rl(self._sc_pos[0]+x_marge,self._sc_pos[1]+i*y_line+y_marge))
+            surface.blit(font_text,rl(pos[0] + x_marge, pos[1] + i * y_line + y_marge))
 
-    def display(self, surface=None):
+    def display(self, surface=None, pos=None):
         '''
         Display the TextBox  
         If a surface is specified, display on it, else display on the screen.
         '''
-        super().display(marge=self.as_marge, surface=surface)
+        super().display(marge=self.as_marge, surface=surface, pos=pos)
 
-        self.display_lines_text(surface=surface)
+        self.display_lines_text(surface=surface, pos=pos)
         
 
 get_input_deco = Delayer(Spec.TEXT_DELAY)
@@ -393,7 +417,7 @@ class InputText(Button):
 
         return False
     
-    def display_text_cursor(self, surface=None):
+    def display_text_cursor(self, surface=None, pos=None):
         '''
         Display the cursor at the correct location.  
         If a surface is specified, display on it, else display on the screen.
@@ -401,6 +425,12 @@ class InputText(Button):
         if surface == None:
             surface = self.screen
 
+        if pos == None:
+            to_set_corners = False
+            pos = self._sc_pos
+        else:
+            to_set_corners = True
+            self._set_corners(pos=pos)
 
         # get text dim until cursor position
         width, height = self.font['font'].size(self._text[:self.cursor_place])
@@ -423,6 +453,9 @@ class InputText(Button):
     
         self.change_cursor_state()
 
+        if to_set_corners:
+            self._set_corners()
+
     @cursor_deco
     def change_cursor_state(self):
         ''' Make the cursor blink '''
@@ -439,7 +472,7 @@ class InputText(Button):
         if self.active:
             self.get_input(events, pressed)
 
-    def display(self, surface=None):
+    def display(self, surface=None, pos=None):
         '''
         Display the InputText  
         If a surface is specified, display on it, else display on the screen.
@@ -455,29 +488,36 @@ class InputText(Button):
         else:
             string = self._text
 
-        super().display(text=string, surface=surface)
+        super().display(text=string, surface=surface, pos=pos)
         
         if self.active:
-            self.display_text_cursor(surface=surface)
+            self.display_text_cursor(surface=surface, pos=pos)
 
 
 class ScrollList(Form):
+    '''
+    Scroll List object, take a list of lines, display them in the scroll list box,
+    with a scroll bar.  
+
+    The lines can be either a built-in object like: Form, Button, TextBox, ...
+    Or a list of multiple of them.
+    '''
+
 
     WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
 
-    def __init__(self, dim, pos, elements, *, color=C.WHITE, 
+    def __init__(self, dim, pos, lines, *, color=C.WHITE, 
                     scale_dim=True, scale_pos=True, bar_color=C.LIGHT_GREY):
         
         super().__init__(dim, pos, color=color, marge=True,
                 scale_pos=scale_pos, scale_dim=scale_dim)
         
-        self._elements = list(elements)
+        self._lines = list(lines)
         self._bar_color = bar_color
 
         self._selected = False
 
-        # y dimension of all elements (unscaled)
-        self._tot_y = sum((element._unsc_dim[1] for element in self._elements))
+        self._set_elements()
 
         # the position of the cursor in % -> between 0 and ?
         self._cursor_y_per = 0
@@ -488,18 +528,22 @@ class ScrollList(Form):
 
         self._set_scroll_bar()
 
-    def add_element(self, element, index=None):
+    def add_line(self, line, index=None):
         '''
-        Add an element to the scroll list.
-        if an index is specified, add the element at the given index.
+        Add an line to the scroll list.
+        if an index is specified, add the line at the given index.
         '''
         if index == None:
-            index = len(self._elements)
+            index = len(self.lines)
         
-        self._elements.insert(index, element)
+        # pass line 
+        if type(line) != list:
+            line = [line]
+
+        self.lines.insert(index, line)
 
         # update tot_y, scroll bat
-        self._tot_y += element._unsc_pos[1]
+        self._tot_y += line[0].get_dim()[1]
 
         self._set_scroll_bar()
 
@@ -524,7 +568,47 @@ class ScrollList(Form):
 
         if self._selected:
             self._update_scroll_bar_pos()
-            
+        
+        self._run_elements(events, pressed)
+
+    def _run_elements(self, events, pressed):
+        '''
+        For each element, check if it has a `run` method, and if it's the case, run it.
+        '''
+        for line in self._lines:
+            for element in line:
+                if hasattr(element, "run"):
+                    element.run(events, pressed)
+
+    def _set_elements(self):
+        '''
+        Pass all lines to list,  
+        Set the tot_y attr,  
+        Store all relative positions of the elements.
+        '''
+        # all unscaled x positions
+        self._x_positions = []
+
+        # set the total y dimension of the lines
+        self._tot_y = 0
+
+        for i, line in enumerate(self._lines):
+
+            # first pass all the lines to list
+            if type(line) != list:
+                self._lines[i] = [line]
+
+            # get all x pos
+            x_pos = []
+
+            for element in self._lines[i]:
+                x_pos.append(element.get_pos()[0])
+
+            self._x_positions.append(x_pos)
+
+            # increment the tot_y
+            self._tot_y += self._lines[i][0].get_dim()[1]
+
     def _update_scroll_bar_pos(self):
         '''
         When scroll bar is selected, 
@@ -570,38 +654,12 @@ class ScrollList(Form):
         
         return y
 
-    def _get_displayed_elements(self):
-        '''
-        Select the elements to be displayed,
-        set their relative position.  
-        Return a list of the selected elements.
-        '''
-        elements = []
-        y = 0
-
-        for element in self._elements:
-
-            y_top = y
-            y_bottom = y + element._unsc_dim[1]
-
-            # check if element is displayed
-            if y_bottom > self._top_lim and y_top < self._bottom_lim:
-                
-                rel_pos = [0, y - self._top_lim]
-                element.set_pos(rel_pos, scale=True)
-                
-                elements.append(element)
-
-            y += element._unsc_dim[1]
-        
-        return elements
-
     def _is_selected(self, events):
         '''
         Return if the scroll cursor is selected.  
         Selected means mouse button down and mouse cursor on scroll cursor.
         '''
-        if self.on_it():
+        if self._scroll_cursor.on_it():
             is_pressed = pygame.mouse.get_pressed()[0]
             return is_pressed
 
@@ -644,13 +702,45 @@ class ScrollList(Form):
         # reset surface
         self.set_surface()
 
-        elements = self._get_displayed_elements()
-        
-        for element in elements:
-            element.display(surface=self.get_surface('main'))
+        y = 0
 
+        for i, line in enumerate(self._lines):
+
+            y_top = y
+            y_bottom = y + line[0].get_dim()[1]
+
+            # check if line is displayed
+            if y_bottom > self._top_lim and y_top < self._bottom_lim:
+
+                self._display_line(i, y - self._top_lim)
+                
+            y += line[0].get_dim()[1]
 
         super().display(marge=True)
 
         self._rect_bar.display()
         self._scroll_cursor.display()
+
+    def _display_line(self, idx_line, y):
+        '''
+        Display a line at the given relative y position.  
+        Set in the first place a position relative to
+        the scroll list, display the line on the scroll list surface. And then
+        set the absolute position, to be able to use on_it function
+        '''
+        surface = self.get_surface('main')
+
+        for x, element in zip(self._x_positions[idx_line], self._lines[idx_line]):
+
+            # set the relative position -> display on scoll list surface    
+            rel_pos = Dimension.scale([x, y])
+
+            element.display(surface=surface, pos=rel_pos)
+
+            # set the absolute position -> on_it function
+            abs_pos = [
+                self._sc_pos[0] + rel_pos[0],
+                self._sc_pos[1] + rel_pos[1]
+            ]
+            
+            element.set_pos(abs_pos)

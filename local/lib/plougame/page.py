@@ -182,10 +182,11 @@ class Page:
 
     def add_button_logic(self, name, func):
         '''
-        Add a function to be executed when the specified button is pushed.
+        Add a function to be executed when the specified button is pushed, 
+        equivalent to `Button.set_logic`.
 
         Arguments:
-        - name: the name of the object
+        - name: the name of the button
         - func: the function to be executed
         '''
 

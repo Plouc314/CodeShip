@@ -59,6 +59,26 @@ class Form:
         '''
         self._interface.gui_objects.remove(self)
 
+    def get_pos(self, scaled=False):
+        '''
+        Return the unscaled position of the instance.  
+        If scaled=True, return the scaled position.
+        '''
+        if scaled:
+            return self._sc_pos.copy()
+        else:
+            return self._unsc_pos.copy()
+
+    def get_dim(self, scaled=False):
+        '''
+        Return the unscaled dimension of the instance.  
+        If scaled=True, return the scaled dimension.
+        '''
+        if scaled:
+            return self._sc_dim.copy()
+        else:
+            return self._unsc_dim.copy()
+
     def set_surface(self, surface=None, with_font=False):
         '''
         Set the surface attribute, 
@@ -264,11 +284,24 @@ class Form:
         else:
             self._high_color = get_dark_color(self.color)
 
-    def display_margin(self, surface):
+    def _display_margin(self, surface, pos=None):
+        '''
+        Display the margin of the instance, given a surface and potentialy a position.
+        '''
+
+        if pos == None:
+            to_set_corners = False
+        else:
+            self._set_corners(pos=pos)
+            to_set_corners = True
+
         pygame.draw.line(surface, self.marge_color, self.TOPLEFT   , self.TOPRIGHT   , self._rs_marge_width)
         pygame.draw.line(surface, self.marge_color, self.TOPLEFT   , self.BOTTOMLEFT , self._rs_marge_width)
         pygame.draw.line(surface, self.marge_color, self.TOPRIGHT  , self.BOTTOMRIGHT, self._rs_marge_width)
         pygame.draw.line(surface, self.marge_color, self.BOTTOMLEFT, self.BOTTOMRIGHT, self._rs_marge_width)
+
+        if to_set_corners:
+            self._set_corners()
 
     def display(self, *, surface=None, pos=None, marge=False):
         '''
@@ -295,7 +328,7 @@ class Form:
         surface.blit(self._surf['main'], pos)
         
         if marge:
-            self.display_margin(surface)
+            self._display_margin(surface, pos=pos)
     
     def on_it(self):
         '''Return if the mouse is on the surface (not rotated)'''
@@ -305,11 +338,18 @@ class Form:
                 return True
         return False
 
-    def set_corners(self):
-        self.TOPLEFT = rl(self._sc_pos)
-        self.TOPRIGHT = rl(self._sc_pos[0]+self._sc_dim[0],self._sc_pos[1])
-        self.BOTTOMLEFT = rl(self._sc_pos[0], self._sc_pos[1]+self._sc_dim[1])
-        self.BOTTOMRIGHT = rl(self._sc_pos[0]+self._sc_dim[0],self._sc_pos[1]+self._sc_dim[1])
+    def _set_corners(self, pos=None):
+        '''
+        Set the TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT attributes
+        '''
+
+        if pos == None:
+            pos = self._sc_pos
+
+        self.TOPLEFT = rl(pos)
+        self.TOPRIGHT = rl(pos[0]+self._sc_dim[0],pos[1])
+        self.BOTTOMLEFT = rl(pos[0], pos[1]+self._sc_dim[1])
+        self.BOTTOMRIGHT = rl(pos[0]+self._sc_dim[0],pos[1]+self._sc_dim[1])
 
     def get_center(self, scale=False, fp=5):
         '''
@@ -363,14 +403,14 @@ class Form:
 
         if not center:
             self._set_pos_attr(pos, scale=scale, compensate_rotation=is_rotated)
-            self.set_corners()
+            self._set_corners()
         else:
             if scale:
                 pos = Dimension.scale(pos)
 
             pos = [pos[0]-self._sc_dim[0]/2, pos[1]-self._sc_dim[1]/2]
             self._set_pos_attr(pos, compensate_rotation=is_rotated)
-            self.set_corners()
+            self._set_corners()
 
     def set_dim_pos(self, dim, pos, *, scale_dim=False, scale_pos=False, update_original=True):
         '''
@@ -383,7 +423,7 @@ class Form:
         '''
         self._set_dim_attr(dim, scale=scale_dim, update_original=update_original)
         self._set_pos_attr(pos, scale=scale_pos, update_original=update_original)
-        self.set_corners()
+        self._set_corners()
 
     def compile(self, *, scale=False, with_marge=True, with_font=True, extend_dim=False):
         '''

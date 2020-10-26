@@ -111,7 +111,7 @@ class Interface:
         for gui_obj in cls.gui_objects:
             
             # resize dimension
-            gui_obj.set_dim_pos(gui_obj.unscaled_dim, gui_obj.unscaled_pos, 
+            gui_obj.set_dim_pos(gui_obj._unsc_dim, gui_obj._unsc_pos, 
                         scale_pos=True, scale_dim=True, update_original=False)
             
             # resize marges
