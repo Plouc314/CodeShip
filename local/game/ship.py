@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
-from lib.interface import Interface, Form, C
+from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
 
@@ -66,11 +66,12 @@ class Ship:
             if np.all(block.coord == coord):
                 return block
 
-    def get_scaled_pos(self):
+    def get_pos(self, scaled=False):
         '''
-        Return the position scaled to the current window's dimension
+        Return the position of the ship (ship's form).  
+        If `scaled=True`, the position will be scaled to the current window's dimension.
         '''
-        return np.array(self.form.pos)
+        return np.array(self.form.get_pos(scaled=scaled))
 
     def get_mask(self):
         '''
@@ -146,8 +147,8 @@ class Ship:
         pos = block.coord * Spec.SIZE_BLOCK
         surf = block.compile()
 
-        self.form.surf['original'].blit(surf, pos)
-        self.form.set_surf(surface=self.form.surf['original'])
+        self.form.get_surface('original').blit(surf, pos)
+        self.form.set_surface(surface=self.form.get_surface('original'))
 
     def update_signal(self, block=None, index=None):
         '''
@@ -161,10 +162,9 @@ class Ship:
         signal = block.get_signal_form()
         
         # blit signal surf on form's surface
-        signal.display(surface=self.form.surf['original'], pos=pos)
+        signal.display(surface=self.form.get_surface('original'), pos=pos)
 
-        self.form.set_surf(surface=self.form.surf['original'])
-
+        self.form.set_surface(surface=self.form.get_surface('original'))
 
     def compile(self):
         '''
@@ -297,7 +297,8 @@ class Ship:
     def control_power_level(self):
         '''
         Check that there is enough power to feed all the blocks.  
-        If not, deactivate blocks randomly (according to the blocks priority) until there is enough power.
+        If not, deactivate blocks randomly (according to the blocks priority)
+        until there is enough power.
         '''
         power_level = self.get_power_level()
         
@@ -328,15 +329,15 @@ class Ship:
         alpha -= self.orien
 
         # inv scale the dif center -> compare to none rotated/scaled dimensions
-        dif_center = Interface.dim.inv_scale(dif_center)
+        dif_center = Dimension.inv_scale(dif_center)
 
         # get not scaled/rotated pos from center
         pos = get_cartesian(dif_center, alpha)
 
         # add center to position 
         relative_center = np.array([
-            self.form.unscaled_dim[0]//2,
-            self.form.unscaled_dim[1]//2,
+            self.form.get_dim()[0]//2,
+            self.form.get_dim()[1]//2,
         ])
         pos += relative_center
 

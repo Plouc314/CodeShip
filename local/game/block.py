@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
-from lib.interface import Form, C, Delayer
+from lib.plougame import Form, C
+from lib.plougame.helper import Delayer
 from game.bulletsystem import Bullet, BulletSystem
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
@@ -108,8 +109,8 @@ class Generator(Block):
         self.power_output = Spec.POWER_ENERGIE
 
         # blit the generator image on the surface -> can resize the image
-        self.surf['original'].blit(img_generator, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
-        self.set_surf(self.surf['original'])
+        self.get_surface('original').blit(img_generator, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
+        self.set_surface(self.get_surface('original'))
 
 
 class Engine(Block):
@@ -123,8 +124,8 @@ class Engine(Block):
         self.activation_per = 1 # % of activation
 
         # blit the engine image on the surface -> can resize the image
-        self.surf['original'].blit(img_engine, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
-        self.set_surf(self.surf['original'])
+        self.get_surface('original').blit(img_engine, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
+        self.set_surface(self.get_surface('original'))
     
     @property
     def is_active(self):
@@ -157,8 +158,8 @@ class Shield(Block):
         self.power_output = -Spec.POWER_CONS        
 
         # blit the shield image on the surface -> can resize the image
-        self.surf['original'].blit(img_shield, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
-        self.set_surf(self.surf['original'])
+        self.get_surface('original').blit(img_shield, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
+        self.set_surface(self.get_surface('original'))
 
 
 class Turret(Block):
@@ -177,8 +178,8 @@ class Turret(Block):
         self.circular_speed = 0 # deg
 
         # blit the turret image on the surface -> can resize the image
-        self.surf['original'].blit(img_turret, (Spec.DIM_BLOCK-Spec.DIM_TURRET)//2)
-        self.set_surf(self.surf['original'])
+        self.get_surface('original').blit(img_turret, (Spec.DIM_BLOCK-Spec.DIM_TURRET)//2)
+        self.set_surface(self.get_surface('original'))
     
     def update_state(self):
         '''
@@ -218,11 +219,11 @@ class Turret(Block):
 
         # update surface - use a new one -> original already has an img blited on
         form = Form(Spec.DIM_BLOCK, (0,0), self.color)
-        surface = form.surf['original']
+        surface = form.get_surface('original')
         form.delete()
 
         surface.blit(img, pos)
-        self.set_surf(surface)
+        self.set_surface(surface)
 
         # update ship's surface
         self.ship.update_block(self)

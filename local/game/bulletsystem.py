@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-from lib.interface import Interface, Form, C
+from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad
 from spec import Spec
 
@@ -48,8 +48,10 @@ class Bullet(Form):
         '''
         Update the position of the bullet.
         '''
-        x = np.cos(-self.orien) * self.speed + self.pos[0]
-        y = np.sin(-self.orien) * self.speed + self.pos[1]
+        pos = self.get_pos(scaled=True)
+
+        x = np.cos(-self.orien) * self.speed + pos[0]
+        y = np.sin(-self.orien) * self.speed + pos[1]
 
         self.set_pos((x,y))
 
@@ -88,7 +90,7 @@ class Explosion(Form):
             return
 
         dim = self.choose_dim()
-        self.set_dim_attr(dim, scale=True)
+        self.set_dim(dim, scale=True)
 
         angle = np.random.randint(360)
         self.rotate(angle)
@@ -155,11 +157,11 @@ class BulletSystem:
         if not: remove the bullet.
         '''
         # get scaled window dimension
-        window_x = Interface.dim.rx
-        window_y = Interface.dim.ry
+        window_x = Dimension.get_x(scaled=True)
+        window_y = Dimension.get_y(scaled=True)
 
         for bullet in cls.bullets:
-            x, y = bullet.pos
+            x, y = bullet.get_pos()
             
             if not (0 < y < window_y) or not (0 < x < window_x):
                 # remove bullet
@@ -179,18 +181,19 @@ class BulletSystem:
                 if bullet.team == ship.team:
                     continue
 
+                pos_bullet = bullet.get_pos(scaled=True)
                 mask_bullet = bullet.get_mask()
 
-                pos_ship = ship.get_scaled_pos()
+                pos_ship = ship.get_pos(scaled=True)
 
-                offset = np.array(bullet.pos - pos_ship, dtype='int32')
+                offset = np.array(pos_bullet - pos_ship, dtype='int32')
 
                 intersect = mask_ship.overlap(mask_bullet, offset)
 
                 if not intersect is None: 
                     # collision occured
-                    ship.handeln_collision(bullet, bullet.pos)
-                    cls.handeln_collision(bullet, bullet.pos)
+                    ship.handeln_collision(bullet, pos_bullet)
+                    cls.handeln_collision(bullet, pos_bullet)
 
     @classmethod
     def handeln_collision(cls, bullet, intersect):
