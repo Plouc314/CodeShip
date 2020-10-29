@@ -79,7 +79,7 @@ class Interface:
         for obj in objects:
             # check that each object has a on_resize method, else: don't add obj to resizable ones
             if hasattr(obj, 'on_resize'):
-                obj.on_resize(Dimension.f)
+                obj.on_resize(Dimension.get_factor())
                 cls.resize_objects.append(obj)
             else:
                 print('WARNING: resizable objects must have an on_resize(self, scale_factor) method')
@@ -88,9 +88,10 @@ class Interface:
     def rescale(cls, new_dim):
 
         # set new scale factor
-        scale_factor = min(new_dim[0]/Dimension.x, new_dim[1] / Dimension.y)
+        scale_factor = min(new_dim[0] / Dimension.get_x(), 
+                           new_dim[1] / Dimension.get_y())
 
-        Dimension.f = scale_factor
+        Dimension.set_factor(scale_factor)
 
         win_x, win_y = Dimension.get_window_dim()
 

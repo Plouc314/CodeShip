@@ -16,11 +16,16 @@ class Application:
         self._pages_history = [self._active_page]
 
         self._frame_funcs = []
+        self._active_frame_funcs = []
 
         self._pages = {}
-    
+
         for name, page in pages:
             self.add_page(name, page)
+        
+        # functions called when the page change to a new one
+        self._in_pages = {page: None for page in self._pages}
+        self._out_pages = {page: None for page in self._pages}
 
     def add_page(self, name, page):
         '''
@@ -39,6 +44,10 @@ class Application:
         If state is specified, set the state of the new page.
         '''
         self._check_valid_page(name)
+
+        # look for out_page function
+        if self._out_pages[self._active_page] != None:
+            self._out_pages[self._active_page]()
 
         # update the pages history
         # check if we go back of one page
@@ -59,6 +68,10 @@ class Application:
 
         else:
             self._pages[name].change_state(state)
+
+        # look for in_page function
+        if self._in_pages[name] != None:
+            self._in_pages[name]()
 
     def go_back(self):
         '''
@@ -84,11 +97,56 @@ class Application:
 
         return self._pages[name]
 
-    def add_frame_function(self, func):
+    def add_frame_function(self, func, is_active=True):
         '''
-        Add a function that will be executed every frame.
+        Add a function that will be executed every frame.  
+        If `is_active=True`, the function will be executed at each frame,
+        to change the function state (if it's executed) call the `set_frame_function_state` method.
         '''
         self._frame_funcs.append(func)
+        
+        if is_active:
+            self._active_frame_funcs.append(func)
+
+    def set_frame_function_state(self, func, state: bool):
+        '''
+        Change the state of the given function, if it's displayed or not.
+        '''
+        if state:
+            # check if function has been set previously
+            try:
+                idx = self._frame_funcs.index(func)
+            except ValueError:
+                raise ValueError(f"Function {func.__name__} isn't part of the app's frame functions.")
+            
+            # set function in active frame functions
+            if not func in self._active_frame_funcs:
+                self._active_frame_funcs.append(func)
+
+        else:
+            # check if function is an active function
+            try:
+                idx = self._active_frame_funcs.index(func)
+            except ValueError:
+                return
+            
+            self._active_frame_funcs.remove(func)
+
+    def set_in_page_func(self, page, func):
+        '''
+        Set a function that will be executed when getting in the specified page.
+        '''
+        self._check_valid_page(page)
+
+        self._in_pages[page] = func
+
+    def set_out_page_func(self, page, func):
+        '''
+        Set a function that will be executed when getting out of the specified page.
+        '''
+        self._check_valid_page(page)
+
+        self._out_pages[page] = func
 
     def react_events(self, pressed, events):
         '''
@@ -96,7 +154,7 @@ class Application:
         '''
         self._look_for_call()
 
-        for func in self._frame_funcs:
+        for func in self._active_frame_funcs:
             self._safe_exec_func(func)
 
         self._pages[self._active_page].react_events(pressed, events)

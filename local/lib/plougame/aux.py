@@ -1,7 +1,24 @@
 import pygame
 
 class Dimension:
-    f = 1
+    _f = 1
+
+    @classmethod
+    def set_factor(cls, factor):
+        '''
+        Set the scale factor, used to change the dimension of the window 
+        (based on the dimension given in `Interface.setup`).
+        '''
+        cls._f = factor
+
+        # update scaled sizes
+        cls._rx = cls._f * cls._x
+        cls._ry = cls._f * cls._y
+
+    @classmethod
+    def get_factor(cls):
+        ''' Return the scale factor. '''
+        return cls._f
 
     @classmethod
     def set_dim(cls, dim):
@@ -14,8 +31,32 @@ class Dimension:
         cls.center_x = int(dim[0]/2)
         cls.center_y = int(dim[1]/2)
         cls.center = (cls.center_x, cls.center_y)
-        cls.x = dim[0]
-        cls.y = dim[1]
+        cls._x = dim[0]
+        cls._y = dim[1]
+        cls._rx = cls._f * cls._x
+        cls._ry = cls._f * cls._y
+
+    @classmethod
+    def get_x(cls, scaled=False):
+        '''
+        Return the x dimension of the window,
+        if `scaled=True` the dimension will be scaled to the current window's dimension.
+        '''
+        if scaled:
+            return cls._rx
+        else:
+            return cls._x
+
+    @classmethod
+    def get_y(cls, scaled=False):
+        '''
+        Return the y dimension of the window,
+        if `scaled=True` the dimension will be scaled to the current window's dimension.
+        '''
+        if scaled:
+            return cls._ry
+        else:
+            return cls._y
 
     @classmethod
     def get_window_dim(cls):
@@ -23,12 +64,12 @@ class Dimension:
         return cls.scale(cls.WINDOW)
 
     @classmethod
-    def scale(cls, x, factor=None, fp=None):
+    def scale(cls, x, factor=None, fp=5):
         
         if factor:
             f = factor
         else:
-            f = cls.f
+            f = cls._f
 
         if type(x) == float or type(x) == int:
             x = round(x*f, fp)
@@ -49,7 +90,7 @@ class Dimension:
             - fp : floating point of the unscaled number (to keep precision)
 
         '''
-        f = 1/cls.f
+        f = 1/cls._f
         if type(x) == list or type(x) == tuple:
             x = list(x)
             for i in range(len(x)):
@@ -60,7 +101,7 @@ class Dimension:
 
     @classmethod
     def E(cls, x, *, fp=None):
-        return round(x*cls.f, fp)
+        return round(x*cls._f, fp)
 
 class C:
     '''Container of predefined colors'''

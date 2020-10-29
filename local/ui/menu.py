@@ -6,7 +6,7 @@ import numpy as np
 
 Y_TB = 100
 X_TB1 = 100
-X_TB2 = 500
+X_TB2 = 550
 
 POS_ERROR = np.array([X_TB1, Y_TB + 100], dtype='int16')
 
@@ -51,11 +51,12 @@ class Menu(Page):
         self.set_states_components('logged',['t username', 'b friends'])
 
         self.add_button_logic('b conn', self.conn)
+        self.add_button_logic('b friends', self.friends)
 
-        self.set_in_state_func('unlogged', self.to_unlogged)
+        self.set_out_state_func('unlogged', self.out_unlogged)
         self.set_in_state_func('logged', self.to_logged)
     
-    def to_unlogged(self):
+    def out_unlogged(self):
         # reset text error
         self.change_display_state("t error", False)
 
@@ -66,7 +67,7 @@ class Menu(Page):
     def friends(self):
         # go to the friends page
         self.change_page(Spec.PAGE_FRIENDS)
-
+        
     def conn(self):
         # try to connect to the server
         if not self.client.connected:

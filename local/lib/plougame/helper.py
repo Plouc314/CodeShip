@@ -19,6 +19,7 @@ def center_text(dim_box, font, text, *, ignore_exception=True):
 
 def get_pressed_key(pressed):
     '''Return the keyboard input as str'''
+    # get letters
     for i in range(97, 123):
         if pressed[i]:
             if pressed[pygame.K_LSHIFT]:
@@ -26,6 +27,7 @@ def get_pressed_key(pressed):
             else:
                 return chr(i)
     
+    # get numbers
     for i in range(48, 58):
         if pressed[i]:
             return chr(i)
@@ -45,7 +47,7 @@ def rl(*args):
     args = list(args)
     
     for i in range(len(args)):
-        args[i] = round(args[i])
+        args[i] = int(round(args[i]))
     return args
 
 def get_dark_color(color):

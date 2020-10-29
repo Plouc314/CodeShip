@@ -501,8 +501,15 @@ class ScrollList(Form):
 
     The lines can be either a built-in object like: Form, Button, TextBox, ...
     Or a list of multiple of them.
-    '''
 
+    Arguments:
+    - bar_color: the color used for the scroll bar
+
+    Methods:
+    - add_line: Add a line to the instance
+    - run: React to user inputs on the scroll bar, call the objects in lines run methods
+    - display: display the 
+    '''
 
     WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
 
@@ -518,6 +525,8 @@ class ScrollList(Form):
         self._selected = False
 
         self._set_elements()
+
+        self._cursor_x_center = None
 
         # the position of the cursor in % -> between 0 and ?
         self._cursor_y_per = 0
@@ -620,7 +629,7 @@ class ScrollList(Form):
 
         # update postion
         new_pos = [
-            self._scroll_cursor.get_center(scale=True)[0],
+            Dimension.scale(self._cursor_x_center),
             mouse_y
         ]
 
@@ -684,7 +693,11 @@ class ScrollList(Form):
         self._rect_bar = Form(dim, pos, color=rect_color, marge=True)
 
         # scroll cursor
-        dim_y = self._unsc_dim[1] * (self._unsc_dim[1] / self._tot_y)
+        if self._tot_y == 0:
+            dim_y = self._unsc_dim[1]
+        else:
+            dim_y = self._unsc_dim[1] * (self._unsc_dim[1] / self._tot_y)
+        
         dim = (self.WIDTH_SCROLL_BAR, dim_y)
 
         dif_y = self._cursor_y_per * self._unsc_dim[1]
@@ -694,6 +707,9 @@ class ScrollList(Form):
         )
 
         self._scroll_cursor = Form(dim, pos, color=self._bar_color)
+
+        # store center of scroll cursor -> avoid "slide" of cursor due to the loss of precision
+        self._cursor_x_center = self._scroll_cursor.get_center()[0]
 
     def display(self):
         '''

@@ -1,6 +1,9 @@
 
 class Specifications:
-    
+    '''
+    Specifications of the library.
+    '''
+
     # time
     FPS = 30
     TEXT_DELAY = FPS // 10

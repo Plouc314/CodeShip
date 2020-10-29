@@ -93,7 +93,7 @@ class Form:
 
         # dict with type, original surf, main surf, font surf
         self._surf = {}
-        
+
         if surface is None:
             # by default: create a uni-colored surface
             self._surf['type'] = 'default'
@@ -369,7 +369,7 @@ class Form:
         y += self._unsc_pos[1]
 
         if scale:
-            x,y = Dimension.scale((x,y))
+            x,y = Dimension.scale((x,y), fp=fp)
 
         return [x,y]
 
@@ -411,6 +411,18 @@ class Form:
             pos = [pos[0]-self._sc_dim[0]/2, pos[1]-self._sc_dim[1]/2]
             self._set_pos_attr(pos, compensate_rotation=is_rotated)
             self._set_corners()
+
+    def set_dim(self, dim, *, scale=False, update_original=True):
+        '''
+        Rescale the instance to a new dimension.
+
+        Arguments:
+        - dim : the new dimension
+        - scale : if the dimension needs to be rescaled to the current window's dimension
+        - update_original : if the new dimension are kept when window is resized
+        '''
+        self._set_dim_attr(dim, scale=scale, update_original=update_original)
+        self._set_corners()
 
     def set_dim_pos(self, dim, pos, *, scale_dim=False, scale_pos=False, update_original=True):
         '''
