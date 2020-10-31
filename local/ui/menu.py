@@ -1,4 +1,5 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
+from ui.chat import Chat
 from spec import Spec
 import numpy as np
 
@@ -8,6 +9,7 @@ Y_TB = 100
 X_TB1 = 100
 X_TB2 = 550
 
+POS_CHAT = np.array([2000, 900], dtype='int16')
 POS_ERROR = np.array([X_TB1, Y_TB + 100], dtype='int16')
 
 ### Components ###
@@ -27,6 +29,8 @@ text_username = TextBox(Spec.DIM_MEDIUM_TEXT, (X_TB1, Y_TB),
 button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB), color=C.LIGHT_BLUE,
                     text="Friends", font=Font.f(40))
 
+chat = Chat(POS_CHAT)
+
 states = ['unlogged', 'logged']
 
 components = [
@@ -34,7 +38,8 @@ components = [
     ('t error', text_error),
     ('b conn', button_conn),
     ('t username', text_username),
-    ('b friends', button_friends)
+    ('b friends', button_friends),
+    ('chat', chat)
 ]
 
 class Menu(Page):
@@ -44,10 +49,13 @@ class Menu(Page):
         self.client = client
         self.username = None
 
+        # set client in chat
+        chat.client = client
+
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
-        self.set_states_components('unlogged','b conn')
+        self.set_states_components('unlogged', ['b conn', 'chat'])
         self.set_states_components('logged',['t username', 'b friends'])
 
         self.add_button_logic('b conn', self.conn)
@@ -55,7 +63,7 @@ class Menu(Page):
 
         self.set_out_state_func('unlogged', self.out_unlogged)
         self.set_in_state_func('logged', self.to_logged)
-    
+
     def out_unlogged(self):
         # reset text error
         self.change_display_state("t error", False)

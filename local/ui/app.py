@@ -25,6 +25,19 @@ class App(Application):
         self.set_in_page_func(Spec.PAGE_CONN, self.in_conn)
         self.set_out_page_func(Spec.PAGE_CONN, self.out_conn)
 
+        self.add_frame_function(self.look_general_chat_msg)
+
+        self.set_in_page_func(Spec.PAGE_MENU, self.in_menu)
+        self.set_out_page_func(Spec.PAGE_MENU, self.out_menu)
+
+    def out_menu(self):
+        ''' Stop the execution of look_general_chat_msg'''
+        self.set_frame_function_state(self.look_general_chat_msg, False)
+
+    def in_menu(self):
+        '''Start the execution of look_general_chat_msg'''
+        self.set_frame_function_state(self.look_general_chat_msg, True)
+
     def out_conn(self):
         '''Stop the execution of look_comm_login'''
         self.set_frame_function_state(self.look_comm_login, False)
@@ -47,9 +60,31 @@ class App(Application):
             # get username
             self.username = self.get_page(Spec.PAGE_CONN).username
 
-            # set username attr in menu
-            self.get_page(Spec.PAGE_MENU).username = self.username
+            # set username attr in menu, chat
+            menu = self.get_page(Spec.PAGE_MENU)
+            
+            menu.username = self.username
+            menu.get_component('chat').username = self.username
+            
 
             self.change_page(Spec.PAGE_MENU, state='logged')
 
+    def look_general_chat_msg(self):
+        '''
+        Check if the server send a message on the general chat.
+        '''
+        # get client's container content
+        contents = self.client.in_data['gc']
 
+        menu = self.get_page(Spec.PAGE_MENU)
+            
+        chat = menu.get_component('chat')
+
+        for content in contents:
+
+            username, msg = content.split(Spec.SEP_CONTENT)
+
+            chat.add_msg(username, msg)
+
+        # reset client's container
+        self.client.in_data['gc'] = []

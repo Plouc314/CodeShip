@@ -12,7 +12,8 @@ class Page:
     - active_states: take either 'none' or 'all', the default active states of the components
     
     Methods:
-    - add_components: Add a component to the page
+    - add_component: Add a component to the page
+    - get_component: Get the specified component
     - set_states_components: Set the states of one or more components
     - change_state: Change the active state of the page
     - go_back: Change the state to be the previous one
@@ -138,6 +139,14 @@ class Page:
 
         self.change_state(new_state)
 
+    def get_component(self, name):
+        '''
+        Return the component with the specified name.
+        '''
+        self._check_valid_name(name)
+
+        return self._components[name]['object']
+
     def add_component(self, name, obj, active_states=None):
         '''
         Add a component to the page.  
@@ -164,7 +173,7 @@ class Page:
         self._components[name] = comp_info
 
         # look if component is a subpage
-        if type(comp_info['object']) == SubPage:
+        if isinstance(comp_info['object'], SubPage):
             self._subpages[name] = comp_info
 
         # look if object that react to events
@@ -177,7 +186,7 @@ class Page:
         elif type(comp_info['object']) == InputText:
             self._inputs[name] = comp_info
         
-        elif type(comp_info['object']) == ScrollList:
+        elif isinstance(comp_info['object'], ScrollList):
             self._scrolls[name] = comp_info
 
     def add_button_logic(self, name, func):
@@ -263,7 +272,6 @@ class Page:
         '''
         # run subpages
         for sub_info in self._get_active_comps(self._subpages):
-
             sub_info['object'].react_events(pressed, events)
 
         # run inputs
@@ -351,7 +359,7 @@ class SubPage(Page):
         super().__init__(states, components, active_states=active_states)
 
         self.set_pos(pos)
-    
+        
     def set_pos(self, pos, is_scaled=False):
         '''
         Set the position of the SubPage.  
@@ -369,6 +377,16 @@ class SubPage(Page):
             self._unsc_pos = list(pos)
             self._sc_pos = Dimension.scale(pos)
     
+        self._set_dif_pos()
+
+    def _set_dif_pos(self):
+        '''
+        Set the difference of position of all the components for the `on_it` method,
+        set the `_dif_pos_on_it` attribute of `Form`.
+        '''
+        for comp_info in self._components.values():
+            comp_info['object']._dif_pos_on_it = self._unsc_pos
+
     def display(self, dif_pos=None):
         '''
         Display all components in the active state.  
@@ -381,14 +399,14 @@ class SubPage(Page):
 
             if self._active_state in comp_info['active states'] or comp_info['displayed']:
             
-                if type(comp_info['object']) == SubPage:
+                if isinstance(comp_info['object'], SubPage):
                     comp_info['object'].display(dif_pos=self._sc_pos)
 
                 else:
                     pos = (
-                        self._sc_pos[0] + comp_info['object'].pos[0],
-                        self._sc_pos[1] + comp_info['object'].pos[1],
+                        self._sc_pos[0] + comp_info['object'].get_pos(scaled=True)[0],
+                        self._sc_pos[1] + comp_info['object'].get_pos(scaled=True)[1],
                     )
-                
+                    
                     comp_info['object'].display(pos=pos)
         

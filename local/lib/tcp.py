@@ -37,15 +37,23 @@ class ClientTCP:
         - on_message : Method executed when receiving a message, to be implemented.
     '''
 
-    def __init__(self, addr, connect=True):
+    def __init__(self, addr, connect=False):
 
         self.addr = tuple(addr)
         self.ip = addr[0]
         self.port = addr[1]
-        self.connected = True
+        self.connected = False
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect()
+
+        if connect:
+            self.connect()
+
+    def __del__(self):
+        # safety to be sure to disconnect properly
+        if self.connected:
+            self.connected = False
+            self.disconnect()
 
     def connect(self):
         '''
@@ -54,6 +62,7 @@ class ClientTCP:
         '''
         try:
             self._socket.connect(self.addr)
+            self.connected = True
             return True
         except:
             return False
@@ -76,8 +85,9 @@ class ClientTCP:
         '''
         Send disconnection message to the server.     
         '''
-        self.send(Spec.DISCONNECT_MSG)
-        self.connected = False
+        if self.connected:
+            self.send(Spec.DISCONNECT_MSG)
+            self.connected = False
 
     @staticmethod
     def on_message(msg):
@@ -108,7 +118,7 @@ class ClientTCP:
 
             self._socket.send(msg)
         except:
-            ErrorClient.call("Failure sending message: " + msg)
+            ErrorClient.call("Failure sending message: " + msg.decode(Spec.FORMAT))
     
     def receive(self):
         '''

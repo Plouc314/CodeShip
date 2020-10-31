@@ -70,6 +70,8 @@ class Spec:
     DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
     DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')
 
+    DIM_CHAT = np.array([1000,600], dtype='int16')
+
     # page names
     PAGE_MENU = "menu"
     PAGE_CONN = "conn"

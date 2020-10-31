@@ -9,6 +9,7 @@ class Specifications:
     TEXT_DELAY = FPS // 10
     CURSOR_DELAY = FPS // 2
 
+    CURSOR_WIDTH = 2
     MARGE_WIDTH = 4
     MARGE_TEXT = 5
     WIDTH_SCROLL_BAR = 40

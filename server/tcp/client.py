@@ -1,4 +1,5 @@
 from lib.tcp import ClientTCP
+from tcp.interaction import Interaction
 from db.db import DataBase
 from spec import Spec
 
@@ -16,9 +17,14 @@ class Client(ClientTCP):
         self.identifiers = {
             'lg': self.login,
             'sg': self.sign_up,
+            'gc': self.general_chat
         }
 
     def on_disconnect(self):
+        
+        # remove from Interaction
+        Interaction.clients.remove(self)
+
         self.print("Disconnected.")
 
     def _log_client(self, username):
@@ -81,6 +87,13 @@ class Client(ClientTCP):
             msg = f'rsg{Spec.SEP_MAIN}0'
             self.send(msg)
     
+    def general_chat(self, content):
+        '''
+        Send a message on the general chat.  
+        Content: msg
+        '''
+        Interaction.send_general_chat_msg(self.username, content)
+
     def print(self, string):
         '''
         Print a string to the terminal.  
@@ -91,6 +104,4 @@ class Client(ClientTCP):
         else:
             id = self.ip
 
-        call_info = f"[TCP {id}]"
-
-        print(call_info, string)
+        print(f'[TCP] |{id}| {string}')

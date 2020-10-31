@@ -28,6 +28,9 @@ class Cadre(Form):
 
     def display(self, surface=None):
         super().display(marge=True, surface=surface)
+    
+    def __repr__(self):
+        return "Cadre Object"
 
 class Button(Form):
     ''' 
@@ -56,7 +59,7 @@ class Button(Form):
 
         self._text = text
         self.text_color = text_color
-        self.highlighted = highlight
+        self._highlighted = highlight
         self.centered = centered
         self.font = font
         self._logic = None
@@ -149,13 +152,16 @@ class Button(Form):
         If a surface is specified, display on it, else display on the screen.
         '''
         # if highlight actived, handeln highlight color changes
-        if self.highlighted:
+        if self._highlighted:
             self._highlight()
         
         # display the surf
         super().display(marge=True, surface=surface, pos=pos)
         
         self.display_text(text=text, surface=surface, pos=pos)
+
+    def __repr__(self):
+        return "Button Object"
 
 class TextBox(Form):
     ''' 
@@ -232,7 +238,9 @@ class TextBox(Form):
         super().display(marge=self.as_marge, surface=surface, pos=pos)
 
         self.display_lines_text(surface=surface, pos=pos)
-        
+
+    def __repr__(self):
+        return "TextBox Object"    
 
 get_input_deco = Delayer(Spec.TEXT_DELAY)
 cursor_deco = Delayer(Spec.CURSOR_DELAY)
@@ -256,16 +264,22 @@ class InputText(Button):
     - run : Get input ( execute once by frame )
     - display
     '''
-    CURSOR_WIDTH = 2
+    COLOR_PRETEXT = C.GREY
     is_cursor_displayed = True
     
-    def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, centered=False, font=Font.f(30),
-                    limit=None, cache=False, scale_dim=True, scale_pos=True, pretext=None):
+    def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, 
+                centered=False, font=Font.f(30), limit=None, cache=False, 
+                scale_dim=True, scale_pos=True, pretext=None):
 
-        super().__init__(dim, pos, color, text_color=text_color, centered=centered, font=font, scale_dim=scale_dim, scale_pos=scale_pos)
+        super().__init__(dim, pos, color, text_color=text_color, 
+                centered=centered, font=font, scale_dim=scale_dim, scale_pos=scale_pos)
         
+        # set Specifications
+        self.CURSOR_WIDTH = Spec.CURSOR_WIDTH
+
         self.active = False
-        self.highlighted = True
+        self._base_text_color = text_color
+        self._highlighted = True
         self.cursor_place = len(text)
         self.limit = limit # max char
         self.cache = cache # if true text -> $$$
@@ -480,18 +494,24 @@ class InputText(Button):
 
         # set string to be displayed
         if self.is_pretext:
+            self.text_color = self.COLOR_PRETEXT
             string = self.pretext
 
         elif self.cache:
             string = '$' * len(self._text)
-
+            self.text_color = self._base_text_color
+        
         else:
             string = self._text
+            self.text_color = self._base_text_color
 
         super().display(text=string, surface=surface, pos=pos)
         
         if self.active:
             self.display_text_cursor(surface=surface, pos=pos)
+
+    def __repr__(self):
+        return "InputText Object"
 
 
 class ScrollList(Form):
@@ -507,11 +527,10 @@ class ScrollList(Form):
 
     Methods:
     - add_line: Add a line to the instance
+    - remove_line: Remove a line from the instance
     - run: React to user inputs on the scroll bar, call the objects in lines run methods
-    - display: display the 
+    - display: display the scroll list
     '''
-
-    WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
 
     def __init__(self, dim, pos, lines, *, color=C.WHITE, 
                     scale_dim=True, scale_pos=True, bar_color=C.LIGHT_GREY):
@@ -519,14 +538,15 @@ class ScrollList(Form):
         super().__init__(dim, pos, color=color, marge=True,
                 scale_pos=scale_pos, scale_dim=scale_dim)
         
+        # set specifications
+        self.WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
+
         self._lines = list(lines)
         self._bar_color = bar_color
 
         self._selected = False
 
         self._set_elements()
-
-        self._cursor_x_center = None
 
         # the position of the cursor in % -> between 0 and ?
         self._cursor_y_per = 0
@@ -539,20 +559,42 @@ class ScrollList(Form):
 
     def add_line(self, line, index=None):
         '''
-        Add an line to the scroll list.
+        Add a line to the scroll list.
         if an index is specified, add the line at the given index.
         '''
         if index == None:
-            index = len(self.lines)
+            index = len(self._lines)
         
         # pass line 
         if type(line) != list:
             line = [line]
 
-        self.lines.insert(index, line)
+        self._lines.insert(index, line)
 
-        # update tot_y, scroll bat
+        rel_pos = [element.get_pos() for element in line]
+        self._rel_positions.append(rel_pos)
+
+        # update tot_y, scroll bar
         self._tot_y += line[0].get_dim()[1]
+
+        self._set_scroll_bar()
+
+    def remove_line(self, index=None):
+        '''
+        Remove a line at the specified index,
+        if `index` is not specified remove the last line.
+        '''
+        if index == None:
+            index = len(self._lines) - 1
+        
+        line = self._lines[index]
+
+        self._lines.pop(index)
+
+        self._rel_positions.pop(index)
+
+        # update tot_y, scroll bar
+        self._tot_y -= line[0].get_dim()[1]
 
         self._set_scroll_bar()
 
@@ -596,7 +638,7 @@ class ScrollList(Form):
         Store all relative positions of the elements.
         '''
         # all unscaled x positions
-        self._x_positions = []
+        self._rel_positions = []
 
         # set the total y dimension of the lines
         self._tot_y = 0
@@ -608,12 +650,12 @@ class ScrollList(Form):
                 self._lines[i] = [line]
 
             # get all x pos
-            x_pos = []
+            rel_pos = []
 
             for element in self._lines[i]:
-                x_pos.append(element.get_pos()[0])
+                rel_pos.append(element.get_pos())
 
-            self._x_positions.append(x_pos)
+            self._rel_positions.append(rel_pos)
 
             # increment the tot_y
             self._tot_y += self._lines[i][0].get_dim()[1]
@@ -629,11 +671,11 @@ class ScrollList(Form):
 
         # update postion
         new_pos = [
-            Dimension.scale(self._cursor_x_center),
-            mouse_y
+            Dimension.scale(self._unsc_dim[0] - self.WIDTH_SCROLL_BAR),
+            mouse_y - self._sc_pos[1] - self._scroll_cursor._sc_dim[1]//2
         ]
 
-        self._scroll_cursor.set_pos(new_pos, center=True)
+        self._scroll_cursor.set_pos(new_pos)
 
         # update scroll cursor state
         rel_y = mouse_y - self._sc_pos[1]
@@ -678,22 +720,43 @@ class ScrollList(Form):
         '''
         return pygame.mouse.get_pressed()[0]
 
+    @property
+    def _dif_pos_on_it(self):
+        return super()._dif_pos_on_it
+    
+    @_dif_pos_on_it.setter
+    def _dif_pos_on_it(self, value):
+        '''
+        Set the dif_pos_on_it attr on scroll cursor, all elements of instance
+        '''
+        # check if instance has been initialised
+        if not hasattr(self, "_scroll_cursor"):
+            return
+        
+        self._scroll_cursor._dif_pos_on_it = value
+
+        for line in self._lines:
+            for element in line:
+                element._dif_pos_on_it = value
+
     def _set_scroll_bar(self):
         '''
         Set the scroll bar: the bar rectangle and the moving cursor.
         '''
         # rectangle bar
         dim = (self.WIDTH_SCROLL_BAR, self._unsc_dim[1])
-        pos = (
-            self._unsc_pos[0] + self._unsc_dim[0] - self.WIDTH_SCROLL_BAR,
-            self._unsc_pos[1]
+        
+        # set a relative position to the rect bar -> can display on specified position
+        rel_pos = (
+            self._unsc_dim[0] - self.WIDTH_SCROLL_BAR,
+            0
         )
         rect_color = get_dark_color(self._bar_color)
 
-        self._rect_bar = Form(dim, pos, color=rect_color, marge=True)
+        self._rect_bar = Form(dim, rel_pos, color=rect_color, marge=True)
 
         # scroll cursor
-        if self._tot_y == 0:
+        if self._tot_y <= self._unsc_dim[1]:
             dim_y = self._unsc_dim[1]
         else:
             dim_y = self._unsc_dim[1] * (self._unsc_dim[1] / self._tot_y)
@@ -701,22 +764,24 @@ class ScrollList(Form):
         dim = (self.WIDTH_SCROLL_BAR, dim_y)
 
         dif_y = self._cursor_y_per * self._unsc_dim[1]
+        
+        # set a relative position to the scroll cursor -> can display on specified position
         pos = (
-            self._unsc_pos[0] + self._unsc_dim[0] - self.WIDTH_SCROLL_BAR, 
-            self._unsc_pos[1] + dif_y
+            self._unsc_dim[0] - self.WIDTH_SCROLL_BAR, 
+            dif_y
         )
 
         self._scroll_cursor = Form(dim, pos, color=self._bar_color)
 
-        # store center of scroll cursor -> avoid "slide" of cursor due to the loss of precision
-        self._cursor_x_center = self._scroll_cursor.get_center()[0]
-
-    def display(self):
+    def display(self, pos=None):
         '''
         Display the scroll list.
         '''
         # reset surface
         self.set_surface()
+
+        if pos == None:
+            pos = self._sc_pos
 
         y = 0
 
@@ -728,16 +793,25 @@ class ScrollList(Form):
             # check if line is displayed
             if y_bottom > self._top_lim and y_top < self._bottom_lim:
 
-                self._display_line(i, y - self._top_lim)
+                self._display_line(i, y - self._top_lim, base_pos=pos)
                 
             y += line[0].get_dim()[1]
 
-        super().display(marge=True)
+        super().display(pos=pos, marge=True)
 
-        self._rect_bar.display()
-        self._scroll_cursor.display()
+        abs_pos = (
+            pos[0] + self._rect_bar._sc_pos[0],
+            pos[1] + self._rect_bar._sc_pos[1]
+        )
+        self._rect_bar.display(pos=abs_pos)
 
-    def _display_line(self, idx_line, y):
+        abs_pos = (
+            pos[0] + self._scroll_cursor._sc_pos[0],
+            pos[1] + self._scroll_cursor._sc_pos[1]
+        )
+        self._scroll_cursor.display(pos=abs_pos)
+
+    def _display_line(self, idx_line, y, base_pos=None):
         '''
         Display a line at the given relative y position.  
         Set in the first place a position relative to
@@ -746,17 +820,20 @@ class ScrollList(Form):
         '''
         surface = self.get_surface('main')
 
-        for x, element in zip(self._x_positions[idx_line], self._lines[idx_line]):
+        for rel_pos, element in zip(self._rel_positions[idx_line], self._lines[idx_line]):
 
             # set the relative position -> display on scoll list surface    
-            rel_pos = Dimension.scale([x, y])
+            rel_pos = Dimension.scale([rel_pos[0], rel_pos[1] + y])
 
             element.display(surface=surface, pos=rel_pos)
 
             # set the absolute position -> on_it function
             abs_pos = [
-                self._sc_pos[0] + rel_pos[0],
-                self._sc_pos[1] + rel_pos[1]
+                base_pos[0] + rel_pos[0],
+                base_pos[1] + rel_pos[1]
             ]
             
             element.set_pos(abs_pos)
+    
+    def __repr__(self):
+        return "ScrollList Object"

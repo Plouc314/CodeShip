@@ -21,27 +21,31 @@ class Form:
         - rotate : rotate the surface of a given angle
         - compile : return  a pygame.Surface object of the instance
         - get_mask : return a pygame.mask.Mask object of the instance
+        - copy : return a copy of the instance
     '''
     screen = None
     _interface = None
-
-    MARGE_WIDTH = Spec.MARGE_WIDTH
-    MARGE_TEXT = Spec.MARGE_TEXT
-
     _dev_rotation = (0,0)
     
     def __init__(self, dim, pos, color=C.WHITE, *, rescale=True, scale_pos=True, 
                 scale_dim=True, center=False, surface=None, with_font=False, marge=False):
-        
+
         self._set_dim_attr(dim, scale=scale_dim, update_surf=False)
 
         self.set_pos(pos, scale=scale_pos, center=center)
         
         self.color = color
-    
+        self.marge_color = None # set only if marge=True
+        
+        # can be set for when object have a relative position
+        self._dif_pos_on_it = (0,0) # unscaled
+
         self.set_surface(surface, with_font=with_font)
         
         # set marges
+        self.MARGE_WIDTH = Spec.MARGE_WIDTH
+        self.MARGE_TEXT = Spec.MARGE_TEXT
+
         self._rs_marge_width = Dimension.E(self.MARGE_WIDTH)
         self._rs_marge_text = Dimension.E(self.MARGE_TEXT)
 
@@ -330,9 +334,21 @@ class Form:
         if marge:
             self._display_margin(surface, pos=pos)
     
-    def on_it(self):
-        '''Return if the mouse is on the surface (not rotated)'''
+    def on_it(self, dif_pos=None):
+        '''
+        Return if the mouse is on the surface (not rotated),
+        if `dif_pos` is specified, it will be substract(!) to the mouse position.
+        '''
+        if dif_pos == None:
+            dif_pos = Dimension.scale(self._dif_pos_on_it)
+
         mouse_pos = pygame.mouse.get_pos()
+        
+        mouse_pos = (
+            mouse_pos[0] - dif_pos[0],
+            mouse_pos[1] - dif_pos[1],
+        )
+        
         if mouse_pos[0] > self.TOPLEFT[0] and mouse_pos[0] < self.TOPRIGHT[0]:
             if mouse_pos[1] > self.TOPLEFT[1] and mouse_pos[1] < self.BOTTOMLEFT[1]:
                 return True
@@ -436,6 +452,29 @@ class Form:
         self._set_dim_attr(dim, scale=scale_dim, update_original=update_original)
         self._set_pos_attr(pos, scale=scale_pos, update_original=update_original)
         self._set_corners()
+
+    def copy(self):
+        '''
+        Return a copy of the instance.
+        '''
+        if self._surf['type'] == "custom":
+            surface = self._surf['original']
+        else:
+            surface = None
+
+        with_font = not self._surf['font'] is None
+        marge = not self.marge_color is None
+
+        copy = Form(self._unsc_dim, self._unsc_pos, color=self.color,
+                surface=surface, with_font=with_font, marge=marge)
+
+        # check if surface has been rotated
+        if any(self._dev_rotation):
+            # set the rotated surface
+            copy._surf['main'] = self._surf['main'].copy()
+            copy._dev_rotation = self._dev_rotation.copy()
+
+        return copy
 
     def compile(self, *, scale=False, with_marge=True, with_font=True, extend_dim=False):
         '''

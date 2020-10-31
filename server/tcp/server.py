@@ -1,5 +1,6 @@
 from lib.tcp import ServerTCP
 from tcp.client import Client
+from tcp.interaction import Interaction
 from spec import Spec
 import threading
 
@@ -18,6 +19,8 @@ class Server(ServerTCP):
         '''
         client = Client(conn, addr)
         self.clients[client.ip] = client
+
+        Interaction.clients.append(client)
 
         thread = threading.Thread(target=client.run)
         self.threads[client.ip] = thread

@@ -13,12 +13,10 @@ class ErrorServer:
             call_type = "[ERROR]"
 
         if id == None:
-            call_info = "|TCP|"
+            print(f"[TCP] {call_type} {traceback}")
         else:
-            call_info = f"|TCP {id}|"
+            print(f"[TCP] {call_type} |{id}| {traceback}")
         
-        print(f"{call_type} {call_info} {traceback}")
-
 
 class Spec:
     HEADER = 64
@@ -79,7 +77,7 @@ class ServerTCP:
 
             conn, addr = self._socket.accept()
 
-            print(f'[TCP] Connected: {addr[0]}')
+            print(f'[TCP] |{addr[0]}| Connected.')
 
             self.on_connection(conn, addr)
 
