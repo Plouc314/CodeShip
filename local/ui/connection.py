@@ -21,6 +21,8 @@ POS_INP_PASS = np.array([Spec.CENTER_X + X_SPACE//2, 800], dtype='int16')
 POS_DONE = np.array([2200,1200], dtype='int16')
 POS_BACK = np.array([100,100], dtype='int16')
 
+POS_ERROR = np.array([2120,1140], dtype='int16') 
+
 ### Components ###
 
 title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
@@ -52,6 +54,9 @@ input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(40))
 button_done = Button(Spec.DIM_MEDIUM_BUTTON, POS_DONE, color=C.LIGHT_BLUE,
                     text="Done", font=Font.f(30))
 
+text_error = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.LIGHT_RED,
+                font=Font.f(20), text_color=C.WHITE)
+
 states = ['base', 'login', 'signup']
 
 components = [
@@ -63,7 +68,8 @@ components = [
     ('t password', text_password),
     ('i username', input_username),
     ('i password', input_password),
-    ('b done', button_done)
+    ('b done', button_done),
+    ('t error', text_error)
 ]
 
 class Connection(Page):
@@ -97,6 +103,7 @@ class Connection(Page):
     def to_base(self):
         ''' Executed when state pass to base.'''
         self.set_text('title', 'Connection')
+        self.change_display_state('t error', False)
 
     def back(self):
         # go back of one state
@@ -126,3 +133,14 @@ class Connection(Page):
             self.client.send_login(username, password)
         else:
             self.client.send_sign_up(username, password)
+    
+    def set_negative_response(self):
+        '''
+        When the server return that the log/sign info are incorrect,  
+        set an error message.
+        '''
+        input_username.reset_text()
+        input_password.reset_text()
+
+        self.set_text('t error', "The register informations are incorrects.")
+        self.change_display_state('t error', True)

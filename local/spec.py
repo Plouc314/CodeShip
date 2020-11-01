@@ -12,6 +12,7 @@ class Spec:
     
     SEP_MAIN = '|'
     SEP_CONTENT = ','
+    SEP_CONTENT2 = '*'
 
     ### game ###
 
@@ -66,9 +67,11 @@ class Spec:
 
     DIM_BIG_TEXT = np.array([400,80], dtype='int16')
     DIM_MEDIUM_TEXT = np.array([400,60], dtype='int16')
+    DIM_SMALL_TEXT = np.array([400,40], dtype='int16')
 
     DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
     DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')
+    DIM_SMALL_BUTTON = np.array([200,40], dtype='int16')
 
     DIM_CHAT = np.array([1000,600], dtype='int16')
 
@@ -76,3 +79,5 @@ class Spec:
     PAGE_MENU = "menu"
     PAGE_CONN = "conn"
     PAGE_FRIENDS = "friends"
+
+    CHAT_MAX_MSG = 20

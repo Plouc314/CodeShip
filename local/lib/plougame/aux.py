@@ -71,10 +71,14 @@ class Dimension:
         else:
             f = cls._f
 
-        if type(x) == float or type(x) == int:
-            x = round(x*f, fp)
+        # check if x is iterable
+        try:
+            iter(x)
         
-        else:
+        except TypeError: # not iterable            
+            x = round(x*f, fp)
+
+        else: # iterable
             x = list(x)
             for i in range(len(x)):
                 x[i] = round(x[i]*f, fp)

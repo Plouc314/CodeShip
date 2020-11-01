@@ -20,6 +20,8 @@ class App(Application):
 
         super().__init__(pages)
 
+        self.add_frame_function(self.look_friends)
+
         self.add_frame_function(self.look_comm_login)
 
         self.set_in_page_func(Spec.PAGE_CONN, self.in_conn)
@@ -48,43 +50,52 @@ class App(Application):
 
     def look_comm_login(self):
         '''
-        Check if the server send a login response
+        Check if the server sent a login response
         '''
-        # look for login response
-        rlg = self.client.in_data['rlg']
+        # look for login/signup response
+        with self.client.get_data(['rlg', 'rsg']) as (rlg, rsg):
 
-        # look for sign up response
-        rsg = self.client.in_data['rsg']
+            if rlg == 1 or rsg == 1:
+                # get username
+                self.username = self.get_page(Spec.PAGE_CONN).username
 
-        if rlg or rsg:
-            # get username
-            self.username = self.get_page(Spec.PAGE_CONN).username
+                # set username attr in menu, chat
+                menu = self.get_page(Spec.PAGE_MENU)
+                
+                menu.username = self.username
+                menu.get_component('chat').username = self.username
+                
+                self.change_page(Spec.PAGE_MENU, state='logged')
 
-            # set username attr in menu, chat
-            menu = self.get_page(Spec.PAGE_MENU)
-            
-            menu.username = self.username
-            menu.get_component('chat').username = self.username
-            
+            elif rlg == 0 or rsg == 0:
+                # set error msg
+                conn = self.get_page(Spec.PAGE_CONN)
 
-            self.change_page(Spec.PAGE_MENU, state='logged')
+                conn.set_negative_response()
 
     def look_general_chat_msg(self):
         '''
-        Check if the server send a message on the general chat.
+        Check if the server sent a message on the general chat.
         '''
-        # get client's container content
-        contents = self.client.in_data['gc']
+        with self.client.get_data('gc') as contents:
 
-        menu = self.get_page(Spec.PAGE_MENU)
-            
-        chat = menu.get_component('chat')
+            menu = self.get_page(Spec.PAGE_MENU)
+                
+            chat = menu.get_component('chat')
 
-        for content in contents:
+            for username, msg in contents:
+                chat.add_msg(username, msg)
 
-            username, msg = content.split(Spec.SEP_CONTENT)
+    def look_friends(self):
+        '''
+        Check if the server sent info about friends
+        '''
+        with self.client.get_data('frs') as contents:
 
-            chat.add_msg(username, msg)
+            if contents == None:
+                return
 
-        # reset client's container
-        self.client.in_data['gc'] = []
+            page_fr = self.get_page(Spec.PAGE_FRIENDS)
+
+            for username, connected in contents:
+                page_fr.add_friend(username, connected)

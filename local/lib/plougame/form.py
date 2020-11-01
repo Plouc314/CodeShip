@@ -12,7 +12,8 @@ class Form:
     Methods:
         - display : display the instance on the Interface's screen
         - delete : for when the instance is no longer used, increase performance
-        - set_pos : set a new position for the object
+        - set_pos : set a new position for the instance
+        - set_dim: set a new dimension for the instance
         - set_dim_pos : set new position and dimension, keep the same surface
         - set_surf : set a new surface, can be a pygame surface or a numpy.ndarray
         - set_marge_width : set a new marge width
@@ -38,7 +39,7 @@ class Form:
         self.marge_color = None # set only if marge=True
         
         # can be set for when object have a relative position
-        self._dif_pos_on_it = (0,0) # unscaled
+        self._dif_pos_on_it = [0,0] # unscaled
 
         self.set_surface(surface, with_font=with_font)
         

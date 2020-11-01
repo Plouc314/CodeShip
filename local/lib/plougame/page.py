@@ -385,7 +385,8 @@ class SubPage(Page):
         set the `_dif_pos_on_it` attribute of `Form`.
         '''
         for comp_info in self._components.values():
-            comp_info['object']._dif_pos_on_it = self._unsc_pos
+            comp_info['object']._dif_pos_on_it[0] += self._unsc_pos[0]
+            comp_info['object']._dif_pos_on_it[1] += self._unsc_pos[1]
 
     def display(self, dif_pos=None):
         '''

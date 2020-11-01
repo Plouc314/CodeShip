@@ -2,7 +2,7 @@ import threading
 from lib.tcp import ClientTCP
 from spec import Spec
 
-sep_m, sep_c = Spec.SEP_MAIN, Spec.SEP_CONTENT
+sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
 
 class Client(ClientTCP):
 
@@ -15,7 +15,17 @@ class Client(ClientTCP):
         self.in_data = {
             'rlg': None, # response login
             'rsg': None, # response sign up
+            'frs': None, # friends connected
             'gc': [] # message on general chat
+        }
+
+        # store the identifiers of the comm as key
+        # for each key, a function will process the incoming data
+        self.processes = {
+            'rlg': lambda x: int(x),
+            'rsg': lambda x: int(x),
+            'frs': self.on_friends,
+            'gc': self.on_general_chat
         }
 
     def connect(self):
@@ -36,16 +46,12 @@ class Client(ClientTCP):
     def on_message(self, msg):
         '''
         Split the identifier and content of the message.  
-        Call the method linked to the identifier.
+        Store the content in the designated container.
         '''
         print('[SERVER]',msg)
-        identifier, content = msg.split(Spec.SEP_MAIN)
+        identifier, content = msg.split(sep_m)
 
-        # try to pass the content to number
-        try:
-            content = int(content)
-        except:
-            pass
+        content = self.processes[identifier](content)
 
         container = self.in_data[identifier]
 
@@ -53,6 +59,26 @@ class Client(ClientTCP):
             container.append(content)
         else:
             self.in_data[identifier] = content
+
+    def get_data(self, identifier):
+        '''
+        To use as a context manager.  
+        Return the specified data container(s) (`str` or `list`),   
+        will free the container(s) after exit of context.
+        '''
+        return ContextManager(self, identifier)
+
+    def on_general_chat(self, content):
+        '''Return chat msg in format: `[username, message]`'''
+        return content.split(sep_c)
+
+    def on_friends(self, content):
+        '''
+        Return friends in format: `list` `[username, is_connected]`
+        '''
+        content = content.split(sep_c)
+        content = [data.split(sep_c2) for data in content]
+        return [[username, int(conn)] for username, conn in content]
 
     def send_login(self, username, password):
         '''
@@ -80,3 +106,35 @@ class Client(ClientTCP):
         msg = f'gc{sep_m}{message}'
 
         self.send(msg)
+
+class ContextManager:
+    '''
+    Context manager used to get `in_data` content and free it after use.
+    '''
+
+    def __init__(self, client, identifier):
+        self.client = client
+
+        # pass identifiers to list
+        if type(identifier) != list:
+            self.id = [identifier]
+        else:
+            self.id = identifier
+    
+    def __enter__(self):
+        data = [self.client.in_data[id] for id in self.id]
+        
+        if len(data) == 1:
+            return data[0]
+        else:
+            return data
+    
+    def __exit__(self, type, value, tb):
+        '''Free every containers'''
+        for id in self.id:
+            # free the container
+            if id in ['rlg', 'rsg', 'frs']:
+                self.client.in_data[id] = None
+            
+            else:
+                self.client.in_data[id] = []

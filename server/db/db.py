@@ -9,8 +9,11 @@ class DataBase:
     @classmethod
     def load(cls):
         cls.df = pd.read_csv(cls.filepath, index_col='username')
-        cls.df['password'] = cls.df['password'].astype(str)
+        cls.df.loc[:,['password','friend','dfr']] = cls.df.loc[:,['password','friend','dfr']].astype(str)
 
+        cls.df['friend'] = cls.df['friend'].str.split('|')
+        cls.df['dfr'] = cls.df['dfr'].str.split('|')
+        
     @classmethod
     def add_user(cls, username, password):
         '''
@@ -36,3 +39,10 @@ class DataBase:
         Return the password of the given username.
         '''
         return cls.df.loc[username,'password']
+    
+    @classmethod
+    def get_friends(cls, username):
+        '''
+        Return the friends of the given username.
+        '''
+        return cls.df.loc[username,'friend']

@@ -26,8 +26,8 @@ class Cadre(Form):
         if self._is_transparent:
             self._surf['main'].set_colorkey(self.color)
 
-    def display(self, surface=None):
-        super().display(marge=True, surface=surface)
+    def display(self, surface=None, pos=None):
+        super().display(marge=True, surface=surface, pos=pos)
     
     def __repr__(self):
         return "Cadre Object"
@@ -52,7 +52,7 @@ class Button(Form):
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK,
                 centered=True, font=Font.f(50), surface=None, with_font=False,
-                scale_dim=True, scale_pos=True, highlight=True):
+                scale_dim=True, scale_pos=True, highlight=True, has_marge=True):
         
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, 
                         surface=surface, with_font=with_font, marge=True)
@@ -60,7 +60,8 @@ class Button(Form):
         self._text = text
         self.text_color = text_color
         self._highlighted = highlight
-        self.centered = centered
+        self._centered = centered
+        self._has_marge = has_marge
         self.font = font
         self._logic = None
 
@@ -134,7 +135,7 @@ class Button(Form):
         # get marges
         x_marge, y_marge = center_text(self._sc_dim, self.font['font'], text)
         
-        if not self.centered:
+        if not self._centered:
             x_marge = self._rs_marge_text
         
         # create font
@@ -156,7 +157,7 @@ class Button(Form):
             self._highlight()
         
         # display the surf
-        super().display(marge=True, surface=surface, pos=pos)
+        super().display(marge=self._has_marge, surface=surface, pos=pos)
         
         self.display_text(text=text, surface=surface, pos=pos)
 
@@ -185,7 +186,7 @@ class TextBox(Form):
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos)
         
         self._text = text
-        self.centered = centered
+        self._centered = centered
         self.font = font
         self.lines = text.split('\n')
         self.text_color = text_color
@@ -223,7 +224,7 @@ class TextBox(Form):
         for i, line in enumerate(self.lines):
             x_marge, y_marge = center_text((self._sc_dim[0],y_line), self.font['font'], line)
         
-            if not self.centered:
+            if not self._centered:
                 x_marge = self._rs_marge_text
         
             font_text = self.font['font'].render(line,True,self.text_color)
@@ -269,9 +270,9 @@ class InputText(Button):
     
     def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK, 
                 centered=False, font=Font.f(30), limit=None, cache=False, 
-                scale_dim=True, scale_pos=True, pretext=None):
+                scale_dim=True, scale_pos=True, pretext=None, has_marge=True):
 
-        super().__init__(dim, pos, color, text_color=text_color, 
+        super().__init__(dim, pos, color, text_color=text_color, has_marge=has_marge,
                 centered=centered, font=font, scale_dim=scale_dim, scale_pos=scale_pos)
         
         # set Specifications
@@ -299,10 +300,14 @@ class InputText(Button):
 
         self.is_pretext = with_pretext
 
-    def reset_text(self):
+    def reset_text(self, pretext=None):
         '''
-        Reset the text, if has a pretext: set it.
+        Reset the text, if has a pretext: set it.  
+        If `pretext` argument is specified, set a new pretext.
         '''
+        if not pretext is None:
+            self.pretext = pretext
+
         self._text = ''
         self.cursor_place = 0
 
@@ -451,7 +456,7 @@ class InputText(Button):
         
         # get marges
         x_marge, y_marge = center_text(self._sc_dim, self.font['font'], self._text[:self.cursor_place])
-        if not self.centered:
+        if not self._centered:
             x_marge = self._rs_marge_text
 
         # get cursor pos
@@ -532,7 +537,7 @@ class ScrollList(Form):
     - display: display the scroll list
     '''
 
-    def __init__(self, dim, pos, lines, *, color=C.WHITE, 
+    def __init__(self, dim, pos, lines, *, color=C.WHITE,
                     scale_dim=True, scale_pos=True, bar_color=C.LIGHT_GREY):
         
         super().__init__(dim, pos, color=color, marge=True,
@@ -557,6 +562,10 @@ class ScrollList(Form):
 
         self._set_scroll_bar()
 
+    @property
+    def size(self):
+        return len(self._lines)
+
     def add_line(self, line, index=None):
         '''
         Add a line to the scroll list.
@@ -572,12 +581,12 @@ class ScrollList(Form):
         self._lines.insert(index, line)
 
         rel_pos = [element.get_pos() for element in line]
-        self._rel_positions.append(rel_pos)
+        self._rel_positions.insert(index, rel_pos)
 
         # update tot_y, scroll bar
         self._tot_y += line[0].get_dim()[1]
 
-        self._set_scroll_bar()
+        self._update_scroll_cursor_dim()
 
     def remove_line(self, index=None):
         '''
@@ -596,7 +605,7 @@ class ScrollList(Form):
         # update tot_y, scroll bar
         self._tot_y -= line[0].get_dim()[1]
 
-        self._set_scroll_bar()
+        self._update_scroll_cursor_dim()
 
     def run(self, events, pressed):
         '''
@@ -618,7 +627,7 @@ class ScrollList(Form):
                 self._scroll_cursor.set_color(self._bar_color)
 
         if self._selected:
-            self._update_scroll_bar_pos()
+            self._update_scroll_cursor_pos()
         
         self._run_elements(events, pressed)
 
@@ -660,28 +669,44 @@ class ScrollList(Form):
             # increment the tot_y
             self._tot_y += self._lines[i][0].get_dim()[1]
 
-    def _update_scroll_bar_pos(self):
+    def _update_scroll_cursor_dim(self):
+        '''
+        When a line is added/removed, update the dimension of the cursor.
+        '''
+        # scroll cursor
+        if self._tot_y <= self._unsc_dim[1]:
+            dim_y = self._unsc_dim[1]
+        else:
+            dim_y = self._unsc_dim[1] * (self._unsc_dim[1] / self._tot_y)
+        
+        dim = (self.WIDTH_SCROLL_BAR, dim_y)
+        
+        self._scroll_cursor.set_dim(dim, scale=True)
+
+    def _update_scroll_cursor_pos(self):
         '''
         When scroll bar is selected, 
         update its position according to the mouse position.  
         Update the limits of the displayed elements.
         '''
         mouse_y = pygame.mouse.get_pos()[1]
+ 
+        # add the potential dif pos
+        mouse_y -= Dimension.scale(self._scroll_cursor._dif_pos_on_it[1])
+
         mouse_y = self._y_in_boundaries(mouse_y)
 
         # update postion
         new_pos = [
             Dimension.scale(self._unsc_dim[0] - self.WIDTH_SCROLL_BAR),
-            mouse_y - self._sc_pos[1] - self._scroll_cursor._sc_dim[1]//2
+            mouse_y - self._scroll_cursor._sc_dim[1]//2
         ]
 
         self._scroll_cursor.set_pos(new_pos)
 
         # update scroll cursor state
-        rel_y = mouse_y - self._sc_pos[1]
-
         # handeln the marge
-        rel_y -= self._scroll_cursor._sc_dim[1]//2
+        rel_y = mouse_y - self._scroll_cursor._sc_dim[1]//2
 
         self._cursor_y_per = rel_y / self._sc_dim[1]
 
@@ -694,8 +719,8 @@ class ScrollList(Form):
         Check if given position (scaled) is in the scroll bar boundaries,
         Return the in boundaries position.
         '''
-        top_lim = self._sc_pos[1] + self._scroll_cursor._sc_dim[1]//2
-        bottom_lim = self._sc_pos[1] + self._sc_dim[1] - self._scroll_cursor._sc_dim[1]//2
+        top_lim = self._scroll_cursor._sc_dim[1]//2
+        bottom_lim = self._sc_dim[1] - self._scroll_cursor._sc_dim[1]//2
 
         if y < top_lim:
             return top_lim
@@ -722,7 +747,7 @@ class ScrollList(Form):
 
     @property
     def _dif_pos_on_it(self):
-        return super()._dif_pos_on_it
+        return self._scroll_cursor._dif_pos_on_it
     
     @_dif_pos_on_it.setter
     def _dif_pos_on_it(self, value):
@@ -772,6 +797,9 @@ class ScrollList(Form):
         )
 
         self._scroll_cursor = Form(dim, pos, color=self._bar_color)
+
+        # add dif_pos_on_it to cursor -> it has rel pos
+        self._scroll_cursor._dif_pos_on_it = self._unsc_pos.copy()
 
     def display(self, pos=None):
         '''

@@ -7,7 +7,7 @@ class Interaction:
     Manage the interaction between the clients.
     '''
 
-    clients = []
+    clients = {}
 
     @classmethod
     def send_general_chat_msg(cls, username, msg):
@@ -15,7 +15,7 @@ class Interaction:
         Send a message to all connected clients on the general chat.
         '''
 
-        for client in cls.clients:
+        for client in cls.clients.values():
 
             if client.username == username:
                 continue

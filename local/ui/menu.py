@@ -55,8 +55,8 @@ class Menu(Page):
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
-        self.set_states_components('unlogged', ['b conn', 'chat'])
-        self.set_states_components('logged',['t username', 'b friends'])
+        self.set_states_components('unlogged', ['b conn'])
+        self.set_states_components('logged',['t username', 'b friends', 'chat'])
 
         self.add_button_logic('b conn', self.conn)
         self.add_button_logic('b friends', self.friends)

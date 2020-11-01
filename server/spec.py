@@ -13,3 +13,4 @@ class Spec:
 
     SEP_MAIN = '|'
     SEP_CONTENT = ','
+    SEP_CONTENT2 = '*'

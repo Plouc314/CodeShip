@@ -20,8 +20,6 @@ class Server(ServerTCP):
         client = Client(conn, addr)
         self.clients[client.ip] = client
 
-        Interaction.clients.append(client)
-
         thread = threading.Thread(target=client.run)
         self.threads[client.ip] = thread
 

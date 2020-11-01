@@ -34,7 +34,9 @@ class Chat(SubPage):
 
     def __init__(self, pos, client=None):
         
-        self.username = "bob"#None
+        self.MAX_MSG = Spec.CHAT_MAX_MSG
+
+        self.username = None
         self.client = client
 
         super().__init__(['base'], components, pos, active_states='all')
@@ -47,7 +49,11 @@ class Chat(SubPage):
         '''
         msg = self.get_text('i msg')
 
-        #self.client.send_general_chat_msg(msg)
+        # check that there is a msg
+        if msg == '':
+            return
+
+        self.client.send_general_chat_msg(msg)
 
         self.add_msg(self.username, msg)
 
@@ -65,6 +71,11 @@ class Chat(SubPage):
         scroll = self.get_component('scroll')
 
         scroll.add_line(self._create_msg(username, msg, user_color))
+
+        # check if there is to many message
+        if scroll.size > self.MAX_MSG:
+            # remove oldest msg
+            scroll.remove_line(0)
     
     def _create_msg(self, username, msg, user_color):
         '''
