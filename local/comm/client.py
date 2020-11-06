@@ -13,19 +13,26 @@ class Client(ClientTCP):
         # store the identifiers of the comm as key
         # the values are the msg send by the server
         self.in_data = {
-            'rlg': None, # response login
-            'rsg': None, # response sign up
-            'frs': None, # friends connected
-            'gc': [] # message on general chat
+            'rlg' : None, # response login
+            'rsg' : None, # response sign up
+            'frs' : None, # friends connected
+            'rdfr': None, # response on friend demand
+            'dfr' :   [], # friend demands (from other users) 
+            'gc'  :   [], # message on general chat
         }
+
+        # store "empty" datatype of each container -> reset automaticly
+        self.default_in_data = self.in_data.copy()
 
         # store the identifiers of the comm as key
         # for each key, a function will process the incoming data
         self.processes = {
-            'rlg': lambda x: int(x),
-            'rsg': lambda x: int(x),
-            'frs': self.on_friends,
-            'gc': self.on_general_chat
+            'rlg' : lambda x: int(x),
+            'rsg' : lambda x: int(x),
+            'frs' : self.on_friends,
+            'rdfr': lambda x: int(x),
+            'dfr' : lambda x: x,
+            'gc'  : self.on_general_chat
         }
 
     def connect(self):
@@ -107,6 +114,22 @@ class Client(ClientTCP):
 
         self.send(msg)
 
+    def send_demand_friend(self, username):
+        '''
+        Send a friend demand.
+        ID: dfr
+        '''
+        msg = f'dfr{sep_m}{username}'
+
+        self.send(msg)
+
+    def send_response_dfr(self, username, response):
+        '''
+        Send if accepted or not a friend demand.
+        ID: rdfr
+        '''
+        self.send(f'rdfr{sep_m}{username}{sep_c}{int(response)}')
+
 class ContextManager:
     '''
     Context manager used to get `in_data` content and free it after use.
@@ -131,10 +154,7 @@ class ContextManager:
     
     def __exit__(self, type, value, tb):
         '''Free every containers'''
+        
         for id in self.id:
             # free the container
-            if id in ['rlg', 'rsg', 'frs']:
-                self.client.in_data[id] = None
-            
-            else:
-                self.client.in_data[id] = []
+            self.client.in_data[id] = self.client.default_in_data[id]

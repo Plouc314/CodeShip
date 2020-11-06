@@ -11,7 +11,7 @@ class ErrorClient:
         else:
             call_type = "ERROR"
         
-        print(f"{call_type} |TCP| {traceback}")
+        print(f"[TCP] [{call_type}] {traceback}")
 
 
 class Spec:

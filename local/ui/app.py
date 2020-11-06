@@ -20,34 +20,31 @@ class App(Application):
 
         super().__init__(pages)
 
-        self.add_frame_function(self.look_friends)
+        self.add_frame_function(self.look_friends, is_active=True)
+        self.add_frame_function(self.look_demand_friends, is_active=True)
+        self.add_frame_function(self.manage_notif, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
+        self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
 
-        self.add_frame_function(self.look_comm_login)
+    def manage_notif(self):
+        '''
+        Manage the notif TextBox of page Menu that indicates the number of
+        active friend demands.
+        '''
+        page_fr = self.get_page(Spec.PAGE_FRIENDS)
+        page_menu = self.get_page(Spec.PAGE_MENU)
+        notif = page_menu.get_component('notif')
 
-        self.set_in_page_func(Spec.PAGE_CONN, self.in_conn)
-        self.set_out_page_func(Spec.PAGE_CONN, self.out_conn)
+        n_dfr  = page_fr.get_n_dfr()
 
-        self.add_frame_function(self.look_general_chat_msg)
-
-        self.set_in_page_func(Spec.PAGE_MENU, self.in_menu)
-        self.set_out_page_func(Spec.PAGE_MENU, self.out_menu)
-
-    def out_menu(self):
-        ''' Stop the execution of look_general_chat_msg'''
-        self.set_frame_function_state(self.look_general_chat_msg, False)
-
-    def in_menu(self):
-        '''Start the execution of look_general_chat_msg'''
-        self.set_frame_function_state(self.look_general_chat_msg, True)
-
-    def out_conn(self):
-        '''Stop the execution of look_comm_login'''
-        self.set_frame_function_state(self.look_comm_login, False)
-    
-    def in_conn(self):
-        '''Start the execution of look_comm_login'''
-        self.set_frame_function_state(self.look_comm_login, True)
-
+        if n_dfr == 0:
+            page_menu.change_display_state('notif', False)
+        
+        else:
+            page_menu.change_display_state('notif', True)
+            notif.set_text(str(n_dfr))
+        
     def look_comm_login(self):
         '''
         Check if the server sent a login response
@@ -86,6 +83,19 @@ class App(Application):
             for username, msg in contents:
                 chat.add_msg(username, msg)
 
+    def look_rdfr(self):
+        '''
+        Check if the server send a response on a friend demand.
+        '''
+        with self.client.get_data('rdfr') as content:
+
+            if content == None:
+                return
+            
+            page_fr = self.get_page(Spec.PAGE_FRIENDS)
+
+            page_fr.set_rdfr(content)
+
     def look_friends(self):
         '''
         Check if the server sent info about friends
@@ -98,4 +108,15 @@ class App(Application):
             page_fr = self.get_page(Spec.PAGE_FRIENDS)
 
             for username, connected in contents:
-                page_fr.add_friend(username, connected)
+                page_fr.set_friend(username, connected)
+    
+    def look_demand_friends(self):
+        '''
+        Check if the server sent a friend demand.
+        '''
+        with self.client.get_data('dfr') as contents:
+
+            page_fr = self.get_page(Spec.PAGE_FRIENDS)
+
+            for username in contents:
+                page_fr.set_demand_friend(username)

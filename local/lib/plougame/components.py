@@ -65,8 +65,6 @@ class Button(Form):
         self.font = font
         self._logic = None
 
-        self._set_corners()
-
     def pushed(self, events):
         '''Return True if the object was clicked'''
         if self.on_it():
@@ -531,6 +529,7 @@ class ScrollList(Form):
     - bar_color: the color used for the scroll bar
 
     Methods:
+    - get_line: Return the specified line
     - add_line: Add a line to the instance
     - remove_line: Remove a line from the instance
     - run: React to user inputs on the scroll bar, call the objects in lines run methods
@@ -562,9 +561,14 @@ class ScrollList(Form):
 
         self._set_scroll_bar()
 
-    @property
-    def size(self):
+    def __len__(self):
         return len(self._lines)
+
+    def get_line(self, index):
+        '''
+        Return the specified line.
+        '''
+        return self._lines[index]
 
     def add_line(self, line, index=None):
         '''
@@ -588,10 +592,11 @@ class ScrollList(Form):
 
         self._update_scroll_cursor_dim()
 
-    def remove_line(self, index=None):
+    def remove_line(self, index=None, line=None):
         '''
-        Remove a line at the specified index,
-        if `index` is not specified remove the last line.
+        Remove a line,  
+        If `index` is specified remove the line at the given index.  
+        If `line` is specified remove the given line.
         '''
         if index == None:
             index = len(self._lines) - 1

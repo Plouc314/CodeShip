@@ -7,4 +7,7 @@ server = Server()
 DataBase.load()
 
 
-server.run()
+try:
+    server.run()
+except KeyboardInterrupt:
+    DataBase.store()

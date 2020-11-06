@@ -122,7 +122,8 @@ class C:
     
     LIGHT_RED = (255, 80, 80)
     RED = (225, 50, 50)
-    
+    DARK_RED = (195, 20, 20)
+
     LIGHT_GREEN = (124,252,100)
     GREEN = (94,222,70)
     DARK_GREEN = (17, 159, 26)

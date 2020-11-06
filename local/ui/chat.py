@@ -73,7 +73,7 @@ class Chat(SubPage):
         scroll.add_line(self._create_msg(username, msg, user_color))
 
         # check if there is to many message
-        if scroll.size > self.MAX_MSG:
+        if len(scroll) > self.MAX_MSG:
             # remove oldest msg
             scroll.remove_line(0)
     

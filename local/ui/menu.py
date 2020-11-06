@@ -11,13 +11,14 @@ X_TB2 = 550
 
 POS_CHAT = np.array([2000, 900], dtype='int16')
 POS_ERROR = np.array([X_TB1, Y_TB + 100], dtype='int16')
+POS_NOTIF = np.array([X_TB2 + 230, Y_TB-20], dtype='int16')
 
 ### Components ###
 
 title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
                             text="CodeShip", font=Font.f(80))
         
-text_error = TextBox(Spec.DIM_MEDIUM_TEXT, POS_ERROR, color=C.LIGHT_RED,
+text_error = TextBox(Spec.DIM_MEDIUM_TEXT, POS_ERROR, color=C.DARK_RED,
                     text="", font=Font.f(25), marge=True, text_color=C.WHITE)
 
 button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
@@ -29,6 +30,9 @@ text_username = TextBox(Spec.DIM_MEDIUM_TEXT, (X_TB1, Y_TB),
 button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB), color=C.LIGHT_BLUE,
                     text="Friends", font=Font.f(40))
 
+notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE,
+                    text='0', font=Font.f(20))
+
 chat = Chat(POS_CHAT)
 
 states = ['unlogged', 'logged']
@@ -39,6 +43,7 @@ components = [
     ('b conn', button_conn),
     ('t username', text_username),
     ('b friends', button_friends),
+    ('notif', notif),
     ('chat', chat)
 ]
 

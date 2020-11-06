@@ -283,7 +283,7 @@ class Form:
         '''
         Set the color taken by the marges and the object when highlighted.
         '''
-        if mean(self.color) < 130:
+        if mean(self.color) < 60:
             self._high_color = get_light_color(self.color)
         
         else:

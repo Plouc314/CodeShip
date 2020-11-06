@@ -74,6 +74,9 @@ class Spec:
     DIM_SMALL_BUTTON = np.array([200,40], dtype='int16')
 
     DIM_CHAT = np.array([1000,600], dtype='int16')
+    DIM_NOTIF = np.array([30,30], dtype='int16')
+
+    DIM_ICON = np.array([40,40], dtype='int16')
 
     # page names
     PAGE_MENU = "menu"

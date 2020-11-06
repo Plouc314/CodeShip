@@ -15,14 +15,15 @@ class Application:
         self._active_page = pages[0][0]
         self._pages_history = [self._active_page]
 
-        self._frame_funcs = []
-        self._active_frame_funcs = []
-
         self._pages = {}
 
         for name, page in pages:
             self.add_page(name, page)
         
+        self._frame_funcs = []
+        self._pages_frame_funcs = {page:[] for page in self._pages.keys()}
+        self._active_frame_funcs = []
+
         # functions called when the page change to a new one
         self._in_pages = {page: None for page in self._pages}
         self._out_pages = {page: None for page in self._pages}
@@ -97,14 +98,24 @@ class Application:
 
         return self._pages[name]
 
-    def add_frame_function(self, func, is_active=True):
+    def add_frame_function(self, func, active_pages=None, is_active=False):
         '''
         Add a function that will be executed every frame.  
-        If `is_active=True`, the function will be executed at each frame,
-        to change the function state (if it's executed) call the `set_frame_function_state` method.
+
+        Arguments:
+        - is_active: if the function will be executed at each frame, to change the function state (if it's executed) call the set_frame_function_state method.
+        - active_pages: if specified, the page(s) where the frame function will be executed.
         '''
         self._frame_funcs.append(func)
         
+        if not active_pages is None:
+
+            if type(active_pages) != list:
+                active_pages = [active_pages]
+
+            for page in active_pages:
+                self._pages_frame_funcs[page].append(func)
+
         if is_active:
             self._active_frame_funcs.append(func)
 
@@ -155,6 +166,9 @@ class Application:
         self._look_for_call()
 
         for func in self._active_frame_funcs:
+            self._safe_exec_func(func)
+
+        for func in self._pages_frame_funcs[self._active_page]:
             self._safe_exec_func(func)
 
         self._pages[self._active_page].react_events(pressed, events)

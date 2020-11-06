@@ -21,13 +21,20 @@ class Client(ClientTCP):
         self.identifiers = {
             'lg': self.login,
             'sg': self.sign_up,
-            'gc': self.general_chat
+            'gc': self.general_chat,
+            'dfr': self.demand_friend,
+            'rdfr': self.response_demand_friend
         }
 
     def on_disconnect(self):
-        
+        '''
+        Executed on disconnection, to have a clean disconnection
+        '''
+
+        Interaction.send_connection_state(self.username, False)
+
         # remove from Interaction
-        Interaction.clients.pop(self.username)
+        Interaction.remove(self.username)
 
         self.print("Disconnected.")
 
@@ -40,6 +47,8 @@ class Client(ClientTCP):
         self.username = username
 
         Interaction.clients[username] = self
+
+        Interaction.send_connection_state(self.username, True)
 
         self._send_basic_infos()
 
@@ -55,10 +64,14 @@ class Client(ClientTCP):
         # get friends
         friends = DataBase.get_friends(self.username)
 
+        # doesn't send message if user doesn't have friends
+        if len(friends) == 0:
+            return
+
         for friend in friends:
 
             # look if friend is connected
-            if friend in Interaction.clients.keys():
+            if Interaction.is_user(friend):
                 is_connected = 1
             else:
                 is_connected = 0
@@ -70,6 +83,16 @@ class Client(ClientTCP):
                 msg += sep_c
 
         self.send(msg)
+
+        # friend demands
+        dfrs = DataBase.get_friend_demands(self.username)
+
+        for sender in dfrs:
+            
+            if sender == '':
+                continue
+            
+            Interaction.send_demand_friend(self.username, sender)
 
     def on_message(self, msg):
         '''
@@ -88,7 +111,7 @@ class Client(ClientTCP):
         username, password = content.split(sep_c)
 
         # check that the username exists and that the password is correct
-        if DataBase.is_username(username):
+        if DataBase.is_user(username):
             if DataBase.get_password(username) == password:
                 # log in
                 self.send(f'rlg{sep_m}1')
@@ -121,6 +144,43 @@ class Client(ClientTCP):
         Content: msg
         '''
         Interaction.send_general_chat_msg(self.username, content)
+
+    def demand_friend(self, content):
+        '''
+        Manage the friend demand
+        Content: target username
+        '''
+        # check requested user exist
+        if not DataBase.is_user(content):
+            # send error in friend demand
+            self.send(f'rdfr{sep_m}0')
+            return
+        
+        DataBase.add_friend_demand(content, self.username)
+
+        # check if requested user is connected
+        if Interaction.is_user(content):
+            Interaction.send_demand_friend(content, self.username)
+
+        # send friend demand is ok
+        self.send(f'rdfr{sep_m}1')
+
+    def response_demand_friend(self, content):
+        '''
+        Manage the response of a friend demand.
+        Content: username, response
+        '''
+        username, response = content.split(sep_c)
+        response = int(response)
+
+        DataBase.remove_friend_demand(self.username, username)
+
+        if response:
+            DataBase.set_as_friends(self.username, username)
+            
+            # send to new friend that we are connected
+            if Interaction.is_user(username):
+                Interaction.send(username, f'frs{sep_m}{self.username}{sep_c2}1')
 
     def print(self, string):
         '''
