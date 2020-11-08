@@ -25,6 +25,18 @@ class DataBase:
         cls.df['friend'].apply(mapper)
         cls.df['dfr'].apply(mapper)
 
+        cls.load_ships()
+
+    @classmethod
+    def load_ships(cls):
+        cls.ships = {}
+
+        for user in cls.df.index:
+            # load ship of every user
+            arr = np.load(f"db/data/ships/{user}.npy")
+
+            cls.ships[user] = arr
+
     @classmethod
     def store(cls):
         
@@ -38,6 +50,20 @@ class DataBase:
         cls.df['dfr'] = cls.df['dfr'].apply(mapper)
 
         cls.df.to_csv('db/data.csv')
+
+        cls.store_ships()
+
+    @classmethod
+    def store_ships(cls):
+        for user, arr in cls.ships.items():
+            np.save(f"db/data/ships/{user}.npy", arr)
+
+    @classmethod
+    def get_ship(cls, username):
+        '''
+        Return the ship array of a user
+        '''
+        return cls.ships[username]
 
     @classmethod
     def add_user(cls, username, password):

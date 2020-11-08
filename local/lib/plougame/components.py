@@ -532,6 +532,7 @@ class ScrollList(Form):
     - get_line: Return the specified line
     - add_line: Add a line to the instance
     - remove_line: Remove a line from the instance
+    - clear: Clear the lines of the instance
     - run: React to user inputs on the scroll bar, call the objects in lines run methods
     - display: display the scroll list
     '''
@@ -609,6 +610,16 @@ class ScrollList(Form):
 
         # update tot_y, scroll bar
         self._tot_y -= line[0].get_dim()[1]
+
+        self._update_scroll_cursor_dim()
+
+    def clear(self):
+        '''
+        Clear the lines of the instance.
+        '''
+        self._lines = []
+        self._rel_positions = []
+        self._tot_y = 0
 
         self._update_scroll_cursor_dim()
 

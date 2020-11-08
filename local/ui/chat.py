@@ -32,16 +32,23 @@ components = (
 
 class Chat(SubPage):
 
-    def __init__(self, pos, client=None):
+    def __init__(self, pos, general_chat=True, client=None):
         
         self.MAX_MSG = Spec.CHAT_MAX_MSG
 
+        self.is_general_chat = general_chat
         self.username = None
         self.client = client
 
         super().__init__(['base'], components, pos, active_states='all')
 
         self.add_button_logic('b send', self.on_send)
+
+    def reset(self):
+        '''Reset chat'''
+        scroll = self.get_component('scroll')
+
+        scroll.clear()
 
     def on_send(self):
         '''
@@ -53,7 +60,8 @@ class Chat(SubPage):
         if msg == '':
             return
 
-        self.client.send_general_chat_msg(msg)
+        if self.is_general_chat:
+            self.client.send_general_chat_msg(msg)
 
         self.add_msg(self.username, msg)
 

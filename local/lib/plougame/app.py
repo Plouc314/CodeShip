@@ -7,8 +7,19 @@ class Application:
     Arguments:
     - pages: list (name, Page)
         List of all the pages of the application.
+    
+    Methods:
+    - add_page: Add a page to the application
+    - get_page: Return the specified page
+    - change_page: Change the active page
+    - go_back: Change the active page to be the previous one
+    - add_frame_function: Add a function that will be executed at each frame
+    - set_frame_function_state: Set if the function is executed or not
+    - set_in_page_func: Set a function that will be executed when getting in a page
+    - set_out_page_func: Set a function that will be executed when getting out a page
+    - react_events: React to the user inputs
+    - display: Display the active page
     '''
-
 
     def __init__(self, pages):
         
@@ -121,7 +132,7 @@ class Application:
 
     def set_frame_function_state(self, func, state: bool):
         '''
-        Change the state of the given function, if it's displayed or not.
+        Change the state of the given function, if it's executed or not.
         '''
         if state:
             # check if function has been set previously

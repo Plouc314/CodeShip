@@ -19,6 +19,7 @@ class Client(ClientTCP):
         # store the identifiers of the comm as key
         # the values are the methods called for each of the identifier
         self.identifiers = {
+            'lo': self.on_disconnect, # log out
             'lg': self.login,
             'sg': self.sign_up,
             'gc': self.general_chat,
@@ -26,15 +27,19 @@ class Client(ClientTCP):
             'rdfr': self.response_demand_friend
         }
 
-    def on_disconnect(self):
+    def on_disconnect(self, content=None):
         '''
         Executed on disconnection, to have a clean disconnection
         '''
+        self.logged = False
+        
+        if self.username != None:
+            Interaction.send_connection_state(self.username, False)
 
-        Interaction.send_connection_state(self.username, False)
+            # remove from Interaction
+            Interaction.remove(self.username)
 
-        # remove from Interaction
-        Interaction.remove(self.username)
+            self.username = None
 
         self.print("Disconnected.")
 
@@ -58,15 +63,26 @@ class Client(ClientTCP):
         '''
         Send the basic informations, friends, ...
         '''
+        self._send_connected_friends()
+        self._send_ship()
+
+        # friend demands
+        dfrs = DataBase.get_friend_demands(self.username)
+
+        for sender in dfrs:
+            
+            if sender == '':
+                continue
+            
+            Interaction.send_demand_friend(self.username, sender)
+
+    def _send_connected_friends(self):
+        '''Send the status of each friend of client'''
         # friends
         msg = f'frs{sep_m}'
 
         # get friends
         friends = DataBase.get_friends(self.username)
-
-        # doesn't send message if user doesn't have friends
-        if len(friends) == 0:
-            return
 
         for friend in friends:
 
@@ -82,17 +98,23 @@ class Client(ClientTCP):
             if not friend == friends[-1]:
                 msg += sep_c
 
+        # doesn't send message if user doesn't have friends
+        if len(friends) != 0:
+            self.send(msg)
+
+    def _send_ship(self):
+        '''Send the ship array of client to client'''
+        arr = DataBase.get_ship(self.username)
+        msg = f'sh{sep_m}{self.username}{sep_c}'
+
+        for x in range(arr.shape[0]):
+            for y in range(arr.shape[1]):
+                msg += f'{arr[x,y]}{sep_c2}'
+
+        # remove last sep
+        msg = msg[:-1]
+
         self.send(msg)
-
-        # friend demands
-        dfrs = DataBase.get_friend_demands(self.username)
-
-        for sender in dfrs:
-            
-            if sender == '':
-                continue
-            
-            Interaction.send_demand_friend(self.username, sender)
 
     def on_message(self, msg):
         '''
@@ -117,9 +139,10 @@ class Client(ClientTCP):
                 self.send(f'rlg{sep_m}1')
 
                 self._log_client(username)
-        else:
-            # can't log in
-            self.send(f'rlg{sep_m}0')
+                return
+        
+        # can't log in
+        self.send(f'rlg{sep_m}0')
     
     def sign_up(self, content):
         '''
@@ -172,6 +195,7 @@ class Client(ClientTCP):
         '''
         username, response = content.split(sep_c)
         response = int(response)
+        is_connected = False # if sender is connected
 
         DataBase.remove_friend_demand(self.username, username)
 
@@ -180,7 +204,12 @@ class Client(ClientTCP):
             
             # send to new friend that we are connected
             if Interaction.is_user(username):
+                is_connected = True
                 Interaction.send(username, f'frs{sep_m}{self.username}{sep_c2}1')
+
+            # send to client if new friend is connected
+            self.send(f'frs{sep_m}{username}{sep_c2}{int(is_connected)}')
+            
 
     def print(self, string):
         '''

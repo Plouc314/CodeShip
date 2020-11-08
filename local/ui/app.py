@@ -2,6 +2,7 @@ from lib.plougame import Application
 from ui.connection import Connection
 from ui.menu import Menu
 from ui.friends import Friends
+from ui.ship import Ship
 from spec import Spec
 
 
@@ -15,17 +16,22 @@ class App(Application):
         pages = [
             (Spec.PAGE_MENU, Menu(client)),
             (Spec.PAGE_CONN, Connection(client)),
-            (Spec.PAGE_FRIENDS, Friends(client))
+            (Spec.PAGE_FRIENDS, Friends(client)),
+            (Spec.PAGE_SHIP, Ship(client))
         ]
 
         super().__init__(pages)
 
-        self.add_frame_function(self.look_friends, is_active=True)
-        self.add_frame_function(self.look_demand_friends, is_active=True)
+        self.add_frame_function(self.look_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
+        self.add_frame_function(self.look_demand_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.manage_notif, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
+
+        # set log out logic
+        page_menu = self.get_page(Spec.PAGE_MENU)
+        page_menu.add_button_logic('b logout', self.logic_logout)
 
     def manage_notif(self):
         '''
@@ -44,6 +50,21 @@ class App(Application):
         else:
             page_menu.change_display_state('notif', True)
             notif.set_text(str(n_dfr))
+
+    def logic_logout(self):
+        '''
+        Function executed when button logout is pushed.
+        '''
+        page_menu = self.get_page(Spec.PAGE_MENU)
+        page_fr = self.get_page(Spec.PAGE_FRIENDS)
+        page_conn = self.get_page(Spec.PAGE_CONN)
+
+        self.client.send_logout()
+        
+        page_conn.change_state('base')
+        page_menu.change_state('unlogged')
+        page_menu.get_component('chat').reset()
+        page_fr.reset()
         
     def look_comm_login(self):
         '''

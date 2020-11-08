@@ -1,5 +1,6 @@
 import pygame
-from lib.plougame import Interface, Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
+from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
+from ui.chat import Chat
 from spec import Spec
 import numpy as np
 
@@ -7,41 +8,45 @@ Y_TB = 100
 X_TB1 = 100
 X_TB2 = 550
 
-POS_SCR_FRS = (500, 500)
-DIM_SCR_FRS = (1200, 600)
+POS_CHAT = np.array([2000, 900])
+POS_SCR_FRS = np.array((500, 500))
+DIM_SCR_FRS = np.array((1200, 600))
 
-POS_SCR_DFRS = (2400, 300)
-DIM_SCR_DFRS = (600, 400)
+POS_SCR_DFRS = np.array((2500, 180))
+DIM_SCR_DFRS = np.array((600, 400))
 
-POS_BACK = np.array([X_TB1,Y_TB], dtype='int16')
-POS_ADD_FR = np.array([1460,440], dtype='int16')
+DIM_TITLE_DFR = np.array([DIM_SCR_DFRS[0], 80])
+POS_TITLE_DFR = np.array([POS_SCR_DFRS[0], POS_SCR_DFRS[1]-80])
 
-POS_CADRE = np.array([POS_ADD_FR[0] + 250,POS_ADD_FR[1]], dtype='int16')
-POS_USER = np.array([POS_CADRE[0] + 10,POS_CADRE[1] + 10], dtype='int16')
-POS_SEND = np.array([POS_USER[0] + 410,POS_USER[1]], dtype='int16')
+POS_BACK = np.array([X_TB1,Y_TB])
+POS_ADD_FR = np.array([1460,440])
 
-POS_ERROR = np.array([POS_CADRE[0],POS_CADRE[1]+70], dtype='int16')
+POS_CADRE = np.array([POS_ADD_FR[0] + 250,POS_ADD_FR[1]])
+POS_USER = np.array([POS_CADRE[0] + 10,POS_CADRE[1] + 10])
+POS_SEND = np.array([POS_USER[0] + 410,POS_USER[1]])
 
-DIM_CADRE = np.array([630,60], dtype='int16')
+POS_ERROR = np.array([POS_CADRE[0],POS_CADRE[1]+70])
+
+DIM_CADRE = np.array([630,60])
 
 ## friend line ##
-DIM_CONN = np.array([30,30], dtype='int16')
-POS_CONN = np.array([500,25], dtype='int16')
-POS_PROFIL = np.array([700,20], dtype='int16')
-POS_PLAY = np.array([930,20], dtype='int16')
+DIM_CONN = np.array([30,30])
+POS_CONN = np.array([500,25])
+POS_PROFIL = np.array([700,20])
+POS_PLAY = np.array([930,20])
 
-DIM_CADRE_LINE = np.array([1160,80], dtype='int16')
+DIM_CADRE_LINE = np.array([1160,80])
 
 ## dfr line ##
-DIM_DFR_BUTT = np.array([60,40], dtype='int16')
-DIM_ICON = np.array([512, 512], dtype='int16')
+DIM_DFR_BUTT = np.array([60,40])
+DIM_ICON = np.array([512, 512])
 POS_ICON = (15*DIM_DFR_BUTT - DIM_ICON)//2
 
 POS_DFR_TEXT = np.array([20, 00])
-POS_YES = np.array([400, 10], dtype='int16')
-POS_NO = np.array([480, 10], dtype='int16')
+POS_YES = np.array([400, 10])
+POS_NO = np.array([480, 10])
 
-DIM_CADRE_LINE_DFR = np.array([560,60], dtype='int16')
+DIM_CADRE_LINE_DFR = np.array([560,60])
 
 ### Components ###
 
@@ -58,7 +63,12 @@ button_add_fr = Button(Spec.DIM_MEDIUM_BUTTON, POS_ADD_FR, color=C.LIGHT_BLUE,
 
 scroll_frs = ScrollList(DIM_SCR_FRS, POS_SCR_FRS, [])
 
+chat = Chat(POS_CHAT, general_chat=False)
+
 ### dfr ###
+
+title_dfr = TextBox(DIM_TITLE_DFR, POS_TITLE_DFR, 
+                text="Friend requests", font=Font.f(40))
 
 scroll_dfrs = ScrollList(DIM_SCR_DFRS, POS_SCR_DFRS, [])
 
@@ -88,6 +98,7 @@ states = ['base', 'add fr']
 
 components = [
     ('title', title),
+    ('title dfr', title_dfr),
     ('b back', button_back),
     ('b add fr', button_add_fr),
     ('s frs', scroll_frs),
@@ -95,7 +106,8 @@ components = [
     ('c add fr', cadre_add_fr),
     ('i username', input_userame),
     ('b send', button_send),
-    ('t rdfr', text_rdfr)
+    ('t rdfr', text_rdfr),
+    ('chat', chat)
 ]
 
 class Friends(Page):
@@ -111,28 +123,35 @@ class Friends(Page):
         self.set_in_state_func('base', self.in_base)
 
         self.set_states_components(None, ['title', 'b back'])
-        self.set_states_components(['base','add fr'], ['b add fr', 's frs', 's dfrs'])
+        self.set_states_components(['base','add fr'], 
+                ['b add fr', 's frs', 's dfrs', 'title dfr'])
     
         self.set_states_components('add fr', ['c add fr', 'i username', 'b send'])
 
-        self.add_button_logic('b add fr', self.b_add_friend)
-        self.add_button_logic('b back', self.b_back)
-        self.add_button_logic('b send', self.b_send)
+        self.add_button_logic('b add fr', self.add_friend)
+        self.add_button_logic('b back', self.go_back)
+        self.add_button_logic('b send', self.send)
+
+    def reset(self):
+        '''
+        Reset friends and friend demands
+        '''
+        self.get_component('s frs').clear()
+        self.get_component('s dfrs').clear()
+
+        self.friends = {}
+        self.demand_friends = []
 
     def in_base(self):
         # reset demand friend components
         self.change_display_state('t rdfr', False)
         self.get_component('i username').reset_text(pretext="Enter a username...")
-
-    def b_back(self):
-        '''go back of one state'''
-        self.go_back()
     
-    def b_add_friend(self):
+    def add_friend(self):
         '''pass to add fr state'''
         self.change_state('add fr')
 
-    def b_send(self):
+    def send(self):
         '''Send (try to) a friend demand'''
 
         inp = self.get_component('i username')
@@ -159,15 +178,15 @@ class Friends(Page):
         self.change_display_state('t rdfr', True)
 
         if response == 1:
-            inp.reset_text(pretext="Try again...")
+            inp.reset_text(pretext="Enter username...")
 
-            text.set_color(C.LIGHT_GREEN)
+            text.set_color(C.DARK_GREEN)
             text.set_text(f'Demand sent succesfully to "{username}".')
 
         else:
             inp.reset_text(pretext="Try again...")
 
-            text.set_color(C.LIGHT_RED)
+            text.set_color(C.DARK_RED)
             text.set_text(f'There is no user named "{username}".')
 
     def set_friend(self, username, connected):

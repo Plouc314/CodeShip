@@ -265,15 +265,20 @@ class Form:
         Set the color of the surface
 
         Arguments:
-            - marge : set to True if the object as marge
+            - marge : if True, update marge color too
         '''
-        # if has custom surf -> change font color, else change normal color
+        # if has custom surf -> change font color
         if self._surf['font'] == None:
             self._surf['main'].fill(color)
         else:
             self._surf['font'].fill(color)
         
         self.color = color
+
+        # change uni color surf
+        if self._surf['type'] == 'default':
+            self._surf['original'].fill(self.color)
+            self._surf['main'].fill(self.color)    
         
         if marge:
             self._set_high_color()

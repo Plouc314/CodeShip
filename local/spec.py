@@ -30,8 +30,8 @@ class Spec:
     POS_SIGNAL = np.array([10,10], dtype='int16')
 
     # grid dimension
-    SIZE_GRID_SHIP = 4
-    SHAPE_GRID_SHIP = np.array([4,4], dtype='int16')
+    SIZE_GRID_SHIP = 6
+    SHAPE_GRID_SHIP = np.array([6,6], dtype='int16')
     DIM_SHIP = SHAPE_GRID_SHIP * DIM_BLOCK[0]
 
     # ship movement
@@ -82,5 +82,6 @@ class Spec:
     PAGE_MENU = "menu"
     PAGE_CONN = "conn"
     PAGE_FRIENDS = "friends"
+    PAGE_SHIP = "ship"
 
     CHAT_MAX_MSG = 20

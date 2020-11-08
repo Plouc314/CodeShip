@@ -54,7 +54,7 @@ input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(40))
 button_done = Button(Spec.DIM_MEDIUM_BUTTON, POS_DONE, color=C.LIGHT_BLUE,
                     text="Done", font=Font.f(30))
 
-text_error = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.LIGHT_RED,
+text_error = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.DARK_RED,
                 font=Font.f(20), text_color=C.WHITE)
 
 states = ['base', 'login', 'signup']
@@ -96,7 +96,7 @@ class Connection(Page):
         self.add_button_logic('b login', self.login)
         self.add_button_logic('b signup', self.signup)
         self.add_button_logic('b done', self.done)
-        self.add_button_logic('b back', self.back)
+        self.add_button_logic('b back', self.go_back)
 
         self.set_in_state_func('base', self.to_base)
 
@@ -104,10 +104,6 @@ class Connection(Page):
         ''' Executed when state pass to base.'''
         self.set_text('title', 'Connection')
         self.change_display_state('t error', False)
-
-    def back(self):
-        # go back of one state
-        self.go_back()
 
     def login(self):
         # go to the login state

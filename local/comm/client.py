@@ -1,6 +1,7 @@
 import threading
 from lib.tcp import ClientTCP
 from spec import Spec
+import numpy as np
 
 sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
 
@@ -19,10 +20,8 @@ class Client(ClientTCP):
             'rdfr': None, # response on friend demand
             'dfr' :   [], # friend demands (from other users) 
             'gc'  :   [], # message on general chat
+            'sh'  : None, # ship array
         }
-
-        # store "empty" datatype of each container -> reset automaticly
-        self.default_in_data = self.in_data.copy()
 
         # store the identifiers of the comm as key
         # for each key, a function will process the incoming data
@@ -32,7 +31,8 @@ class Client(ClientTCP):
             'frs' : self.on_friends,
             'rdfr': lambda x: int(x),
             'dfr' : lambda x: x,
-            'gc'  : self.on_general_chat
+            'gc'  : self.on_general_chat,
+            'sh'  : self.on_ship
         }
 
     def connect(self):
@@ -87,6 +87,22 @@ class Client(ClientTCP):
         content = [data.split(sep_c2) for data in content]
         return [[username, int(conn)] for username, conn in content]
 
+    def on_ship(self, content):
+        '''
+        Return the ship as a np.ndarray.
+        '''
+        username, arr = content.split(sep_c)
+
+        arr = arr.split(sep_c2)
+        return np.array(arr, dtype=int)
+
+    def send_logout(self):
+        '''
+        Send to the server that client is logging out.
+        ID: lo
+        '''
+        self.send(f'lo{sep_m}')
+
     def send_login(self, username, password):
         '''
         Send the login information to the server.  
@@ -138,6 +154,15 @@ class ContextManager:
     def __init__(self, client, identifier):
         self.client = client
 
+        self.default_in_data = {
+            'rlg' : None,
+            'rsg' : None,
+            'frs' : None,
+            'rdfr': None,
+            'dfr' :   [],
+            'gc'  :   [],
+        }
+
         # pass identifiers to list
         if type(identifier) != list:
             self.id = [identifier]
@@ -157,4 +182,4 @@ class ContextManager:
         
         for id in self.id:
             # free the container
-            self.client.in_data[id] = self.client.default_in_data[id]
+            self.client.in_data[id] = self.default_in_data[id]
