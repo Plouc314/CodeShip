@@ -24,7 +24,7 @@ class Cadre(Form):
         super()._rescale_surf()
         
         if self._is_transparent:
-            self._surf['main'].set_colorkey(self.color)
+            self._surf['main'].set_colorkey(self._color)
 
     def display(self, surface=None, pos=None):
         super().display(marge=True, surface=surface, pos=pos)
@@ -106,11 +106,11 @@ class Button(Form):
             # check if custom surf
             if self._surf['type'] == 'custom':
                 if self._surf['font']: # check if has a font
-                    self._surf['font'].fill(self.color)
+                    self._surf['font'].fill(self._color)
                 else:
                     self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
             else:
-                self._surf['main'].fill(self.color)
+                self._surf['main'].fill(self._color)
 
     def display_text(self, text=None, surface=None, pos=None):
         '''

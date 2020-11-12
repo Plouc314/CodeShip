@@ -1,4 +1,5 @@
 from .page import Page
+from .interface import Interface
 
 class Application:
     '''
@@ -188,6 +189,10 @@ class Application:
         '''
         Display the current page.
         '''
+        # in case of static interface, check if the surface need to be displayed
+        if Interface.is_static() and not Interface.is_frame_displayed():
+            return
+
         self._pages[self._active_page].display()
 
     def _look_for_call(self):

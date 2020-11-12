@@ -35,9 +35,13 @@ class Form:
 
         self.set_pos(pos, scale=scale_pos, center=center)
         
-        self.color = color
+        self._color = color
         self.marge_color = None # set only if marge=True
         
+        # bool value of if the mouse is on the surf,
+        # used to know if the state has changed (for static interface)
+        self._is_on_it = False
+
         # can be set for when object have a relative position
         self._dif_pos_on_it = [0,0] # unscaled
 
@@ -56,7 +60,7 @@ class Form:
 
         if rescale:
             # add every gui obj to interface to be able to rezise gui objs auto
-            self._interface.gui_objects.append(self)
+            self._interface._gui_objects.append(self)
 
     def delete(self):
         '''
@@ -104,8 +108,8 @@ class Form:
             self._surf['type'] = 'default'
             self._surf['original'] = pygame.Surface(rl(self._unsc_dim), pygame.SRCALPHA)
             self._surf['main'] = pygame.Surface(rl(self._sc_dim), pygame.SRCALPHA)
-            self._surf['main'].fill(self.color)
-            self._surf['original'].fill(self.color)
+            self._surf['main'].fill(self._color)
+            self._surf['original'].fill(self._color)
        
         elif type(surface) == pygame.Surface:
             # if custom surface: keep a original surf to rescale properly
@@ -124,7 +128,7 @@ class Form:
         if with_font:
             self._surf['font'] = pygame.Surface(rl(self._sc_dim))
             try:
-                self._surf['font'].fill(self.color)
+                self._surf['font'].fill(self._color)
             except:
                 self._surf['font'] = None # reset font
 
@@ -171,7 +175,7 @@ class Form:
     
         if self._surf['font'] and rotate_font:
             self._surf['font'] = pygame.transform.rotate(pygame.Surface(rl(self._sc_dim), pygame.SRCALPHA), angle)
-            self._surf['font'].fill(self.color)
+            self._surf['font'].fill(self._color)
 
     def get_mask(self, *, scale=True, with_marge=False, with_font=False):
         '''
@@ -260,6 +264,10 @@ class Form:
             self.MARGE_WIDTH = Dimension.inv_scale(width)
             self._rs_marge_width = round(width)
 
+    def get_color(self):
+        '''Return the color of the surface'''
+        return self._color
+
     def set_color(self, color: tuple, *, marge=False):
         '''
         Set the color of the surface
@@ -273,12 +281,12 @@ class Form:
         else:
             self._surf['font'].fill(color)
         
-        self.color = color
+        self._color = color
 
         # change uni color surf
         if self._surf['type'] == 'default':
-            self._surf['original'].fill(self.color)
-            self._surf['main'].fill(self.color)    
+            self._surf['original'].fill(self._color)
+            self._surf['main'].fill(self._color)    
         
         if marge:
             self._set_high_color()
@@ -288,11 +296,11 @@ class Form:
         '''
         Set the color taken by the marges and the object when highlighted.
         '''
-        if mean(self.color) < 60:
-            self._high_color = get_light_color(self.color)
+        if mean(self._color) < 60:
+            self._high_color = get_light_color(self._color)
         
         else:
-            self._high_color = get_dark_color(self.color)
+            self._high_color = get_dark_color(self._color)
 
     def _display_margin(self, surface, pos=None):
         '''
@@ -323,6 +331,10 @@ class Form:
             marge : if the marges are also displayed
         '''
 
+        # in case of static interface, check if the surface need to be displayed
+        if self._interface.is_static() and not self._interface.is_frame_displayed():
+            return
+
         if surface is None:
             surface = self.screen
 
@@ -342,8 +354,9 @@ class Form:
     
     def on_it(self, dif_pos=None):
         '''
-        Return if the mouse is on the surface (not rotated),
-        if `dif_pos` is specified, it will be substract(!) to the mouse position.
+        Return if the mouse is on the surface (not rotated),  
+        if `dif_pos` is specified, it will be substract(!) to the mouse position.  
+        In case of static interface, a True returning value would activate the current frame.
         '''
         if dif_pos == None:
             dif_pos = Dimension.scale(self._dif_pos_on_it)
@@ -354,11 +367,29 @@ class Form:
             mouse_pos[0] - dif_pos[0],
             mouse_pos[1] - dif_pos[1],
         )
-        
+        is_on_it = False
+
         if mouse_pos[0] > self.TOPLEFT[0] and mouse_pos[0] < self.TOPRIGHT[0]:
-            if mouse_pos[1] > self.TOPLEFT[1] and mouse_pos[1] < self.BOTTOMLEFT[1]:
-                return True
-        return False
+            if mouse_pos[1] > self.TOPLEFT[1] and mouse_pos[1] < self.BOTTOMLEFT[1]: 
+                is_on_it = True
+
+        # in case of static interface, set frame to be display
+        if self._interface.is_static():
+            self._check_on_it_state(is_on_it)
+
+        return is_on_it            
+
+    def _check_on_it_state(self, is_on_it):
+        '''
+        Check if the on it state has changed,
+        if the mouse passed from on the surface to not on it for example.  
+        In case of change, call Interface to display the frame (static interface)
+        '''
+        if self._is_on_it == is_on_it:
+            return
+        else:
+            self._is_on_it = is_on_it
+            self._interface.set_frame_to_display()
 
     def _set_corners(self, pos=None):
         '''
@@ -402,13 +433,13 @@ class Form:
         
         if self._surf['type'] == 'default':
             self._surf['main'] = pygame.Surface(rl(self._sc_dim))
-            self._surf['main'].fill(self.color)
+            self._surf['main'].fill(self._color)
         else:
             self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
         
         if self._surf['font']:
             self._surf['font'] = pygame.Surface(rl(self._sc_dim))
-            self._surf['font'].fill(self.color)
+            self._surf['font'].fill(self._color)
 
     def set_pos(self, pos, *, center=False, scale=False):
         '''Set a new position
@@ -471,7 +502,7 @@ class Form:
         with_font = not self._surf['font'] is None
         marge = not self.marge_color is None
 
-        copy = Form(self._unsc_dim, self._unsc_pos, color=self.color,
+        copy = Form(self._unsc_dim, self._unsc_pos, color=self._color,
                 surface=surface, with_font=with_font, marge=marge)
 
         # check if surface has been rotated
@@ -510,7 +541,7 @@ class Form:
             if with_font:
                 # create font surf
                 surf_font = pygame.Surface(rl(self._unsc_dim))
-                surf_font.fill(self.color)
+                surf_font.fill(self._color)
 
         # create the base - a transparent surface
         if with_marge and extend_dim:

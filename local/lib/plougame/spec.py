@@ -3,6 +3,8 @@ class Specifications:
     '''
     Specifications of the library.
     '''
+    # for static interfaces, display first times to get elements to the screen
+    N_FIRST_FRAMES = 3
 
     # time
     FPS = 30
