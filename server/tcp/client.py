@@ -1,3 +1,4 @@
+import numpy as np
 from lib.tcp import ClientTCP
 from tcp.interaction import Interaction
 from db.db import DataBase
@@ -24,7 +25,8 @@ class Client(ClientTCP):
             'sg': self.sign_up,
             'gc': self.general_chat,
             'dfr': self.demand_friend,
-            'rdfr': self.response_demand_friend
+            'rdfr': self.response_demand_friend,
+            'shcf': self.ship_config
         }
 
     def on_disconnect(self, content=None):
@@ -210,6 +212,18 @@ class Client(ClientTCP):
             # send to client if new friend is connected
             self.send(f'frs{sep_m}{username}{sep_c2}{int(is_connected)}')
             
+    def ship_config(self, content):
+        '''
+        Store the new ship config of the client
+        '''
+        arr = content.split(sep_c)
+
+        # compute shape of the ship
+        size = int(np.sqrt(len(arr)))
+
+        arr = np.array(arr, dtype=int).reshape((size, size))
+
+        DataBase.set_ship(self.username, arr)
 
     def print(self, string):
         '''

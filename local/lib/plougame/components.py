@@ -173,28 +173,32 @@ class TextBox(Form):
         - centered : if the text is centered
         - text : the text that is present at the beginning
         - marge : if it has marge or not
-    
+        - dynamic_dim : if True, the dimention will be adjusted to the text
+
     Methods:
         - set_text : pass a string, can be on multiple lines
         - display
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *,
-                    text_color=C.BLACK, centered=True, font=Font.f(50), marge=False, scale_dim=True, scale_pos=True):
+                    text_color=C.BLACK, centered=True, font=Font.f(50), marge=False, 
+                    scale_dim=True, scale_pos=True, dynamic_dim=False):
         
-        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos)
+        if dynamic_dim:
+            # set a defalt dimension to doesn't produce any errors in Form.__init__
+            dim = (10,10)
+
+        super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=marge)
         
         self._text = text
         self._centered = centered
         self.font = font
-        self.lines = text.split('\n')
-        self.text_color = text_color
-        self.as_marge = marge
-       
-        self._set_corners()
+        self._lines = text.split('\n')
+        self._text_color = text_color
+        self._as_marge = marge
+        self._is_dynamic = dynamic_dim
 
-        if marge:
-            self._set_high_color()
-            self.marge_color = self._high_color
+        if self._is_dynamic:
+            self._set_dim_as_to_text()
 
     def get_text(self):
         ''' Return the text '''
@@ -203,7 +207,27 @@ class TextBox(Form):
     def set_text(self, text):
         ''' Set the text of the TextBox'''
         self._text = text
-        self.lines = text.split('\n')
+        self._lines = text.split('\n')
+
+        if self._is_dynamic:
+            self._set_dim_as_to_text()
+
+    def _set_dim_as_to_text(self):
+        '''
+        Set the dim of the instance according to the text.
+        '''
+        biggest_line = ' ' + max(self._lines, key=len) + ' '
+        width, height = self.font['font'].size(biggest_line)
+
+        dim = [
+            width + 2 * self._rs_marge_text,
+            len(self._lines) * (height + 1 * self._rs_marge_text)
+        ]
+
+        # add a bit more marges
+        dim[1] += 2 * self._rs_marge_text
+
+        self.set_dim(dim)
 
     def display_lines_text(self, surface=None, pos=None):
         '''
@@ -213,28 +237,28 @@ class TextBox(Form):
         if surface == None:
             surface = self.screen
 
-        if pos == None:
+        if pos is None:
             pos = self._sc_pos
 
         # split the box in n part for n lines
-        y_line = round(self._sc_dim[1]/len(self.lines))
+        y_line = round(self._sc_dim[1]/len(self._lines))
         
-        for i, line in enumerate(self.lines):
-            x_marge, y_marge = center_text((self._sc_dim[0],y_line), self.font['font'], line)
+        for i, line in enumerate(self._lines):
+            x_marge, y_marge = center_text((self._sc_dim[0], y_line), self.font['font'], line)
         
             if not self._centered:
                 x_marge = self._rs_marge_text
         
-            font_text = self.font['font'].render(line,True,self.text_color)
+            font_text = self.font['font'].render(line, True, self._text_color)
         
-            surface.blit(font_text,rl(pos[0] + x_marge, pos[1] + i * y_line + y_marge))
+            surface.blit(font_text, rl(pos[0] + x_marge, pos[1] + i * y_line + y_marge))
 
     def display(self, surface=None, pos=None):
         '''
         Display the TextBox  
         If a surface is specified, display on it, else display on the screen.
         '''
-        super().display(marge=self.as_marge, surface=surface, pos=pos)
+        super().display(marge=self._as_marge, surface=surface, pos=pos)
 
         self.display_lines_text(surface=surface, pos=pos)
 

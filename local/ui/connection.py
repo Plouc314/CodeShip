@@ -49,7 +49,7 @@ text_password = TextBox(Spec.DIM_MEDIUM_TEXT, POS_PASS,
 
 input_username = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_USER, font=Font.f(40))
 
-input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(40))
+input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(40), cache=True)
 
 button_done = Button(Spec.DIM_MEDIUM_BUTTON, POS_DONE, color=C.LIGHT_BLUE,
                     text="Done", font=Font.f(30))

@@ -19,20 +19,28 @@ class Spec:
     # block dimension
     SIZE_BLOCK = 100
     SIZE_TURRET = 80
-    DIM_BLOCK = np.array([100, 100], dtype='int16')
-    DIM_ITEM = np.array([70, 70], dtype='int16')
-    DIM_TURRET = np.array([80, 80], dtype='int16')
-    DIM_BULLET = np.array([20,20], dtype='int16')
+    DIM_BLOCK = np.array([100, 100])
+    DIM_ITEM = np.array([70, 70])
+    DIM_TURRET = np.array([80, 80])
+    DIM_BULLET = np.array([20,20])
     DIM_BLOCK_MARGE = 10
     
     # signal
-    DIM_SIGNAL = np.array([20,20], dtype='int16')
-    POS_SIGNAL = np.array([10,10], dtype='int16')
+    DIM_SIGNAL = np.array([20,20])
+    POS_SIGNAL = np.array([10,10])
 
     # grid dimension
     SIZE_GRID_SHIP = 6
-    SHAPE_GRID_SHIP = np.array([6,6], dtype='int16')
+    SHAPE_GRID_SHIP = np.array([6,6])
     DIM_SHIP = SHAPE_GRID_SHIP * DIM_BLOCK[0]
+
+    # ship config
+    CREDITS_TOTAL = 1000
+    PRICE_BLOCK = 40
+    PRICE_ENGINE = 70
+    PRICE_GENERATOR = 70
+    PRICE_SHIELD = 60
+    PRICE_TURRET = 90
 
     # ship movement
     MAX_CIRCULAR_ACC = 0.00025 # rad
@@ -52,8 +60,8 @@ class Spec:
     SPEED_BULLET = 40
     
     # explosion
-    DIM_MAX_EXPL = np.array([60,60], dtype='int16')
-    DIM_MIN_EXPL = np.array([20,20], dtype='int16')
+    DIM_MAX_EXPL = np.array([60,60])
+    DIM_MIN_EXPL = np.array([20,20])
     TIME_EXPL = 3 # frame
 
 
@@ -62,21 +70,21 @@ class Spec:
     CENTER_X = 1600
     CENTER_Y = 800
 
-    POS_TITLE = np.array([1400, 100], dtype='int16')
-    DIM_TITLE = np.array([400,100], dtype='int16')
+    POS_TITLE = np.array([1400, 100])
+    DIM_TITLE = np.array([400,100])
 
-    DIM_BIG_TEXT = np.array([400,80], dtype='int16')
-    DIM_MEDIUM_TEXT = np.array([400,60], dtype='int16')
-    DIM_SMALL_TEXT = np.array([400,40], dtype='int16')
+    DIM_BIG_TEXT = np.array([400,80])
+    DIM_MEDIUM_TEXT = np.array([400,60])
+    DIM_SMALL_TEXT = np.array([400,40])
 
-    DIM_BIG_BUTTON = np.array([320,80], dtype='int16')
-    DIM_MEDIUM_BUTTON = np.array([240,60], dtype='int16')
-    DIM_SMALL_BUTTON = np.array([200,40], dtype='int16')
+    DIM_BIG_BUTTON = np.array([320,80])
+    DIM_MEDIUM_BUTTON = np.array([240,60])
+    DIM_SMALL_BUTTON = np.array([200,40])
 
-    DIM_CHAT = np.array([1000,600], dtype='int16')
-    DIM_NOTIF = np.array([30,30], dtype='int16')
+    DIM_CHAT = np.array([1000,600])
+    DIM_NOTIF = np.array([30,30])
 
-    DIM_ICON = np.array([40,40], dtype='int16')
+    DIM_ICON = np.array([40,40])
 
     # page names
     PAGE_MENU = "menu"

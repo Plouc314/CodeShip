@@ -1,5 +1,6 @@
 from .aux import Dimension
 from .components import Button, InputText, ScrollList
+from .interface import Interface
 
 class Page:
     '''
@@ -13,7 +14,9 @@ class Page:
     
     Methods:
     - add_component: Add a component to the page
+    - remove_component: Remove a component from the page
     - get_component: Get the specified component
+    - has_component: Return if the page has the component
     - set_states_components: Set the states of one or more components
     - change_state: Change the active state of the page
     - go_back: Change the state to be the previous one
@@ -100,6 +103,9 @@ class Page:
         if self._in_states[new_state] != None:
             self._in_states[new_state]()
 
+        # for static interface, set frame to be displayed
+        Interface.set_frame_to_display()
+
     def set_in_state_func(self, state, func):
         '''
         Set a function that will be executed when getting in the specified state.
@@ -147,6 +153,12 @@ class Page:
 
         return self._components[name]['object']
 
+    def has_component(self, name):
+        '''
+        Return if the page has a component with the given name.
+        '''
+        return name in self._components.keys()
+
     def add_component(self, name, obj, active_states=None):
         '''
         Add a component to the page.  
@@ -176,18 +188,34 @@ class Page:
         if isinstance(comp_info['object'], SubPage):
             self._subpages[name] = comp_info
 
-        # look if object that react to events
-        elif type(comp_info['object']) == Button:
+        # must be done in this order, InputText is a subclass of Button
+        elif isinstance(comp_info['object'], InputText):
+            self._inputs[name] = comp_info
             
-            # add butto func attr
+        elif isinstance(comp_info['object'], Button):
+            # add button func attr
             comp_info['func'] = None
             self._buttons[name] = comp_info
         
-        elif type(comp_info['object']) == InputText:
-            self._inputs[name] = comp_info
-        
         elif isinstance(comp_info['object'], ScrollList):
             self._scrolls[name] = comp_info
+
+    def remove_component(self, name):
+        '''
+        Remove a component from the page.
+        '''
+        self._check_valid_name(name)
+
+        self._components.pop(name)
+
+        if name in self._subpages.keys():
+            self._subpages.pop(name)
+        elif name in self._buttons.keys():
+            self._buttons.pop(name)
+        elif name in self._inputs.keys():
+            self._inputs.pop(name)
+        elif name in self._scrolls.keys():
+            self._scrolls.pop(name)
 
     def add_button_logic(self, name, func):
         '''
@@ -266,6 +294,16 @@ class Page:
 
         obj.set_text(text)
 
+    def set_color(self, name, color, marge=False):
+        '''
+        Set the color of one of the component.
+        '''
+        self._check_valid_name(name)
+
+        obj = self._components[name]['object']
+
+        obj.set_color(color, marge=marge)
+
     def react_events(self, pressed, events):
         '''
         React to the user input of the current frame.  
@@ -317,7 +355,7 @@ class Page:
 
     def _get_active_comps(self, _dict=None, state=None):
         '''
-        Generator, yield component dicts of the active state.  
+        Return a list of all the selected components.    
         By default, the _dict is `self._components`.  
         If state is specified, use given state instead of active state.
         '''
@@ -327,9 +365,16 @@ class Page:
         if state == None:
             state = self._active_state
 
+        # does't yield element. because it produces an error 
+        # when a component is added/removed, 
+        # as the size of the dict change during its iteration
+        iterable = []
+
         for comp_info in _dict.values():
             if state in comp_info['active states']:
-                yield comp_info
+                iterable.append(comp_info)
+
+        return iterable
 
     def _check_valid_name(self, name, _dict=None):
         ''' 
@@ -359,6 +404,9 @@ class SubPage(Page):
         super().__init__(states, components, active_states=active_states)
 
         self.set_pos(pos)
+
+        # add instance to interface -> to replace Subpages
+        Interface._subpages.append(self)
         
     def set_pos(self, pos, is_scaled=False):
         '''

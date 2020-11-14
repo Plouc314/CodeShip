@@ -24,6 +24,7 @@ class Interface:
     running = True
 
     _gui_objects = [] # all gui objects, ex: button, form...
+    _subpages = [] # SubPages instances
     _resize_objects = [] # must have a on_resize(self, factor) method
 
     stats_display = 0
@@ -53,7 +54,10 @@ class Interface:
 
         infoObject = pygame.display.Info()
         x, y = infoObject.current_w, infoObject.current_h
-        fullscreen_dim = rl(Dimension.scale((x, y), factor=.96))
+
+        # rescale y -> top bar
+        y = round(y*.96)
+        fullscreen_dim = (x,y)
 
         cls.screen = pygame.display.set_mode(fullscreen_dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
         cls.screen.fill(cls.font_color)
@@ -206,6 +210,10 @@ class Interface:
             if hasattr(gui_obj, 'font'):
                 fontsize = gui_obj.font['size']
                 gui_obj.font = Font.f(fontsize)
+
+        # replace subpages
+        for subpage in cls._subpages:
+            subpage._sc_pos = Dimension.scale(subpage._unsc_pos)
 
         for rz_obj in cls._resize_objects:
             rz_obj.on_resize(scale_factor)

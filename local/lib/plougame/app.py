@@ -85,6 +85,9 @@ class Application:
         # look for in_page function
         if self._in_pages[name] != None:
             self._in_pages[name]()
+        
+        # for static interface, set frame to be displayed
+        Interface.set_frame_to_display()
 
     def go_back(self):
         '''

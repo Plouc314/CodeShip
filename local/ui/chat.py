@@ -16,20 +16,6 @@ DIM_SCROLL = (
     Spec.DIM_CHAT[1] - DIM_INPUT[1]
 )
 
-scroll = ScrollList(DIM_SCROLL, (0,0), [])
-
-input_msg = InputText(DIM_INPUT, (0, DIM_SCROLL[1]), 
-                pretext="Write message...", font=Font.f(25))
-
-button_send = Button(DIM_SEND, (DIM_INPUT[0], DIM_SCROLL[1]), 
-                color=C.LIGHT_BLUE, text='Send', font=Font.f(25))
-
-components = (
-    ('scroll', scroll),
-    ('i msg', input_msg),
-    ('b send', button_send)
-)
-
 class Chat(SubPage):
 
     def __init__(self, pos, general_chat=True, client=None):
@@ -39,6 +25,21 @@ class Chat(SubPage):
         self.is_general_chat = general_chat
         self.username = None
         self.client = client
+
+        # create components
+        scroll = ScrollList(DIM_SCROLL, (0,0), [])
+
+        input_msg = InputText(DIM_INPUT, (0, DIM_SCROLL[1]), 
+                        pretext="Write message...", font=Font.f(25))
+
+        button_send = Button(DIM_SEND, (DIM_INPUT[0], DIM_SCROLL[1]), 
+                        color=C.LIGHT_BLUE, text='Send', font=Font.f(25))
+
+        components = (
+            ('scroll', scroll),
+            ('i msg', input_msg),
+            ('b send', button_send)
+        )
 
         super().__init__(['base'], components, pos, active_states='all')
 

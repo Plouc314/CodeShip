@@ -91,8 +91,8 @@ input_userame = InputText(Spec.DIM_SMALL_TEXT, POS_USER, has_marge=False,
 button_send = Button(Spec.DIM_SMALL_BUTTON, POS_SEND, color=C.LIGHT_BLUE,
                 text="Send", font=Font.f(25))
 
-text_rdfr = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.DARK_RED,
-                font=Font.f(20), text_color=C.WHITE)
+text_rdfr = TextBox(None, POS_ERROR, color=C.DARK_RED,
+                font=Font.f(20), text_color=C.WHITE, dynamic_dim=True)
 
 states = ['base', 'add fr']
 

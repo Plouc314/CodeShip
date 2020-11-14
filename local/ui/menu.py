@@ -8,18 +8,19 @@ import numpy as np
 Y_TB = 100
 Y_TB2 = 200
 X_TB1 = 100
-X_TB2 = 550
+X_TB2 = 400
+X_TB3 = 700
 
-POS_CHAT = np.array([2000, 900], dtype='int16')
-POS_ERROR = np.array([X_TB1, Y_TB + 100], dtype='int16')
-POS_NOTIF = np.array([X_TB2 + 230, Y_TB-20], dtype='int16')
+POS_CHAT = np.array([2000, 900])
+POS_ERROR = np.array([X_TB1, Y_TB + 100])
+POS_NOTIF = np.array([X_TB2 + 230, Y_TB-20])
 
 ### Components ###
 
 title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
                             text="CodeShip", font=Font.f(80))
         
-text_error = TextBox(Spec.DIM_MEDIUM_TEXT, POS_ERROR, color=C.DARK_RED,
+text_error = TextBox(None, POS_ERROR, color=C.DARK_RED, dynamic_dim=True,
                     text="", font=Font.f(25), marge=True, text_color=C.WHITE)
 
 button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
@@ -28,13 +29,13 @@ button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
 button_logout = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB2), color=C.LIGHT_BLUE,
                     text="Log out", font=Font.f(40))
 
-text_username = TextBox(Spec.DIM_MEDIUM_TEXT, (X_TB1, Y_TB),
+text_username = TextBox(None, (X_TB1, Y_TB), dynamic_dim=True,
                     text="", font=Font.f(50), marge=True)
 
-button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB), color=C.LIGHT_BLUE,
+button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB2), color=C.LIGHT_BLUE,
                     text="Friends", font=Font.f(40))
 
-button_ship = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB2), color=C.LIGHT_BLUE,
+button_ship = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB3, Y_TB2), color=C.LIGHT_BLUE,
                     text="Ship editor", font=Font.f(40))
 
 notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE,

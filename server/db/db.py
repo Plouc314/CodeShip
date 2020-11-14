@@ -66,6 +66,13 @@ class DataBase:
         return cls.ships[username]
 
     @classmethod
+    def set_ship(cls, username, grid):
+        '''
+        Set the ship grid of a user
+        '''
+        cls.ships[username] = grid
+
+    @classmethod
     def add_user(cls, username, password):
         '''
         Try to add a new user to the dataframe.  

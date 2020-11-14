@@ -94,7 +94,8 @@ class Client(ClientTCP):
         username, arr = content.split(sep_c)
 
         arr = arr.split(sep_c2)
-        return np.array(arr, dtype=int)
+        arr = np.array(arr, dtype=int)
+        return arr.reshape(Spec.SHAPE_GRID_SHIP)
 
     def send_logout(self):
         '''
@@ -146,6 +147,22 @@ class Client(ClientTCP):
         '''
         self.send(f'rdfr{sep_m}{username}{sep_c}{int(response)}')
 
+    def send_ship_config(self, arr):
+        '''
+        Send the new ship of client.
+        ID: shcf
+        '''
+        msg = f'shcf{sep_m}'
+
+        for x in range(Spec.SIZE_GRID_SHIP):
+            for y in range(Spec.SIZE_GRID_SHIP):
+                msg += f'{arr[x,y]}{sep_c}'
+
+        # remove last sep
+        msg = msg[:-1]
+
+        self.send(msg)
+
 class ContextManager:
     '''
     Context manager used to get `in_data` content and free it after use.
@@ -161,6 +178,7 @@ class ContextManager:
             'rdfr': None,
             'dfr' :   [],
             'gc'  :   [],
+            'sh'  : None
         }
 
         # pass identifiers to list

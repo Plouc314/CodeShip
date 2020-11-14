@@ -66,7 +66,7 @@ class Form:
         '''
         Remove the instance from Interface's references, it won't be resized anymore.
         '''
-        self._interface.gui_objects.remove(self)
+        self._interface._gui_objects.remove(self)
 
     def get_pos(self, scaled=False):
         '''
