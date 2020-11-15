@@ -33,6 +33,7 @@ class Bullet(Form):
         self.rotate(get_deg(orien))
 
         self.orien = orien
+        self.mask = self.get_mask()
 
         if speed == None:
             self.speed = Spec.SPEED_BULLET
@@ -161,7 +162,7 @@ class BulletSystem:
         window_y = Dimension.get_y(scaled=True)
 
         for bullet in cls.bullets:
-            x, y = bullet.get_pos()
+            x, y = bullet.get_pos(scaled=True)
             
             if not (0 < y < window_y) or not (0 < x < window_x):
                 # remove bullet
@@ -182,13 +183,12 @@ class BulletSystem:
                     continue
 
                 pos_bullet = bullet.get_pos(scaled=True)
-                mask_bullet = bullet.get_mask()
 
                 pos_ship = ship.get_pos(scaled=True)
 
                 offset = np.array(pos_bullet - pos_ship, dtype='int32')
 
-                intersect = mask_ship.overlap(mask_bullet, offset)
+                intersect = mask_ship.overlap(bullet.mask, offset)
 
                 if not intersect is None: 
                     # collision occured

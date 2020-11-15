@@ -176,6 +176,7 @@ class Turret(Block):
         # in deg -> makes calculations easier
         self.target_angle = 0 # deg
         self.circular_speed = 0 # deg
+        self.is_rotating = False
 
         # blit the turret image on the surface -> can resize the image
         self.get_surface('original').blit(img_turret, (Spec.DIM_BLOCK-Spec.DIM_TURRET)//2)
@@ -195,12 +196,15 @@ class Turret(Block):
 
             if self.orien < 0:
                 self.orien += 360
+            elif self.orien > 360:
+                self.orien -= 360
 
             # check if the orientation is near to the target_angle
             low = self.target_angle - Spec.TURRET_MAX_SPEED
             high = self.target_angle + Spec.TURRET_MAX_SPEED
 
             if low <= self.orien <= high: # orien in bounds
+                self.is_rotating = False
                 self.orien = self.target_angle
                 self.circular_speed = 0
 
@@ -234,13 +238,12 @@ class Turret(Block):
         In game method.  
         Rotate the turret (at a certain speed) until reaching the target angle (deg).
         '''
+        self.is_rotating = True
         self.target_angle = angle
 
         # select the smallest path to the angle
-        orien = get_deg(self.orien)
-        
-        path1 = abs(orien - angle)
-        path2 = 360 - abs(orien - angle)
+        path1 = abs(self.orien - angle)
+        path2 = 360 - abs(self.orien - angle)
 
         if path1 < path2:
             self.circular_speed = Spec.TURRET_MAX_SPEED
@@ -252,6 +255,7 @@ class Turret(Block):
         Compute the position where the bullet should appear on the screen
         '''
         len_center_turret = np.sqrt(2*(Spec.SIZE_BLOCK//2)**2)
+        
         # compute turret center according to ship's orientation
         x = np.cos(self.ship.orien + np.pi/4) * len_center_turret
         y = np.sin(self.ship.orien + np.pi/4) * len_center_turret

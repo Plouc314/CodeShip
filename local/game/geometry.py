@@ -1,10 +1,10 @@
 import numpy as np
 
 def get_rad(angle):
-    return angle * np.pi / 180
+    return (angle * np.pi / 180) % (2 * np.pi)
 
 def get_deg(angle):
-    return angle * 180 / np.pi
+    return (angle * 180 / np.pi) % 360
 
 def get_polar(pos):
     r = np.sqrt(pos[0]**2 + pos[1]**2)
