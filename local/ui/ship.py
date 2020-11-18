@@ -1,5 +1,6 @@
 import pygame
 from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
+from ui.script_analyser import ScriptAnalyser
 from spec import Spec
 import numpy as np
 
@@ -91,10 +92,10 @@ Y_TB = 100
 X_TB1 = 100
 
 Y_GR = 330
-X_GR1 = 800
-X_GR2 = 990
+X_GR1 = 600
+X_GR2 = 790
 
-X_LB = 1720
+X_LB = 1520
 Y_LB1 = 400
 Y_LB2 = 570
 Y_LB3 = 740
@@ -104,8 +105,10 @@ Y_LB5 = 1080
 DIM_GR_BUTT = np.array([180, 60])
 DIM_GR_TEXT = np.array([280, 60])
 
-POS_GRID = np.array([800, 400])
-POS_INFO = np.array([800, 1320])
+POS_GRID = np.array([600, 400])
+POS_INFO = np.array([600, 1320])
+
+POS_SCRIPT = np.array([1800, 400])
 
 ### base ###
 
@@ -133,6 +136,8 @@ button_shield = Block((X_LB, Y_LB3), DIM_BLOCK, 3, color=C.LIGHT_GREEN)
 button_turret = Block((X_LB, Y_LB4), DIM_BLOCK, 4, color=C.LIGHT_GREEN)
 button_engine = Block((X_LB, Y_LB5), DIM_BLOCK, 5, color=C.LIGHT_GREEN)
 
+script_analyser = ScriptAnalyser(POS_SCRIPT)
+
 states = ['base', 'edit']
 
 components = [
@@ -146,7 +151,8 @@ components = [
     ('b generator', button_generator),
     ('b engine', button_engine),
     ('b shield', button_shield),
-    ('b turret', button_turret)
+    ('b turret', button_turret),
+    ('script analyser', script_analyser)
 ]
 
 map_credits = {
@@ -163,6 +169,8 @@ class Ship(Page):
     def __init__(self, client):
 
         self.client = client
+        script_analyser.client = client
+
         self.blocks = None
         self.credits = 0
 
@@ -172,7 +180,7 @@ class Ship(Page):
 
         super().__init__(states, components)
         
-        self.set_states_components(None, ['title', 'b back'])
+        self.set_states_components(None, ['title', 'b back', 'script analyser'])
         self.set_states_components('base', 'b edit')
         self.set_states_components('edit',
             ['b save', 't credits', 
@@ -236,6 +244,9 @@ class Ship(Page):
         if yes, set the ship conf
         '''
         self.change_display_state('t info', False)
+
+        # reset script analyser
+        self.get_component('script analyser').reset()
 
         with self.client.get_data('sh') as ship_arr:
 

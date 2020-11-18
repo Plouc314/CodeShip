@@ -6,7 +6,6 @@ from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
 from spec import Spec
 
-# grid: 1=base, 2=generator, 3=shield, 4=turret
 map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
 
 
@@ -66,6 +65,14 @@ class Ship:
             if np.all(block.coord == coord):
                 return block
 
+    def set_pos(self, pos, scaled=False):
+        '''
+        Set the position of the ship (ship's form).  
+        If `scaled=True`, the position will be scaled to the current window's dimension.
+        '''
+        self.pos[:] = pos
+        self.form.set_pos(self.pos, scale=scaled)
+
     def get_pos(self, scaled=False):
         '''
         Return the position of the ship (ship's form).  
@@ -77,9 +84,9 @@ class Ship:
         '''
         Return the pygame.mask.Mask object of the ship.
         '''
-        return self.form.get_mask()
+        return pygame.mask.from_surface(self.form.get_surface('main'))
 
-    def set_color(self):
+    def set_color(self, color):
         '''Set the color of the ship'''
         if self.has_blocks:
             self.color = color
@@ -88,10 +95,6 @@ class Ship:
                 block.set_color(self.color)
         else:
             self.color = color
-
-    def set_pos(self, pos: (int, int)):
-        '''Set the position of the ship'''
-        self.pos[:] = pos
 
     def set_blocks(self, grid):
         '''
@@ -136,6 +139,25 @@ class Ship:
         for block in self.blocks.values():
             self.typed_blocks[block.name].append(block)
 
+    def remove_block(self, block=None, index=None):
+        '''
+        Remove one of the blocks of the ship,  
+        given the block object or its index,  
+        compile the entire ship.
+        '''
+        if index:
+            block = self.blocks[index]
+
+            self.blocks.pop(index)
+        
+        else:
+            self.blocks = {key:item for key, item in self.blocks.items() if not item is block}
+
+        self.typed_blocks[block.name].remove(block)
+        block.delete()
+
+        self.compile()
+
     def update_block(self, block=None, index=None):
         '''
         Update one block of the ship form surface,  
@@ -148,7 +170,6 @@ class Ship:
         surf = block.compile()
 
         self.form.get_surface('original').blit(surf, pos)
-        self.form.set_surface(surface=self.form.get_surface('original'))
 
     def update_signal(self, block=None, index=None):
         '''
@@ -163,8 +184,6 @@ class Ship:
         
         # blit signal surf on form's surface
         signal.display(surface=self.form.get_surface('original'), pos=pos)
-
-        self.form.set_surface(surface=self.form.get_surface('original'))
 
     def compile(self):
         '''
@@ -222,6 +241,7 @@ class Ship:
         self.control_power_level()
         self.update_turrets()
         self.update_state()
+        self.run_blocks()
 
     def update_turrets(self):
         '''
@@ -242,12 +262,29 @@ class Ship:
         
         self.orien += self.circular_speed
         
+        # set correct main surface
+        self.form.set_surface(surface=self.form.get_surface('original'))
         self.rotate_surf(self.orien)
 
         x = np.cos(self.orien) * self.speed + self.pos[0]
         y = np.sin(self.orien) * self.speed + self.pos[1]
 
         self.pos[:] = (x, y)
+
+    def run_blocks(self):
+        '''
+        Call the run method of each block,  
+        check if the color of the block has changed
+        '''
+        for block in self.blocks.values():
+            block.run()
+            
+            if block.has_color_changed:
+                block.has_color_changed = False
+                self.update_block(block=block)
+                
+                if block.name != 'Block':
+                    self.update_signal(block=block)
 
     def compute_speed(self):
         '''Update the speed of the ship'''
@@ -278,7 +315,7 @@ class Ship:
         total_force = 0
         for block in self.typed_blocks['Engine']:
             total_force += block.get_engine_power()
-        
+
         # compute acceleration
         self.acc = (total_force - 2 * self.speed) / self.mass
 
@@ -321,7 +358,8 @@ class Ship:
     
     def get_coord(self, pos):
         '''
-        Given a position, return the coordinates of the corresponding block.
+        Given a position,  
+        return the coordinates of the corresponding block.
         '''
         # get distance to center of ship
         center = np.array(self.form.get_center(scale=True))
@@ -362,5 +400,10 @@ class Ship:
         block = self.get_block_by_coord(coord)
 
         if block:
-            block.is_active = False
-        
+
+            block.hit(bullet.damage)
+            
+            if block.hp <= 0:
+                self.remove_block(block=block)
+                
+

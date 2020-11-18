@@ -26,6 +26,7 @@ class DataBase:
         cls.df['dfr'].apply(mapper)
 
         cls.load_ships()
+        cls.load_scripts()
 
     @classmethod
     def load_ships(cls):
@@ -36,6 +37,19 @@ class DataBase:
             arr = np.load(f"db/data/ships/{user}.npy")
 
             cls.ships[user] = arr
+
+        cls.grid_shape = cls.ships[cls.df.index[0]].shape
+
+    @classmethod
+    def load_scripts(cls):
+        cls.scripts = {}
+
+        for user in cls.df.index:
+            # load script of every user
+            with open(f"db/data/scripts/{user}.txt", 'r') as file:
+                script = file.read()
+            
+            cls.scripts[user] = script
 
     @classmethod
     def store(cls):
@@ -52,11 +66,18 @@ class DataBase:
         cls.df.to_csv('db/data.csv')
 
         cls.store_ships()
+        cls.store_scripts()
 
     @classmethod
     def store_ships(cls):
         for user, arr in cls.ships.items():
             np.save(f"db/data/ships/{user}.npy", arr)
+
+    @classmethod
+    def store_scripts(cls):
+        for user, script in cls.scripts.items():
+            with open(f"db/data/scripts/{user}.txt", 'w') as file:
+                file.write(script)
 
     @classmethod
     def get_ship(cls, username):
@@ -73,6 +94,20 @@ class DataBase:
         cls.ships[username] = grid
 
     @classmethod
+    def set_script(cls, username, script):
+        '''
+        Set the script of a user
+        '''
+        cls.scripts[username] = script
+
+    @classmethod
+    def get_script(cls, username):
+        '''
+        Return the ship array of a user
+        '''
+        return cls.scripts[username]
+
+    @classmethod
     def add_user(cls, username, password):
         '''
         Try to add a new user to the dataframe.  
@@ -81,7 +116,11 @@ class DataBase:
         if cls.is_username(username):
             return False
         
-        cls.df.loc[username,:] = [password]
+        cls.df.loc[username,:] = [password,[],[],0]
+        
+        cls.ships[username] = np.zeros(cls.grid_shape)
+        cls.scripts[username] = ''
+
         return True
     
     @classmethod

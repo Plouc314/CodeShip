@@ -26,7 +26,9 @@ class Client(ClientTCP):
             'gc': self.general_chat,
             'dfr': self.demand_friend,
             'rdfr': self.response_demand_friend,
-            'shcf': self.ship_config
+            'shcf': self.ship_config,
+            'sc': self.save_script,
+            'sca': self.script_analysis
         }
 
     def on_disconnect(self, content=None):
@@ -67,6 +69,10 @@ class Client(ClientTCP):
         '''
         self._send_connected_friends()
         self._send_ship()
+
+        # script
+        script = DataBase.get_script(self.username)
+        self.send(f'sc{sep_m}{script}')
 
         # friend demands
         dfrs = DataBase.get_friend_demands(self.username)
@@ -224,6 +230,38 @@ class Client(ClientTCP):
         arr = np.array(arr, dtype=int).reshape((size, size))
 
         DataBase.set_ship(self.username, arr)
+
+    def save_script(self, content):
+        '''
+        Store the script
+        '''
+        DataBase.set_script(self.username, content)
+
+    def script_analysis(self, content):
+        '''
+        Analyse the script, look for cheating attempts.  
+        Send response to user.
+        '''
+        script = content
+        fine = True        
+
+        script = script.replace('  ', ' ')
+
+        maliscious_lines = [
+            'from API import',
+            'API._ships',
+            'API as',
+            'import game',
+            'from game.ship',
+            'from game.game'
+        ]
+
+        for line in maliscious_lines:
+            if script.find(line) != -1:
+                fine = False
+                break
+
+        self.send(f'rsca{sep_m}{int(fine)}')
 
     def print(self, string):
         '''

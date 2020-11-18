@@ -7,14 +7,16 @@ from spec import Spec
 
 class API:
 
+    _ships = {'own':None, 'opp':None}
+
     @classmethod
     def set_ship(cls, ship):
-        cls._ship = ship
+        cls._ships['own'] = ship
         Ship._set_blocks()
 
     @classmethod
     def set_opponent_ship(cls, ship):
-        cls._opponent_ship = ship
+        cls._ships['opp'] = ship
         Opponent._set_blocks()
 
 class Block:
@@ -24,26 +26,32 @@ class Block:
     def __init__(self, key, team):
         self.key = key
 
-        if team == 'own':
-            self._ship = API._ship
+        if team in API._ships.keys():
+            self.team = team
         else:
-            self._ship = API._opponent_ship
+            raise KeyError
 
     def activate(self):
         '''Activate the block.'''
-        self._ship.blocks[self.key].is_active = True
+        if self.team == 'opp': 
+            raise ValueError("Try to give order to opponent ship.")
+
+        API._ships[self.team].blocks[self.key].is_active = True
     
     def deactivate(self):
         '''Deactivate the block.'''
-        self._ship.blocks[self.key].is_active = False
+        if self.team == 'opp': 
+            raise ValueError("Try to give order to opponent ship.")
+
+        API._ships[self.team].blocks[self.key].is_active = False
 
     def get_hp(self):
         '''Return the amound of hp of the block.'''
-        return self._ship.blocks[self.key].hp
+        return API._ships[self.team].blocks[self.key].hp
 
     def get_power_output(self):
         '''Return the power output of the block.'''
-        return self._ship.blocks[self.key].get_power_output()
+        return API._ships[self.team].blocks[self.key].get_power_output()
 
     def __repr__(self):
         return f'{self.name} API Object key:{self.key}'
@@ -73,7 +81,7 @@ class Turret(Block):
         '''
         Return if the turret is rotating.
         '''
-        return self._ship.blocks[self.key].is_rotating
+        return API._ships[self.team].blocks[self.key].is_rotating
 
     def rotate(self, target_angle: int):
         '''
@@ -86,7 +94,10 @@ class Turret(Block):
         `target_angle: int (degree)`  
         The angle up to which the turret will rotate.
         '''
-        self._ship.blocks[self.key].rotate(target_angle)
+        if self.team == 'opp': 
+            raise ValueError("Try to give order to opponent ship.")
+
+        API._ships[self.team].blocks[self.key].rotate(target_angle)
 
 class Engine(Block):
 
@@ -104,7 +115,10 @@ class Engine(Block):
         `value: float`  
         The intensity of the engine, between 0 and 1.
         '''
-        self._ship.blocks[self.key].activation_per = value
+        if self.team == 'opp': 
+            raise ValueError("Try to give order to opponent ship.")
+        
+        API._ships[self.team].blocks[self.key].activation_per = value
 
 map_block = {
     'Block':Block, 
@@ -130,7 +144,7 @@ class Ship:
             'Turret':[]
         }
 
-        for key, block in API._ship.blocks.items():
+        for key, block in API._ships['own'].blocks.items():
             api_block = map_block[block.name](key, 'own')
             
             cls.blocks.append(api_block)
@@ -155,8 +169,26 @@ class Ship:
     @classmethod
     def get_speed(cls):
         ''' Return the speed of the ship. '''
-        return API._ship.speed
+        return API._ships['own'].speed
     
+    @classmethod
+    def get_position(cls):
+        '''
+        Return the position of the center of the ship.  
+        The position coordinates will fall between `[0,0]` and `[3200,1600]`.
+        '''
+        return API._ships['own'].form.get_center()
+
+    @classmethod
+    def get_power_level(cls):
+        '''
+        Return the power level of the ship.  
+        The power level is the sum of the power output of all the blocks,
+        if the power level drops bellow 0, some blocks will randomly be deactivate.  
+        To change the power level of a block, call the `activate` or `deactivate` methods of the block.
+        '''
+        return API._ships['own'].get_power_level()
+
     @classmethod
     def set_power_engines(cls, value):
         '''
@@ -170,7 +202,7 @@ class Ship:
         '''
         engines = cls.typed_blocks['Engine']
 
-        if type(value) == float:
+        if type(value) == float or type(value) == int:
             for engine in engines:
                 engine.set_power_level(value)
         
@@ -188,17 +220,36 @@ class Opponent:
         '''
         cls.blocks = []
 
-        for key, block in API._opponent_ship.blocks.items():
+        for key, block in API._ships['opp'].blocks.items():
             api_block = map_block[block.name](key, 'opp')
             
             cls.blocks.append(api_block)
 
     @classmethod
-    def get_blocks(cls):
-        ''' Return all the blocks of the ship.'''
-        return cls.blocks
+    def get_blocks(cls, type:str=None):
+        ''' 
+        Return the blocks of the ship.
+
+        Parameters
+        ------
+        `type: str`    
+        Can specify a type, can be one of those: `Block`, `Generator`, `Engine`, `Shield`, `Turret`.  
+        In that case, return all the blocks of the specified type.
+        '''
+        if type == None:
+            return cls.blocks
+        else:
+            return cls.typed_blocks[type]
     
     @classmethod
     def get_speed(cls):
         ''' Return the speed of the ship. '''
-        return API._opponent_ship.speed
+        return API._ships['opp'].speed
+    
+    @classmethod
+    def get_position(cls):
+        '''
+        Return the position of the center of the ship.  
+        The position coordinates will fall between `[0,0]` and `[3200,1600]`.
+        '''
+        return API._ships['opp'].form.get_center()

@@ -5,7 +5,7 @@ import numpy as np
 
 sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
 
-class Client(ClientTCP):
+class UIClient(ClientTCP):
 
     def __init__(self, addr, connect=False):
 
@@ -21,6 +21,8 @@ class Client(ClientTCP):
             'dfr' :   [], # friend demands (from other users) 
             'gc'  :   [], # message on general chat
             'sh'  : None, # ship array
+            'sc'  : None, # script
+            'rsca': None, # result of script analyse
         }
 
         # store the identifiers of the comm as key
@@ -32,7 +34,9 @@ class Client(ClientTCP):
             'rdfr': lambda x: int(x),
             'dfr' : lambda x: x,
             'gc'  : self.on_general_chat,
-            'sh'  : self.on_ship
+            'sh'  : self.on_ship,
+            'sc'  : lambda x: x,
+            'rsca': lambda x: int(x)
         }
 
     def connect(self):
@@ -55,8 +59,10 @@ class Client(ClientTCP):
         Split the identifier and content of the message.  
         Store the content in the designated container.
         '''
-        print('[SERVER]',msg)
         identifier, content = msg.split(sep_m)
+
+        if identifier != "sc":
+            print('[SERVER]', msg)
 
         content = self.processes[identifier](content)
 
@@ -163,6 +169,20 @@ class Client(ClientTCP):
 
         self.send(msg)
 
+    def send_script(self, script, analysis=False):
+        '''
+        Send the script stored on the local file to the server.  
+        If analysis=True, send script for analysis -> will receive a response
+        ID: sc/sca
+        '''
+        if analysis:
+            identifier = 'sca'
+        else:
+            identifier = 'sc'
+
+        self.send(f'{identifier}{sep_m}{script}')
+
+
 class ContextManager:
     '''
     Context manager used to get `in_data` content and free it after use.
@@ -178,7 +198,9 @@ class ContextManager:
             'rdfr': None,
             'dfr' :   [],
             'gc'  :   [],
-            'sh'  : None
+            'sh'  : None,
+            'sc'  : None,
+            'rsca': None
         }
 
         # pass identifiers to list
