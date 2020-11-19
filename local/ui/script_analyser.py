@@ -1,5 +1,6 @@
 import pygame
 from lib.plougame import SubPage, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
+from game.game import Game
 from spec import Spec
 import numpy as np
 import importlib, traceback, time
@@ -8,14 +9,16 @@ DIM_CADRE = np.array([1100, 900])
 POS_TITLE = np.array([350, 30])
 
 Y_BAR = 130
-X_BAR1 = 95
-X_BAR2 = 430
-X_BAR3 = 765
+X_BAR1 = 20
+X_BAR2 = 280
+X_BAR3 = 540
+X_BAR4 = 800
 
 POS_ERROR = np.array([30, 210])
 POS_T_TB = np.array([30, 250])
 POS_TB = np.array([0, 310])
 DIM_TB = np.array([1100, 590])
+DIM_STATUS = np.array([280, 60])
 
 # components
 
@@ -33,6 +36,9 @@ button_load = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR2, Y_BAR),
 button_save = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR3, Y_BAR), 
                 color=C.LIGHT_BLUE, text="Save", font=Font.f(30))
 
+text_status = TextBox(DIM_STATUS, (X_BAR4, Y_BAR),
+                font=Font.f(30), text_color=C.WHITE)
+
 text_info = TextBox((0,0), POS_ERROR, dynamic_dim=True,
                 font=Font.f(25), text_color=C.WHITE)
 
@@ -48,6 +54,7 @@ components = [
     ('b analyse', button_analyse),
     ('b load', button_load),
     ('b save', button_save),
+    ('t status', text_status),
     ('title tb', title_traceback),
     ('t tb', text_traceback),
     ('t info', text_info)
@@ -63,15 +70,36 @@ class ScriptAnalyser(SubPage):
 
         self.client = None
         self.n_tb_lines = 12
+        self.script_status = False
+
+        # create game object -> test script
+        self.game = Game(None)
+        self.grid = None
 
         # store script module -> know if need to load or reload module
         self.script_module = None
 
-        self.set_states_components(None, ['cadre', 'title', 'b analyse', 'b load', 'b save'])
+        self.set_states_components(None, ['cadre', 'title', 'b analyse', 'b load', 'b save', 't status'])
     
         self.add_button_logic('b analyse', self.b_analyse)
         self.add_button_logic('b save', self.b_save)
         self.add_button_logic('b load', self.b_load)
+
+    def in_base(self):
+        '''
+        Set the script status,  
+        Reset texts
+        '''
+        self.reset()
+
+        with self.client.get_data('scst') as status:
+
+            if status == 1:
+                self.script_status = True
+            elif status == 0:
+                self.script_status = False
+
+        self.set_status_text()
 
     def b_save(self):
         '''Send script to server, set info text'''
@@ -81,6 +109,7 @@ class ScriptAnalyser(SubPage):
             script = file.read()
 
         self.client.send_script(script)
+        self.client.send_script_status(self.script_status)
 
         # set info text
         self.change_display_state('t info', True)
@@ -107,6 +136,9 @@ class ScriptAnalyser(SubPage):
 
         success = self.analyse_cheat()
         success &= self.analyse_errors()
+
+        self.script_status = success
+        self.set_status_text()
 
         if success:
             self.set_success_text()
@@ -164,6 +196,16 @@ class ScriptAnalyser(SubPage):
             self.set_error('import', tb_lines)
             return False
         
+        # try runtime script
+        is_error, infos = self.game.test_script(self.grid, self.script_module)
+
+        if is_error:
+            error_type, error_msg, tb_lines = infos
+            tb_lines.append(f'{error_type}: {error_msg}')
+
+            self.set_error('runtime', tb_lines)
+            return False
+
         return True
 
     def set_success_text(self):
@@ -231,6 +273,17 @@ class ScriptAnalyser(SubPage):
 
         self.set_text('t tb', string)
     
+    def set_status_text(self):
+        '''
+        Set the text of text_status depending on the current status
+        '''
+        if self.script_status:
+            self.set_text('t status', 'Ready.')
+            self.set_color('t status', C.DARK_GREEN)
+        else:
+            self.set_text('t status', 'Not ready.')
+            self.set_color('t status', C.DARK_RED)
+            
     def reset(self):
         '''
         Reset the texts

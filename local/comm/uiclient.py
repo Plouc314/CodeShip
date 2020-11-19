@@ -22,6 +22,7 @@ class UIClient(ClientTCP):
             'gc'  :   [], # message on general chat
             'sh'  : None, # ship array
             'sc'  : None, # script
+            'scst': None, # script status (if it's ready or not)
             'rsca': None, # result of script analyse
         }
 
@@ -36,7 +37,8 @@ class UIClient(ClientTCP):
             'gc'  : self.on_general_chat,
             'sh'  : self.on_ship,
             'sc'  : lambda x: x,
-            'rsca': lambda x: int(x)
+            'scst': lambda x: int(x),
+            'rsca': lambda x: int(x),
         }
 
     def connect(self):
@@ -182,6 +184,11 @@ class UIClient(ClientTCP):
 
         self.send(f'{identifier}{sep_m}{script}')
 
+    def send_script_status(self, status):
+        '''
+        Send the status of the script
+        '''
+        self.send(f'scst{sep_m}{int(status)}')
 
 class ContextManager:
     '''
@@ -200,6 +207,7 @@ class ContextManager:
             'gc'  :   [],
             'sh'  : None,
             'sc'  : None,
+            'scst': None,
             'rsca': None
         }
 

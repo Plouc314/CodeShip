@@ -103,9 +103,23 @@ class DataBase:
     @classmethod
     def get_script(cls, username):
         '''
-        Return the ship array of a user
+        Return the script of a user
         '''
         return cls.scripts[username]
+
+    @classmethod
+    def set_script_status(cls, username, script_status):
+        '''
+        Set the script status of a user
+        '''
+        cls.df.loc[username, 'scriptstatus'] = int(script_status)
+
+    @classmethod
+    def get_script_status(cls, username):
+        '''
+        Return the script status of a user
+        '''
+        return cls.df.loc[username, 'scriptstatus']
 
     @classmethod
     def add_user(cls, username, password):

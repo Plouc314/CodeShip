@@ -223,7 +223,7 @@ class Ship:
 
     def rotate_surf(self, angle: float):
         '''
-        Rotate the ship's surface of a given angle (rad).  
+        Rotate the ship's surface to a given angle (rad).  
         '''
         # converts the angle into radian
         angle = -get_deg(angle)

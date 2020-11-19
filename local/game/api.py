@@ -99,6 +99,21 @@ class Turret(Block):
 
         API._ships[self.team].blocks[self.key].rotate(target_angle)
 
+    def get_orientation(self):
+        '''Return the orientation of the turret (degree)'''
+        return API._ships[self.team].blocks[self.key].orien
+
+    def fire(self):
+        '''
+        Make the turret fire.  
+        To be able to fire, the turret needs to be activated,
+        and the fire delay needs to be écoulé (turret can't fire at each frame)
+        '''
+        if self.team == 'opp': 
+            raise ValueError("Try to give order to opponent ship.")
+
+        API._ships[self.team].blocks[self.key].fire()
+
 class Engine(Block):
 
     name = 'Engine'
@@ -171,6 +186,18 @@ class Ship:
         ''' Return the speed of the ship. '''
         return API._ships['own'].speed
     
+    @classmethod
+    def get_acceleration(cls):
+        '''Return the acceleration of the ship'''
+        return API._ships['own'].acc
+
+    @classmethod
+    def get_orientation(cls):
+        '''
+        Return the orientation of the ship (in radian)
+        '''
+        return API._ship['own'].orien
+
     @classmethod
     def get_position(cls):
         '''
@@ -246,6 +273,18 @@ class Opponent:
         ''' Return the speed of the ship. '''
         return API._ships['opp'].speed
     
+    @classmethod
+    def get_acceleration(cls):
+        '''Return the acceleration of the ship'''
+        return API._ships['opp'].acc
+
+    @classmethod
+    def get_orientation(cls):
+        '''
+        Return the orientation of the ship (in radian)
+        '''
+        return API._ship['opp'].orien
+
     @classmethod
     def get_position(cls):
         '''

@@ -6,9 +6,13 @@ import threading
 
 class Server(ServerTCP):
 
-    def __init__(self):
+    def __init__(self, queue):
 
         super().__init__(Spec.PORT)
+
+        # queue used to communicate with the udp server
+        self.queue = queue
+        Client.queue = queue
 
         self.clients = {} # key: ip 
         self.threads = {} # key: ip 

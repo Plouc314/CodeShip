@@ -201,6 +201,8 @@ class Ship(Page):
         Set the grid of the ship (a np.ndarray)
         '''
         self.grid = grid
+        self.get_component('script analyser').grid = grid        
+
         self._create_blocks()
         self._set_credits()
 
@@ -246,7 +248,7 @@ class Ship(Page):
         self.change_display_state('t info', False)
 
         # reset script analyser
-        self.get_component('script analyser').reset()
+        self.get_component('script analyser').in_base()
 
         with self.client.get_data('sh') as ship_arr:
 

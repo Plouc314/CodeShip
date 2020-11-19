@@ -315,10 +315,10 @@ class Turret(Block):
         self.target_angle = angle
 
         # select the smallest path to the angle
-        path1 = abs(self.orien - angle)
+        path1 = (abs(self.orien - 360) + angle) % 360
         path2 = 360 - abs(self.orien - angle)
 
-        if path1 < path2:
+        if path1 <= path2:
             self.circular_speed = Spec.TURRET_MAX_SPEED
         else:
             self.circular_speed = -Spec.TURRET_MAX_SPEED
@@ -371,6 +371,7 @@ class Turret(Block):
         '''
         If possible, fire a bullet -> add it in the bulletsystem.
         '''
+
         if not self.active:
             return
         
@@ -379,7 +380,7 @@ class Turret(Block):
             self.fire_delay = 0
 
             BulletSystem.add_bullet(self.create_bullet())
-    
+
     def set_color(self, color):
         '''
         Set the color of the block, set a call to update color 

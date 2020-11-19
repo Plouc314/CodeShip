@@ -10,6 +10,9 @@ sep_c2 = Spec.SEP_CONTENT2
 
 class Client(ClientTCP):
 
+    # queue used to communicate with the udp server
+    queue = None
+
     def __init__(self, conn, addr):
 
         super().__init__(conn, addr)
@@ -28,6 +31,7 @@ class Client(ClientTCP):
             'rdfr': self.response_demand_friend,
             'shcf': self.ship_config,
             'sc': self.save_script,
+            'scst': self.set_script_status,
             'sca': self.script_analysis
         }
 
@@ -73,6 +77,9 @@ class Client(ClientTCP):
         # script
         script = DataBase.get_script(self.username)
         self.send(f'sc{sep_m}{script}')
+
+        script_status = DataBase.get_script_status(self.username)
+        self.send(f'scst{sep_m}{script_status}')
 
         # friend demands
         dfrs = DataBase.get_friend_demands(self.username)
@@ -262,6 +269,12 @@ class Client(ClientTCP):
                 break
 
         self.send(f'rsca{sep_m}{int(fine)}')
+
+    def set_script_status(self, content):
+        '''
+        Set the status of the user script.
+        '''
+        DataBase.set_script_status(self.username, int(content))
 
     def print(self, string):
         '''

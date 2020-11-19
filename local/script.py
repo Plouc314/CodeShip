@@ -7,16 +7,41 @@ it will be run at each frame and will control the ship.
 from game.api import API, Block, Generator, Shield, Turret, Ship, Opponent
 import random
 
-i = 0
-
 def main():
-    global i
-    i += 1
-    if i % 10 == 0:
-        turrets = Ship.get_blocks(type='Turret')
 
-        for turret in turrets:
+    opp_pos = Opponent.get_position()
+    own_pos = Ship.get_position()
 
-            if not turret.is_rotating():
-                turret.rotate(random.randint(0, 360))
-        
+    dist = ((opp_pos[0] - own_pos[0])**2 + (opp_pos[1] - own_pos[1])**2)**0.5
+
+    if dist < 1000:
+        Ship.set_power_engines(0)
+
+    # fire turrets
+    turrets = Ship.get_blocks("Turret")
+
+    for turret in turrets:
+        turret.fire()
+
+        if not turret.is_rotating():
+
+            if turret.get_orientation() == 315:
+                turret.rotate(60)
+            else:
+                turret.rotate(315)
+
+
+
+#class Obj:
+#    def __init__(self, a):
+#        self.a = int(a)
+#
+#def foo():
+#    def r():
+#        Obj('a')
+#    return r
+#def a():
+#    b()
+#def b():
+#    foo()()
+#a()

@@ -52,7 +52,7 @@ class Spec:
     POWER_CONS = 10
     POWER_CONS_MOTOR = 20
     MOTOR_POWER = 10
-    TURRET_FIRE_DELAY = 40
+    TURRET_FIRE_DELAY = 20
     TURRET_MAX_SPEED = 2 # deg
 
     # bullet
