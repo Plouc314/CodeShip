@@ -56,7 +56,7 @@ class Interface:
         x, y = infoObject.current_w, infoObject.current_h
 
         # rescale y -> top bar
-        y = round(y*.96)
+        #y = round(y*.98)
         fullscreen_dim = (x,y)
 
         cls.screen = pygame.display.set_mode(fullscreen_dim, HWSURFACE|DOUBLEBUF|RESIZABLE)

@@ -144,7 +144,7 @@ class Form:
 
     def rotate(self, angle: int, *, rotate_font=True):
         '''
-        Rotate the main surface of a given angle (degree).  
+        Rotate the main surface to a given angle (degree).  
         The original surface isn't touched, to keep sharpness.
     
         Args: rotate_font: if a font as been specified, if it has to be rotated

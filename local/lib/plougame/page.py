@@ -365,7 +365,7 @@ class Page:
         if state == None:
             state = self._active_state
 
-        # does't yield element. because it produces an error 
+        # doesn't yield element, because it produces an error 
         # when a component is added/removed, 
         # as the size of the dict change during its iteration
         iterable = []
