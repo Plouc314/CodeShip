@@ -41,3 +41,9 @@ class Server(ServerUDP):
             if msg == "stop":
                 self.running = False
                 break
+
+            # connect to user to each other
+            ip1, ip2 = msg
+
+            self.clients[ip1].opp_client = self.clients[ip2]
+            self.clients[ip2].opp_client = self.clients[ip1]

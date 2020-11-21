@@ -10,9 +10,6 @@ sep_c2 = Spec.SEP_CONTENT2
 
 class Client(ClientTCP):
 
-    # queue used to communicate with the udp server
-    queue = None
-
     def __init__(self, conn, addr):
 
         super().__init__(conn, addr)
@@ -32,7 +29,8 @@ class Client(ClientTCP):
             'shcf': self.ship_config,
             'sc': self.save_script,
             'scst': self.set_script_status,
-            'sca': self.script_analysis
+            'sca': self.script_analysis,
+            'wg': self.set_waiting_game_state
         }
 
     def on_disconnect(self, content=None):
@@ -78,6 +76,7 @@ class Client(ClientTCP):
         script = DataBase.get_script(self.username)
         self.send(f'sc{sep_m}{script}')
 
+        # script status
         script_status = DataBase.get_script_status(self.username)
         self.send(f'scst{sep_m}{script_status}')
 
@@ -117,19 +116,54 @@ class Client(ClientTCP):
         if len(friends) != 0:
             self.send(msg)
 
-    def _send_ship(self):
-        '''Send the ship array of client to client'''
+    def format_ship_grid(self):
+        '''
+        Return the ship grid formated as a string,  
+        separated by `SEP_CONTENT2`
+        '''
         arr = DataBase.get_ship(self.username)
-        msg = f'sh{sep_m}{self.username}{sep_c}'
+        string = ''
 
         for x in range(arr.shape[0]):
             for y in range(arr.shape[1]):
-                msg += f'{arr[x,y]}{sep_c2}'
+                string += f'{arr[x,y]}{sep_c2}'
 
         # remove last sep
-        msg = msg[:-1]
+        string = string[:-1]
+
+        return string
+
+    def _send_ship(self):
+        '''
+        Send the ship grid and ship status
+        '''
+
+        # ship grid
+        msg = f'sh{sep_m}'
+        msg += self.format_ship_grid()
 
         self.send(msg)
+
+        # ship status
+        status = DataBase.get_ship_status(self.username)
+        self.send(f'shst{sep_m}{status}')
+
+    def send_enter_game(self, opp_client):
+        '''
+        Send to client that he's entering in a game.
+        '''
+        # notify in game | opponent username
+        self.send(f'ign{sep_m}{opp_client.username}')
+
+        # send script
+        script = DataBase.get_script(self.username)
+        self.send(f'sc{sep_m}{script}')
+
+        # send opp ship grid
+        self.send(f'igsh{sep_m}{opp_client.format_ship_grid()}')
+
+        # send own ship grid
+        self.send(f'sh{sep_m}{self.format_ship_grid()}')
 
     def on_message(self, msg):
         '''
@@ -139,7 +173,17 @@ class Client(ClientTCP):
         identifier, content = msg.split(sep_m)
 
         self.identifiers[identifier](content)
-    
+
+        if identifier in ["sc","sca"]:
+            return
+            
+        if self.username != None:
+            _id = self.username
+        else:
+            _id = self.ip
+
+        print(f'[TCP] |{_id}| {msg}')
+
     def login(self, content):
         '''
         Log the user in.  
@@ -227,7 +271,8 @@ class Client(ClientTCP):
             
     def ship_config(self, content):
         '''
-        Store the new ship config of the client
+        Store the new ship config of the client,  
+        Store the ship status, send it to the client
         '''
         arr = content.split(sep_c)
 
@@ -237,6 +282,9 @@ class Client(ClientTCP):
         arr = np.array(arr, dtype=int).reshape((size, size))
 
         DataBase.set_ship(self.username, arr)
+        DataBase.set_ship_status(self.username, 1)
+
+        self.send(f'shst{sep_m}1')
 
     def save_script(self, content):
         '''
@@ -275,6 +323,21 @@ class Client(ClientTCP):
         Set the status of the user script.
         '''
         DataBase.set_script_status(self.username, int(content))
+
+        # send status back to user
+        self.send(f'scst{sep_m}{content}')
+
+    def set_ship_status(self, content):
+        '''
+        Set the status of the user ship.
+        '''
+        DataBase.set_ship_status(self.username, int(content))
+
+    def set_waiting_game_state(self, content):
+        '''
+        Set if the user is waiting to enter a game.
+        '''
+        Interaction.set_user_waiting_game(self.username, int(content))
 
     def print(self, string):
         '''

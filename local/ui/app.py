@@ -4,14 +4,18 @@ from ui.menu import Menu
 from ui.friends import Friends
 from ui.ship import Ship
 from spec import Spec
-
+import time
 
 class App(Application):
 
-    def __init__(self, client):
+    def __init__(self, client, game):
 
         self.client = client
+        self.game = game
+        
         self.username = None
+        self.in_game = False
+        self.opponent = None
 
         pages = [
             (Spec.PAGE_MENU, Menu(client)),
@@ -28,6 +32,7 @@ class App(Application):
         self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
+        self.add_frame_function(self.look_game_notif, active_pages=Spec.PAGE_MENU)
 
         # set log out logic
         page_menu = self.get_page(Spec.PAGE_MENU)
@@ -141,3 +146,38 @@ class App(Application):
 
             for username in contents:
                 page_fr.set_demand_friend(username)
+    
+    def look_game_notif(self):
+        '''
+        Check if the user is entering in a game
+        '''
+        # look for notification
+        with self.client.get_data('ign') as username:
+
+            if username == None:
+                return
+            
+            self.in_game = True
+            self.opponent = username
+        
+        time.sleep(.1)
+
+        # if notified -> get opp's grid
+        with self.client.get_data('igsh') as grid:
+
+            opp_grid = grid
+        
+        with self.client.get_data('sh') as grid:
+
+            own_grid = grid
+        
+        # load & store script
+        script = self.client.in_data['sc']
+
+        with open('script.py', 'w') as file:
+            file.write(script)
+        
+        # set game
+        self.in_game = True
+        self.game.create_ships(own_grid, opp_grid)
+        self.game.setup_api()

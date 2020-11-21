@@ -92,12 +92,11 @@ class ScriptAnalyser(SubPage):
         '''
         self.reset()
 
-        with self.client.get_data('scst') as status:
+        # don't use context manager -> keep status stored for menu
+        status = self.client.in_data['scst']
 
-            if status == 1:
-                self.script_status = True
-            elif status == 0:
-                self.script_status = False
+        if status != None:
+            self.script_status = bool(status)
 
         self.set_status_text()
 
@@ -110,6 +109,7 @@ class ScriptAnalyser(SubPage):
 
         self.client.send_script(script)
         self.client.send_script_status(self.script_status)
+        self.set_status_text()
 
         # set info text
         self.change_display_state('t info', True)
@@ -138,7 +138,6 @@ class ScriptAnalyser(SubPage):
         success &= self.analyse_errors()
 
         self.script_status = success
-        self.set_status_text()
 
         if success:
             self.set_success_text()

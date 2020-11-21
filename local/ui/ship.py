@@ -214,8 +214,8 @@ class Ship(Page):
         Send the current ship config to the server
         '''
         if self._check_ship_integrity():
+            
             self.client.send_ship_config(self.grid)
-
             self.change_state('base')
             
             # set text info
@@ -250,6 +250,7 @@ class Ship(Page):
         # reset script analyser
         self.get_component('script analyser').in_base()
 
+        # set grid ship
         with self.client.get_data('sh') as ship_arr:
 
             if ship_arr is None:
@@ -431,7 +432,7 @@ class Ship(Page):
             if self.grid[x - 1, y] > 0:
                 return True
         
-        if x != 7:
+        if x != Spec.SIZE_GRID_SHIP - 1:
             if self.grid[x + 1, y] > 0:
                 return True
         
@@ -439,7 +440,7 @@ class Ship(Page):
             if self.grid[x, y - 1] > 0:
                 return True
         
-        if y != 7:
+        if y != Spec.SIZE_GRID_SHIP - 1:
             if self.grid[x, y + 1] > 0:
                 return True
         

@@ -11,8 +11,11 @@ class Interaction:
 
     Manage the interaction between the clients.
     '''
+    # queue used to communicate with the udp server
+    queue = None
 
     clients = {}
+    waiting_game = []
 
     @classmethod
     def send(cls, username, msg):
@@ -69,3 +72,45 @@ class Interaction:
         Send the friend demand to the requested user.
         '''
         cls.clients[target].send(f'dfr{sep_m}{sender}')
+
+    @classmethod
+    def set_user_waiting_game(cls, username, state):
+        '''
+        Set if the user is waiting to enter a game
+        '''
+        if state:
+            if not username in cls.waiting_game:
+                cls.waiting_game.append(username)
+            
+                cls.pair_user()
+
+        else:
+            if username in cls.waiting_game:
+                cls.waiting_game.remove(username)
+    
+    @classmethod
+    def pair_user(cls):
+        '''
+        Check if two users a waiting,  
+        If yes: pair the two users, active the udp connection
+        '''
+        # check if enough clients to create a game
+        if len(cls.waiting_game) < 2:
+            return
+        
+        # remove clients from waiting list
+        user1 = cls.waiting_game[-1]
+        user2 = cls.waiting_game[-2]
+
+        cls.waiting_game = cls.waiting_game[:-2]
+
+        # connect client on udp server
+        ip1 = cls.clients[user1].ip
+        ip2 = cls.clients[user2].ip
+
+        cls.queue.put([ip1, ip2])
+
+        # notify clients on local
+        cls.clients[user1].send_enter_game(cls.clients[user2])
+        cls.clients[user2].send_enter_game(cls.clients[user1])
+

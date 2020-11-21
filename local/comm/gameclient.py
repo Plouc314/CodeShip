@@ -11,8 +11,28 @@ class GameClient(ClientUDP):
 
         super().__init__(addr)
 
+        self.opponent_state = {
+            'pos': None,
+            'orien': None,
+            'hps': None
+        }
+
     def on_message(self, msg):
-        self.msg = msg
+        '''Decode state'''
+
+        parts = msg.split(sep_m)
+
+        # get position, orientation
+        pos_x, pos_y, orien = parts[0].split(sep_c)
+
+        self.opponent_state['pos'] = np.array([pos_x, pos_y], dtype=int)
+        self.opponent_state['orien'] = float(orien)
+
+        # get blocks' hp
+        hps = parts[1].split(sep_c)
+        hps = np.array(hps, dtype=int)
+        hps = hps.reshape(Spec.SHAPE_GRID_SHIP)
+        self.opponent_state['hps'] = hps
 
     def send_state(self, ship):
         '''
@@ -27,11 +47,11 @@ class GameClient(ClientUDP):
 
         msg += sep_m
 
-        # add block's hp
+        # add blocks' hp
         for x in range(Spec.SIZE_GRID_SHIP):
             for y in range(Spec.SIZE_GRID_SHIP):
                 
-                block = ship.get_block_by_coord(x,y)
+                block = ship.get_block_by_coord((x,y))
 
                 if block == None:
                     hp = 0
@@ -43,5 +63,5 @@ class GameClient(ClientUDP):
         # remove last separator
         msg = msg[:-1]
 
-        msg += sep_m
+        #msg += sep_m
 

@@ -21,9 +21,12 @@ class UIClient(ClientTCP):
             'dfr' :   [], # friend demands (from other users) 
             'gc'  :   [], # message on general chat
             'sh'  : None, # ship array
+            'shst': None, # ship status
             'sc'  : None, # script
             'scst': None, # script status (if it's ready or not)
             'rsca': None, # result of script analyse
+            'ign' : None, # notify as in game, contains opp's username
+            'igsh': None, # opponent's ship grid
         }
 
         # store the identifiers of the comm as key
@@ -36,9 +39,12 @@ class UIClient(ClientTCP):
             'dfr' : lambda x: x,
             'gc'  : self.on_general_chat,
             'sh'  : self.on_ship,
+            'shst': lambda x: int(x),
             'sc'  : lambda x: x,
             'scst': lambda x: int(x),
             'rsca': lambda x: int(x),
+            'ign' : lambda x: x,
+            'igsh': self.opponent_grid,
         }
 
     def connect(self):
@@ -99,9 +105,15 @@ class UIClient(ClientTCP):
         '''
         Return the ship as a np.ndarray.
         '''
-        username, arr = content.split(sep_c)
+        arr = content.split(sep_c2)
+        arr = np.array(arr, dtype=int)
+        return arr.reshape(Spec.SHAPE_GRID_SHIP)
 
-        arr = arr.split(sep_c2)
+    def opponent_grid(self, content):
+        '''
+        Set the opponent's ship grid
+        '''
+        arr = content.split(sep_c2)
         arr = np.array(arr, dtype=int)
         return arr.reshape(Spec.SHAPE_GRID_SHIP)
 
@@ -187,8 +199,17 @@ class UIClient(ClientTCP):
     def send_script_status(self, status):
         '''
         Send the status of the script
+        ID: scst
         '''
         self.send(f'scst{sep_m}{int(status)}')
+
+    def send_wait_game_status(self, status):
+        '''
+        Send if the user is waiting to enter a game
+        ID: wg
+        '''
+        self.send(f'wg{sep_m}{int(status)}')
+
 
 class ContextManager:
     '''
@@ -206,9 +227,12 @@ class ContextManager:
             'dfr' :   [],
             'gc'  :   [],
             'sh'  : None,
+            'shst': None,
             'sc'  : None,
             'scst': None,
-            'rsca': None
+            'rsca': None,
+            'ign' : None,
+            'igsh': None,
         }
 
         # pass identifiers to list

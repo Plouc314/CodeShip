@@ -96,7 +96,7 @@ class Game:
         self.opp_ship.run()
 
         # send state to server
-        #self.game_client.send_state(self.own_ship)
+        self.game_client.send_state(self.own_ship)
 
         self.own_ship.display()
         self.opp_ship.display()

@@ -12,7 +12,7 @@ class Server(ServerTCP):
 
         # queue used to communicate with the udp server
         self.queue = queue
-        Client.queue = queue
+        Interaction.queue = queue
 
         self.clients = {} # key: ip 
         self.threads = {} # key: ip 
@@ -22,6 +22,7 @@ class Server(ServerTCP):
         Create client object and run client's loop in separate thread.
         '''
         client = Client(conn, addr)
+        
         self.clients[client.ip] = client
 
         thread = threading.Thread(target=client.run)

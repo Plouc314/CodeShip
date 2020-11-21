@@ -122,6 +122,20 @@ class DataBase:
         return cls.df.loc[username, 'scriptstatus']
 
     @classmethod
+    def set_ship_status(cls, username, ship_status):
+        '''
+        Set the ship status of a user
+        '''
+        cls.df.loc[username, 'shipstatus'] = int(ship_status)
+
+    @classmethod
+    def get_ship_status(cls, username):
+        '''
+        Return the ship status of a user
+        '''
+        return cls.df.loc[username, 'shipstatus']
+
+    @classmethod
     def add_user(cls, username, password):
         '''
         Try to add a new user to the dataframe.  

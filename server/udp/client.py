@@ -9,3 +9,11 @@ class Client(ClientUDP):
         super().__init__(addr)
 
         self.opp_client = None
+    
+    def on_message(self, msg):
+        '''
+        Send state to other client.
+        '''
+        if self.opp_client != None:
+            print(msg)
+            self.opp_client.send(msg)
