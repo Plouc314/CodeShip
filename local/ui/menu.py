@@ -68,7 +68,6 @@ class Menu(Page):
     def __init__(self, client):
 
         self.client = client
-        self.username = None
 
         # set client in chat
         chat.client = client
@@ -99,7 +98,7 @@ class Menu(Page):
 
     def to_logged(self):
         # set the username
-        self.set_text('t username', self.username)
+        self.set_text('t username', self.client.username)
 
         # set error pos
         self.change_display_state('t error', False)

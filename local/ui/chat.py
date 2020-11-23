@@ -23,7 +23,6 @@ class Chat(SubPage):
         self.MAX_MSG = Spec.CHAT_MAX_MSG
 
         self.is_general_chat = general_chat
-        self.username = None
         self.client = client
 
         # create components
@@ -64,7 +63,7 @@ class Chat(SubPage):
         if self.is_general_chat:
             self.client.send_general_chat_msg(msg)
 
-        self.add_msg(self.username, msg)
+        self.add_msg(self.client.username, msg)
 
         self.get_component('i msg').reset_text()
 
@@ -72,7 +71,7 @@ class Chat(SubPage):
         '''
         Add a message on the ui (`Message` object).
         '''
-        if username == self.username:
+        if username == self.client.username:
             user_color = C.DARK_GREEN
         else:
             user_color = C.DARK_PURPLE

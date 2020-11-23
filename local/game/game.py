@@ -8,10 +8,12 @@ import numpy as np
 
 class Game:
 
-    def __init__(self, ui_client):
+    def __init__(self, ui_client, connected=True):
 
         self.ui_client = ui_client
-        self.game_client = GameClient(Spec.ADDR_HOST)
+        
+        if connected:
+            self.game_client = GameClient(ui_client.addr)
 
     def create_ships(self, own_grid, opp_grid):
         '''
@@ -25,13 +27,6 @@ class Game:
         self.own_ship.compile()
         self.opp_ship.compile()
 
-        # return opponent ship to make them face each other
-        self.opp_ship.orien = np.pi
-
-        self.own_ship.set_pos(Spec.POS_OWN)
-        self.opp_ship.set_pos(Spec.POS_OPP)
-
-
     def setup_api(self, script=None):
         '''
         Setup the api ships,  
@@ -44,6 +39,24 @@ class Game:
             self.script = importlib.import_module('script')
         else:
             self.script = script
+
+    def set_ships_start_pos(self, own_id):
+        '''
+        Set the position of the ship at the begining of the game.
+        '''
+        if own_id:
+            # return opponent ship to make them face each other
+            self.opp_ship.orien = np.pi
+
+            self.own_ship.set_pos(Spec.POS_P1)
+            self.opp_ship.set_pos(Spec.POS_P2)
+        
+        else:
+            # return own ship to make them face each other
+            self.own_ship.orien = np.pi
+
+            self.own_ship.set_pos(Spec.POS_P2)
+            self.opp_ship.set_pos(Spec.POS_P1)
 
     def run_script(self):
         '''
@@ -86,9 +99,37 @@ class Game:
         else:
             return False, None
 
+    def set_opp_state(self):
+        '''
+        Set opponent state according to comm from server
+        '''
+        pos = self.game_client.opponent_state['pos']
+        if pos:
+            self.opp_ship.set_pos(pos)
+        
+        orien = self.game_client.opponent_state['orien']
+        if orien:
+            self.opp_ship.orien = orien
+
+        # set hp
+        hps = self.game_client.opponent_state['hps']
+
+        if hps is None:
+            return
+        
+        for x in range(Spec.SIZE_GRID_SHIP):
+            for y in range(Spec.SIZE_GRID_SHIP):
+                
+                block = self.opp_ship.get_block_by_coord((x,y))
+
+                if block:
+                    block.hp = hps[x,y]
+
     def run(self):
         '''
         '''
+
+        self.set_opp_state()
 
         self.run_script()
 

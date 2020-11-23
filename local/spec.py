@@ -6,8 +6,10 @@ class Spec:
 
     PORT = 5050
     IP_PUBLIC = '188.62.158.181'
-    IP_HOST = '127.0.0.1'
-    ADDR_HOST = (IP_HOST, PORT)
+    IP_HOST1 = '127.0.0.1'
+    IP_HOST2 = '192.168.1.122'
+    ADDR_HOST1 = (IP_HOST1, PORT)
+    ADDR_HOST2 = (IP_HOST2, PORT)
     ADDR_PUBLIC = (IP_PUBLIC, PORT)
     
     SEP_MAIN = '|'
@@ -68,8 +70,8 @@ class Spec:
     # game
     OWN_COLOR = None
     OPPONENT_COLOR = None
-    POS_OWN = np.array([400, 500])
-    POS_OPP = np.array([2200, 500])
+    POS_P1 = np.array([400, 500])
+    POS_P2 = np.array([2200, 500])
 
     ### ui ###
 

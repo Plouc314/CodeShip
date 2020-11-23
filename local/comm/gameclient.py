@@ -65,3 +65,4 @@ class GameClient(ClientUDP):
 
         #msg += sep_m
 
+        self.send(msg)

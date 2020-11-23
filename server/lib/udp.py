@@ -6,7 +6,7 @@ class ErrorServer:
 
     @staticmethod
     def call(traceback):
-        print('{UDP} [ERROR]', traceback)
+        print('[UDP] [ERROR]', traceback)
 
 class Spec:
     BUFSIZE = 4096
@@ -17,7 +17,7 @@ class Spec:
 class ServerUDP:
 
     # store all instances -> allow Client object to get ref of server
-    instances = []
+    _instances = []
     # store ip address -> see above
     last_ip = None 
 
@@ -34,9 +34,9 @@ class ServerUDP:
         # dict of the clients, key : ip address
         # send incoming msg to them
         # clients themselves add them to the dict
-        self.clients = {}
+        self._clients = {}
 
-        ServerUDP.instances.append(self)
+        ServerUDP._instances.append(self)
 
     def bind(self, port, ip=None):
         '''
@@ -75,16 +75,21 @@ class ServerUDP:
             else:
                 # call transfert msg to client
                 ip = address[0]
-
-                if ip in self.clients.keys():
-                    client = self.clients[ip]
+                
+                if ip in self._clients.keys():
+                    client = self._clients[ip]
 
                     if msg == Spec.DISCONNECT_MSG:
-                        client.on_disconnect()
+                        # run disconnection in separated thread -> don't miss comm
+                        thread = threading.Thread(target=client.on_disconnect)
+                        thread.start()
+                        
                         # remove client
-                        self.clients.pop(ip)
+                        self._clients.pop(ip)
                     else:
-                        client.on_message(msg)
+                        # run client's reaction on separated thread -> don't miss comm
+                        thread = threading.Thread(target=client.on_message, args=[msg])
+                        thread.start()
 
                 else:
                     ErrorServer.call("Invalid IP address: " + ip)
@@ -118,12 +123,12 @@ class ClientUDP:
         Add ref of self to the server.  
         '''
         # find server
-        for server in ServerUDP.instances:
+        for server in ServerUDP._instances:
             if server.last_ip == self.ip:
                 self.server = server
 
         # add own ref
-        self.server.clients[self.ip] = self
+        self.server._clients[self.ip] = self
     
     @staticmethod
     def on_message(msg):

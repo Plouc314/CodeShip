@@ -73,7 +73,7 @@ class ScriptAnalyser(SubPage):
         self.script_status = False
 
         # create game object -> test script
-        self.game = Game(None)
+        self.game = Game(None, connected=False)
         self.grid = None
 
         # store script module -> know if need to load or reload module

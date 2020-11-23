@@ -1,6 +1,5 @@
 import socket, threading
 from time import time, sleep
-from spec import Spec
 
 class ErrorServer:
 

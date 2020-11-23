@@ -10,7 +10,8 @@ class UIClient(ClientTCP):
     def __init__(self, addr, connect=False):
 
         super().__init__(addr, connect=connect)
-    
+        self.username = None
+
         # store the identifiers of the comm as key
         # the values are the msg send by the server
         self.in_data = {
@@ -43,7 +44,7 @@ class UIClient(ClientTCP):
             'sc'  : lambda x: x,
             'scst': lambda x: int(x),
             'rsca': lambda x: int(x),
-            'ign' : lambda x: x,
+            'ign' : lambda x: x.split(sep_c),
             'igsh': self.opponent_grid,
         }
 

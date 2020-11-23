@@ -82,11 +82,8 @@ class App(Application):
                 # get username
                 self.username = self.get_page(Spec.PAGE_CONN).username
 
-                # set username attr in menu, chat
-                menu = self.get_page(Spec.PAGE_MENU)
-                
-                menu.username = self.username
-                menu.get_component('chat').username = self.username
+                # set username attr in client
+                self.client.username = self.username
                 
                 self.change_page(Spec.PAGE_MENU, state='logged')
 
@@ -152,11 +149,12 @@ class App(Application):
         Check if the user is entering in a game
         '''
         # look for notification
-        with self.client.get_data('ign') as username:
+        with self.client.get_data('ign') as contents:
 
-            if username == None:
+            if contents == None:
                 return
             
+            username, pos_id = contents
             self.in_game = True
             self.opponent = username
         
@@ -180,4 +178,5 @@ class App(Application):
         # set game
         self.in_game = True
         self.game.create_ships(own_grid, opp_grid)
+        self.game.set_ships_start_pos(int(pos_id))
         self.game.setup_api()

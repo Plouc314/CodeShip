@@ -148,12 +148,13 @@ class Client(ClientTCP):
         status = DataBase.get_ship_status(self.username)
         self.send(f'shst{sep_m}{status}')
 
-    def send_enter_game(self, opp_client):
+    def send_enter_game(self, opp_client, pos_id):
         '''
-        Send to client that he's entering in a game.
+        Send to client that he's entering in a game.  
+        pos_id specify the starting position of the ship.
         '''
-        # notify in game | opponent username
-        self.send(f'ign{sep_m}{opp_client.username}')
+        # notify in game | opponent username, the position id of the ship
+        self.send(f'ign{sep_m}{opp_client.username}{sep_c}{int(pos_id)}')
 
         # send script
         script = DataBase.get_script(self.username)

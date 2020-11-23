@@ -1,3 +1,4 @@
+import numpy as np
 from db.db import DataBase
 from spec import Spec
 
@@ -111,6 +112,11 @@ class Interaction:
         cls.queue.put([ip1, ip2])
 
         # notify clients on local
-        cls.clients[user1].send_enter_game(cls.clients[user2])
-        cls.clients[user2].send_enter_game(cls.clients[user1])
+
+        # get tandom pos id
+        id1 = bool(np.random.randint(0,2))
+        id2 = not id1
+
+        cls.clients[user1].send_enter_game(cls.clients[user2], id1)
+        cls.clients[user2].send_enter_game(cls.clients[user1], id2)
 

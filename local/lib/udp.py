@@ -21,9 +21,22 @@ class ClientUDP:
         self.addr = tuple(addr)
         self.ip = addr[0]
         self.port = addr[1]
-        self.connected = True
+        self.connected = False
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.connect()
+
+    def connect(self):
+        '''
+        Try to connect to the server.  
+        Return True if the connection succeeds.
+        '''
+        try:
+            self.send(Spec.CONNECT_MSG)
+            self.connected = True
+            return True
+        except:
+            return False
 
     def send(self, msg):
         '''
