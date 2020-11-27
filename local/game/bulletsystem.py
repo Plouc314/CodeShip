@@ -103,6 +103,7 @@ class BulletSystem:
     Manage bullets, explosions.    
     Update position, display, collisions...
     '''
+    game_client = None
     bullets = []
     explosions = []
     ships = []
@@ -122,11 +123,69 @@ class BulletSystem:
         cls.bullets.append(bullet)
     
     @classmethod
+    def get_bullets_by_team(cls, team):
+        '''
+        Return all the bullets of the specified team.
+        '''
+        selected_bullets = []
+        for bullet in cls.bullets:
+            if bullet.team == team:
+                selected_bullets.append(bullet)
+        
+        return selected_bullets
+
+    @classmethod
+    def erase_bullets_by_team(cls, team):
+        '''
+        Erase bullets of specified team.
+        '''
+        for bullet in cls.bullets:
+            if bullet.team == team:
+                cls.bullets.remove(bullet)
+
+    @classmethod
+    def get_bullet_by_pos(cls, pos, margin=2):
+        '''
+        Return the bullet with the specified position (unscaled),  
+        Take a margin to catch any potential miss truncated,  
+        if no bullet is found: return None
+        '''
+        pos = [int(pos[0]), int(pos[1])]
+
+        for bullet in cls.bullets:
+            
+            is_it = True
+            x, y = bullet.get_pos()
+            x = int(x)
+            y = int(y)
+
+            if not x - margin <= pos[0] <= x + margin:
+                is_it = False
+
+            if not y - margin <= pos[1] <= y + margin:
+                is_it = False
+
+            if is_it:
+                return bullet
+            
+    @classmethod
+    def update_opp_bullets(cls):
+        '''
+        Update the opponent bullets.
+        '''
+        cls.erase_bullets_by_team(Spec.OPP_TEAM)
+
+        cls.bullets.extend(cls.game_client.bullets)
+
+        cls.game_client.bullets = []
+
+    @classmethod
     def run(cls):
         '''
         Manage the bullets and explosions,  
         Update the positions, handeln the collisions
         '''
+
         for expl in cls.explosions:
             expl.update_state()
             

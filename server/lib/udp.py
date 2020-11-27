@@ -31,6 +31,9 @@ class ServerUDP:
         self.ip = ip
         self.running = True
 
+        # handeln error
+        self._conn_error = {'ip':None, 'n':0}
+
         # dict of the clients, key : ip address
         # send incoming msg to them
         # clients themselves add them to the dict
@@ -80,19 +83,23 @@ class ServerUDP:
                     client = self._clients[ip]
 
                     if msg == Spec.DISCONNECT_MSG:
-                        # run disconnection in separated thread -> don't miss comm
-                        thread = threading.Thread(target=client.on_disconnect)
-                        thread.start()
+                        client.on_disconnect()
                         
                         # remove client
                         self._clients.pop(ip)
                     else:
-                        # run client's reaction on separated thread -> don't miss comm
-                        thread = threading.Thread(target=client.on_message, args=[msg])
-                        thread.start()
+                        client.on_message(msg)
 
                 else:
-                    ErrorServer.call("Invalid IP address: " + ip)
+
+                    if self._conn_error['ip'] == ip:
+                        self._conn_error['n'] += 1
+                    
+                    else:
+                        ErrorServer.call("Invalid IP address: " + ip)
+
+                        self._conn_error['ip'] = ip
+                        self._conn_error['n'] = 0
 
 
     @staticmethod

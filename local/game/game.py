@@ -14,13 +14,15 @@ class Game:
         
         if connected:
             self.game_client = GameClient(ui_client.addr)
+            self.game_client.start()
+            BulletSystem.game_client = self.game_client
 
     def create_ships(self, own_grid, opp_grid):
         '''
         Create the ships, given the grids.
         '''
-        self.own_ship = Ship.from_grid(1, own_grid)
-        self.opp_ship = Ship.from_grid(2, opp_grid)
+        self.own_ship = Ship.from_grid(Spec.OWN_TEAM, own_grid)
+        self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
 
         BulletSystem.set_ships((self.own_ship, self.opp_ship))
 
@@ -104,8 +106,8 @@ class Game:
         Set opponent state according to comm from server
         '''
         pos = self.game_client.opponent_state['pos']
-        if pos:
-            self.opp_ship.set_pos(pos)
+        if pos is not None:
+            self.opp_ship.set_pos(pos, scaled=True)
         
         orien = self.game_client.opponent_state['orien']
         if orien:
@@ -129,12 +131,16 @@ class Game:
         '''
         '''
 
+        BulletSystem.update_opp_bullets()
+        BulletSystem.run()
+
         self.set_opp_state()
 
         self.run_script()
 
         self.own_ship.run()
         self.opp_ship.run()
+        API.run()
 
         # send state to server
         self.game_client.send_state(self.own_ship)
@@ -144,4 +150,4 @@ class Game:
 
         BulletSystem.display()
 
-        BulletSystem.run()
+        

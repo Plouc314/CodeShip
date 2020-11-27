@@ -1,4 +1,4 @@
-import socket
+import socket, time
 
 class ErrorClient:
 
@@ -56,8 +56,10 @@ class ClientUDP:
 
         while self.connected:
 
+            time.sleep(0.01)
+
             # receive msg
-            msg, address = self.socket.recvfrom(Spec.BUFSIZE)
+            msg, address = self._socket.recvfrom(Spec.BUFSIZE)
             msg = msg.decode(Spec.FORMAT)
 
             self.on_message(msg)

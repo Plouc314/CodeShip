@@ -194,6 +194,12 @@ class Client(ClientTCP):
 
         # check that the username exists and that the password is correct
         if DataBase.is_user(username):
+
+            if Interaction.is_user(username):
+                # can't log in -> already connected
+                self.send(f'rlg{sep_m}0')
+                return
+
             if DataBase.get_password(username) == password:
                 # log in
                 self.send(f'rlg{sep_m}1')

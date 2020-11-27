@@ -10,8 +10,7 @@ class Server(ServerUDP):
 
         super().__init__(Spec.PORT)
 
-        self.clients = {} # key: ip
-        self.threads = {} # key: ip
+        self.clients = {}
     
     def on_connection(self, addr):
         '''
@@ -19,11 +18,6 @@ class Server(ServerUDP):
         client = Client(addr)
         self.clients[client.ip] = client
 
-        thread = threading.Thread(target=client.run)
-        self.threads[client.ip] = thread
-
-        thread.start()
-    
     def run(self, queue):
         '''
         Run the server's run method in a separated thread,  
