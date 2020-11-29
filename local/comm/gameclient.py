@@ -1,5 +1,5 @@
 import threading
-from lib.udp import ClientUDP
+from lib.udp import ClientUDP, ErrorUDP
 from game.bulletsystem import BulletSystem, Bullet
 from spec import Spec
 import numpy as np
@@ -15,7 +15,8 @@ class GameClient(ClientUDP):
         self.opponent_state = {
             'pos': None,
             'orien': None,
-            'hps': None
+            'hps': None,
+            'turrets': []
         }
 
         # contains opponent bullets (temporary)
@@ -25,29 +26,73 @@ class GameClient(ClientUDP):
         '''
         Start a infinite loop in another thread to listen to the server.
         '''
-        if self.connected:
-            print('[LOCAL] Started UDP thread.')
-            self._thread = threading.Thread(target=self.run)
-            self._thread.start()
+
+        if not self.connected:
+            self.connect()
+
+        self._thread = threading.Thread(target=self.run)
+        self._thread.start()
+        print("[UDP] Started client's thread.")
 
     def on_message(self, msg):
-        '''Decode state'''
-        parts = msg.split(sep_m)
-
+        '''
+        Decode state
+        '''
         # get position, orientation
-        pos_x, pos_y, orien = parts[0].split(sep_c)
+        try:
+            self.extract_basic_ship_info(msg)
+        except:
+            ErrorUDP.call("Extraction of ship's information failed.", warning=True)
+
+        # get blocks' hp
+        try:
+            self.extract_hps(msg)
+        except:
+            ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
+
+        # get bullets
+        try:
+            self.extract_bullets(msg)
+        except:
+            ErrorUDP.call("Extraction of bullets' information failed.", warning=True)
+
+        # get turrets' orien
+        try:
+            self.extract_turrets(msg)
+        except:
+            ErrorUDP.call("Extraction of turrets' information failed.", warning=True)
+
+    def extract_basic_ship_info(self, string):
+        '''
+        Extract the (opponent) ship's position and orientation.
+        '''
+        # get part of string that corresponds to the extracted info
+        string = string.split(sep_m)[0]
+        pos_x, pos_y, orien = string.split(sep_c)
 
         self.opponent_state['pos'] = np.array([pos_x, pos_y], dtype=int)
         self.opponent_state['orien'] = float(orien)
 
-        # get blocks' hp
-        hps = parts[1].split(sep_c)
+    def extract_hps(self, string):
+        '''
+        Extract the hp of the blocks.
+        '''
+        # get part of string that corresponds to the extracted info
+        string = string.split(sep_m)[1]
+
+        hps = string.split(sep_c)
         hps = np.array(hps, dtype=int)
         hps = hps.reshape(Spec.SHAPE_GRID_SHIP)
         self.opponent_state['hps'] = hps
 
-        # get bullets
-        str_bullets = parts[2].split(sep_c)
+    def extract_bullets(self, string):
+        '''
+        Extract the position of the bullets of the (opponent) ship.
+        '''
+        # get part of string that corresponds to the extracted info
+        string = string.split(sep_m)[2]
+
+        str_bullets = string.split(sep_c)
 
         if '' in str_bullets:
             str_bullets.remove('')
@@ -59,6 +104,20 @@ class GameClient(ClientUDP):
             bullet = Bullet(Spec.OPP_TEAM, [int(x), int(y)], float(orien), damage=int(damage))
 
             self.bullets.append(bullet)
+
+    def extract_turrets(self, string):
+        '''
+        Extract the orientations of the (opponent) turrets.
+        '''
+        # get part of string that corresponds to the extracted info
+        string = string.split(sep_m)[3]
+
+        oriens = string.split(sep_c)
+
+        if '' in oriens:
+            oriens.remove('')
+        
+        self.opponent_state['turrets'] = [float(orien) for orien in oriens]
 
     def send_state(self, ship):
         '''
@@ -93,7 +152,9 @@ class GameClient(ClientUDP):
         msg += sep_m
 
         # send bullets of own ship
-        for bullet in BulletSystem.get_bullets_by_team(ship.team):
+        bullets = BulletSystem.get_bullets_by_team(ship.team)
+
+        for bullet in bullets:
 
             # add pos, orien, damage
             x, y = bullet.get_pos()
@@ -101,5 +162,22 @@ class GameClient(ClientUDP):
             msg += f'{sep_c2}{bullet.damage}'
 
             msg += sep_c
+
+        # remove last separator
+        if len(bullets) != 0:
+            msg = msg[:-1]
+
+        msg += sep_m
+
+        # send turrets orien
+        turrets = ship.typed_blocks['Turret']
+
+        for turret in turrets:
+            msg += f'{turret.orien:.4f}'
+            msg += sep_c
+
+        # remove last separator
+        if len(turrets) != 0:
+            msg = msg[:-1]
 
         self.send(msg)

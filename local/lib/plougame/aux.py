@@ -137,9 +137,15 @@ class C:
     YELLOW = (253, 240, 49)
 
 class Font:
-    '''Create pygame fonts, use .f method'''
+    '''
+    Create pygame fonts,  
+    use `f` method
+    '''
     fontname = 'Arial'
     @classmethod
     def f(cls, size):
-        '''Create a font of the given size: `{'size':size,'font':pygame.font}`'''
+        '''
+        Create a font of the given size,  
+        In the format: `{'size':size,'font':pygame.font}`
+        '''
         return {'size':size , 'font':pygame.font.SysFont(cls.fontname, Dimension.E(size))}

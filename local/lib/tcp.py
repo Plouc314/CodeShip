@@ -1,11 +1,18 @@
 import socket
 from time import sleep
 
-class ErrorClient:
+class ErrorTCP:
+    '''
+    Basic printer for error.  
+    Use the `call` static method.
+    '''
 
     @staticmethod
     def call(traceback, warning=False):
-        
+        '''
+        Display a message in the terminal.  
+        In the format: `"[TCP] [call type] traceback"`
+        '''
         if warning:
             call_type = "WARNING"
         else:
@@ -118,7 +125,7 @@ class ClientTCP:
 
             self._socket.send(msg)
         except:
-            ErrorClient.call("Failure sending message: " + msg.decode(Spec.FORMAT))
+            ErrorTCP.call("Failure sending message: " + msg.decode(Spec.FORMAT))
     
     def receive(self):
         '''
@@ -135,4 +142,4 @@ class ClientTCP:
             msg = self._socket.recv(msg_length).decode(Spec.FORMAT)
             return msg
         except:
-            ErrorClient.call("Failure receiving message.")
+            ErrorTCP.call("Failure receiving message.")

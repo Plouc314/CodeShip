@@ -12,7 +12,7 @@ class ErrorServer:
             call_type = "[ERROR]"
 
         if id == None:
-            print(f"[TCP] {call_type} {traceback}")
+            print("[TCP]", call_type, traceback)
         else:
             print(f"[TCP] {call_type} |{id}| {traceback}")
         

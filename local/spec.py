@@ -1,4 +1,5 @@
 import numpy as np
+from lib.plougame.aux import C
 
 class Spec:
 
@@ -8,9 +9,6 @@ class Spec:
     IP_PUBLIC = '188.62.158.181'
     IP_HOST1 = '127.0.0.1'
     IP_HOST2 = '192.168.1.122'
-    ADDR_HOST1 = (IP_HOST1, PORT)
-    ADDR_HOST2 = (IP_HOST2, PORT)
-    ADDR_PUBLIC = (IP_PUBLIC, PORT)
     
     SEP_MAIN = '|'
     SEP_CONTENT = ','
@@ -70,8 +68,10 @@ class Spec:
     # game
     OWN_TEAM = 1
     OPP_TEAM = 2
-    OWN_COLOR = None
-    OPPONENT_COLOR = None
+    COLOR_P1 = C.BLUE
+    COLOR_P2 = C.PURPLE
+    LCOLOR_P1 = C.LIGHT_BLUE
+    LCOLOR_P2 = C.LIGHT_PURPLE
     POS_P1 = np.array([400, 500])
     POS_P2 = np.array([2200, 500])
 

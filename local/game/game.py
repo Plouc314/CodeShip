@@ -2,6 +2,7 @@ from comm.gameclient import GameClient
 from game.ship import Ship
 from game.bulletsystem import BulletSystem
 from game.api import API
+from game.interface import GameInterface
 from spec import Spec
 import importlib, traceback
 import numpy as np
@@ -10,11 +11,12 @@ class Game:
 
     def __init__(self, ui_client, connected=True):
 
+        self.interface = GameInterface(ui_client)
         self.ui_client = ui_client
-        
+        self.own_id = None
+
         if connected:
-            self.game_client = GameClient(ui_client.addr)
-            self.game_client.start()
+            self.game_client = GameClient((ui_client.ip, Spec.PORT))
             BulletSystem.game_client = self.game_client
 
     def create_ships(self, own_grid, opp_grid):
@@ -29,6 +31,8 @@ class Game:
         self.own_ship.compile()
         self.opp_ship.compile()
 
+        self.set_ships_start_pos()
+
     def setup_api(self, script=None):
         '''
         Setup the api ships,  
@@ -42,31 +46,52 @@ class Game:
         else:
             self.script = script
 
-    def set_ships_start_pos(self, own_id):
+    def set_own_id(self, own_id):
         '''
-        Set the position of the ship at the begining of the game.
+        Set the id use to set the position, color of the ships.
         '''
-        if own_id:
-            # return opponent ship to make them face each other
-            self.opp_ship.orien = np.pi
+        self.own_id = bool(own_id)
 
-            self.own_ship.set_pos(Spec.POS_P1)
-            self.opp_ship.set_pos(Spec.POS_P2)
-        
+    def setup_interface(self, own_username, opp_username):
+        '''
+        set up the game interface, start the clock.
+        '''
+        if self.own_id:
+            self.interface.set_users(own_username, opp_username)
         else:
-            # return own ship to make them face each other
-            self.own_ship.orien = np.pi
+            self.interface.set_users(opp_username, own_username)
 
-            self.own_ship.set_pos(Spec.POS_P2)
-            self.opp_ship.set_pos(Spec.POS_P1)
+        self.interface.start_clock()
 
+    def set_ships_start_pos(self):
+        '''
+        Set the position of the ships at the begining of the game.  
+        Set their color according to their position.  
+        '''
+        if self.own_id:
+            ship1 = self.own_ship
+            ship2 = self.opp_ship
+        else:
+            ship1 = self.opp_ship
+            ship2 = self.own_ship
+
+        # return opponent ship to make them face each other
+        ship2.orien = np.pi
+
+        ship1.set_pos(Spec.POS_P1)
+        ship2.set_pos(Spec.POS_P2)
+
+        ship1.set_color(Spec.COLOR_P1)
+        ship2.set_color(Spec.COLOR_P2)
+        
     def run_script(self):
         '''
         Run the user's script
         '''
-        #try:
-        self.script.main()
-        #except Exception as e:
+        try:
+            self.script.main()
+        except Exception as e:
+            print("[WARNING] Error occured in script.")
         
     def test_script(self, grid, script_module):
         '''
@@ -78,6 +103,7 @@ class Game:
             - tuple, In case of error (else None): the error type, message & traceback
         '''
         # set ships
+        self.set_own_id(np.random.choice([0, 1]))
         self.create_ships(grid, grid)
         self.setup_api(script=script_module)
 
@@ -116,31 +142,44 @@ class Game:
         # set hp
         hps = self.game_client.opponent_state['hps']
 
-        if hps is None:
-            return
-        
-        for x in range(Spec.SIZE_GRID_SHIP):
-            for y in range(Spec.SIZE_GRID_SHIP):
-                
-                block = self.opp_ship.get_block_by_coord((x,y))
+        if not hps is None:
 
-                if block:
+            for x in range(Spec.SIZE_GRID_SHIP):
+                for y in range(Spec.SIZE_GRID_SHIP):
+                    
+                    block = self.opp_ship.get_block_by_coord((x,y))
+
+                    if not block:
+                        continue
+
                     block.hp = hps[x,y]
 
-    def run(self):
+                    if block.hp <= 0:
+                        self.opp_ship.remove_block(block=block)
+
+        # set turrets' orien
+        oriens = self.game_client.opponent_state['turrets']
+
+        if len(oriens) != 0:
+            
+            for turret, orien in zip(self.opp_ship.typed_blocks['Turret'], oriens):
+                turret.orien = orien
+                turret.rotate_surf(orien)
+
+    def run(self, pressed, events):
         '''
         '''
 
-        BulletSystem.update_opp_bullets()
         BulletSystem.run()
+        BulletSystem.update_opp_bullets()
+        API.run()
 
         self.set_opp_state()
 
         self.run_script()
 
         self.own_ship.run()
-        self.opp_ship.run()
-        API.run()
+        self.opp_ship.run(remote_control=True)
 
         # send state to server
         self.game_client.send_state(self.own_ship)
@@ -149,5 +188,8 @@ class Game:
         self.opp_ship.display()
 
         BulletSystem.display()
+
+        self.interface.react_events(pressed, events)
+        self.interface.display()
 
         

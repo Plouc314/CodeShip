@@ -28,9 +28,13 @@ class Interaction:
     @classmethod
     def remove(cls, username):
         '''
-        Remove a client from the interaction.
+        Remove a client from the interaction.  
+        Also remove client from udp server.
         '''
         if cls.is_user(username):
+
+            cls.queue.put(['rm', cls.clients[username].ip])
+
             cls.clients.pop(username)
 
     @classmethod
@@ -106,14 +110,14 @@ class Interaction:
         cls.waiting_game = cls.waiting_game[:-2]
 
         # connect client on udp server
-        ip1 = cls.clients[user1].ip
-        ip2 = cls.clients[user2].ip
+        addr1 = cls.clients[user1].addr
+        addr2 = cls.clients[user2].addr
 
-        cls.queue.put([ip1, ip2])
+        cls.queue.put(['conn', addr1, addr2])
 
         # notify clients on local
 
-        # get tandom pos id
+        # get random pos id
         id1 = bool(np.random.randint(0,2))
         id2 = not id1
 

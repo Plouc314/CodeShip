@@ -92,7 +92,7 @@ class Ship:
             self.color = color
             # change color of every block
             for block in self.blocks.values():
-                block.set_color(self.color)
+                block.set_color(self.color, update_original=True)
         else:
             self.color = color
 
@@ -234,14 +234,20 @@ class Ship:
         self.form.set_pos(self.pos, scale=True)
         self.form.display()
     
-    def run(self):
+    def run(self, remote_control=False):
         '''
         Execute all the ship's method that need to be executed during a frame.
         '''
         self.control_power_level()
-        self.update_turrets()
-        self.update_state()
         self.run_blocks()
+
+        if not remote_control:
+            self.update_turrets()
+            self.update_state()
+        
+        # update main surface
+        self.form.set_surface(surface=self.form.get_surface('original'))
+        self.rotate_surf(self.orien)
 
     def update_turrets(self):
         '''
@@ -261,10 +267,6 @@ class Ship:
         self.compute_circular_speed()
         
         self.orien += self.circular_speed
-        
-        # set correct main surface
-        self.form.set_surface(surface=self.form.get_surface('original'))
-        self.rotate_surf(self.orien)
 
         x = np.cos(self.orien) * self.speed + self.pos[0]
         y = np.sin(self.orien) * self.speed + self.pos[1]

@@ -126,7 +126,7 @@ class Menu(Page):
 
         # set the user waiting to enter the game
         self.client.send_wait_game_status(True)
-        print('play')
+        
 
     def b_friends(self):
         # go to the friends page

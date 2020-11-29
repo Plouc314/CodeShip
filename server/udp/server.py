@@ -10,13 +10,18 @@ class Server(ServerUDP):
 
         super().__init__(Spec.PORT)
 
-        self.clients = {}
-    
     def on_connection(self, addr):
-        '''
-        '''
+
+        print(f"[UDP] |{addr[0]}| Connected.")
         client = Client(addr)
-        self.clients[client.ip] = client
+        self.add_client(client)
+
+    def connect_clients(self, addr1, addr2):
+        '''
+        Connect two clients together.
+        '''
+        self.get_client(addr1[0]).opp_client = self.get_client(addr2[0])
+        self.get_client(addr2[0]).opp_client = self.get_client(addr1[0])
 
     def run(self, queue):
         '''
@@ -36,8 +41,14 @@ class Server(ServerUDP):
                 self.running = False
                 break
 
-            # connect to user to each other
-            ip1, ip2 = msg
+            # connect two users to each other -> in game comm
+            if msg[0] == 'conn':
+                addr1, addr2 = msg[1:]
 
-            self.clients[ip1].opp_client = self.clients[ip2]
-            self.clients[ip2].opp_client = self.clients[ip1]
+                self.connect_clients(addr1, addr2)
+            
+            # remove a client -> disconnection
+            elif msg[0] == 'rm':
+                self.remove_client(msg[1])
+
+            

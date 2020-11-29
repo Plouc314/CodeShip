@@ -65,6 +65,9 @@ class App(Application):
         page_conn = self.get_page(Spec.PAGE_CONN)
 
         self.client.send_logout()
+
+        # stop game client
+        self.game.game_client.disconnect()
         
         page_conn.change_state('base')
         page_menu.change_state('unlogged')
@@ -79,6 +82,10 @@ class App(Application):
         with self.client.get_data(['rlg', 'rsg']) as (rlg, rsg):
 
             if rlg == 1 or rsg == 1:
+                
+                # activate game client
+                self.game.game_client.start()
+                
                 # get username
                 self.username = self.get_page(Spec.PAGE_CONN).username
 
@@ -177,6 +184,7 @@ class App(Application):
         
         # set game
         self.in_game = True
+        self.game.set_own_id(int(pos_id))
         self.game.create_ships(own_grid, opp_grid)
-        self.game.set_ships_start_pos(int(pos_id))
+        self.game.setup_interface(self.username, self.opponent)
         self.game.setup_api()

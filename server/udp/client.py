@@ -10,6 +10,10 @@ class Client(ClientUDP):
 
         self.opp_client = None
     
+    def on_disconnect(self):
+        # avoid not implemented error
+        pass
+
     def on_message(self, msg):
         '''
         Send state to other client.

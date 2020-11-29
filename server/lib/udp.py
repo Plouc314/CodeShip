@@ -5,8 +5,14 @@ from spec import Spec
 class ErrorServer:
 
     @staticmethod
-    def call(traceback):
-        print('[UDP] [ERROR]', traceback)
+    def call(traceback, warning=False):
+        
+        if warning:
+            call_type = '[WARNING]'
+        else:
+            call_type = '[ERROR]'
+        
+        print('[UDP]', call_type, traceback)
 
 class Spec:
     BUFSIZE = 4096
@@ -15,11 +21,6 @@ class Spec:
     DISCONNECT_MSG = "!DISCONNECT"
 
 class ServerUDP:
-
-    # store all instances -> allow Client object to get ref of server
-    _instances = []
-    # store ip address -> see above
-    last_ip = None 
 
     def __init__(self, port, ip=None):
 
@@ -31,15 +32,13 @@ class ServerUDP:
         self.ip = ip
         self.running = True
 
-        # handeln error
-        self._conn_error = {'ip':None, 'n':0}
+        # list all unknown ip
+        self._unknown_ips = []
 
         # dict of the clients, key : ip address
         # send incoming msg to them
         # clients themselves add them to the dict
         self._clients = {}
-
-        ServerUDP._instances.append(self)
 
     def bind(self, port, ip=None):
         '''
@@ -58,6 +57,34 @@ class ServerUDP:
             ErrorServer.call("Port already used.")
             quit()
     
+    def add_client(self, client):
+        '''
+        Add a client to the server.  
+        '''
+        client.server = self
+        self._clients[client.ip] = client
+
+        # check if client in unknown ips -> remove it
+        if client.ip in self._unknown_ips:
+            self._unknown_ips.remove(client.ip)
+
+    def get_client(self, ip):
+        '''
+        Return the client with the specified ip address.  
+        If no client found: return None
+        '''
+        if ip in self._clients.keys():
+            return self._clients[ip]
+        
+        return None
+
+    def remove_client(self, ip):
+        '''
+        Remove the client with the specified ip.
+        '''
+        if ip in self._clients.keys():
+            self._clients.pop(ip)
+
     def run(self):
         '''
         Loop that wait for all messages.  
@@ -69,11 +96,14 @@ class ServerUDP:
 
             # receive msg
             msg, address = self.socket.recvfrom(Spec.BUFSIZE)
-            msg = msg.decode(Spec.FORMAT)
+            msg = msg.decode(Spec.FORMAT).strip()
 
             if msg == Spec.CONNECT_MSG:
-                self.last_ip = address[0]
-                self.on_connection(address)
+
+                # check that client is not already connected 
+                # -> connection message send two times
+                if not address[0] in self._clients.keys():
+                    self.on_connection(address)
 
             else:
                 # call transfert msg to client
@@ -83,24 +113,23 @@ class ServerUDP:
                     client = self._clients[ip]
 
                     if msg == Spec.DISCONNECT_MSG:
-                        client.on_disconnect()
                         
-                        # remove client
-                        self._clients.pop(ip)
+                        # check that client is not already disconnected 
+                        # -> disconnection message send two times
+                        if address[0] in self._clients.keys():
+                            client.on_disconnect()
+                            
+                            # remove client
+                            self._clients.pop(ip)
+                    
                     else:
                         client.on_message(msg)
 
                 else:
 
-                    if self._conn_error['ip'] == ip:
-                        self._conn_error['n'] += 1
-                    
-                    else:
-                        ErrorServer.call("Invalid IP address: " + ip)
-
-                        self._conn_error['ip'] = ip
-                        self._conn_error['n'] = 0
-
+                    if not ip in self._unknown_ips:
+                        self._unknown_ips.append(ip)
+                        ErrorServer.call("Unknown IP address: " + ip, warning=True)
 
     @staticmethod
     def on_connection(addr):
@@ -122,21 +151,6 @@ class ClientUDP:
         self.port = addr[1]
         self.addr = tuple(addr)
 
-        self.get_server_ref()
-    
-    def get_server_ref(self):
-        '''
-        Look for server reference.  
-        Add ref of self to the server.  
-        '''
-        # find server
-        for server in ServerUDP._instances:
-            if server.last_ip == self.ip:
-                self.server = server
-
-        # add own ref
-        self.server._clients[self.ip] = self
-    
     @staticmethod
     def on_message(msg):
         '''
@@ -160,5 +174,7 @@ class ClientUDP:
         In case of error: abort operation.  
         '''
         msg = msg.encode(Spec.FORMAT)
+
+        msg += b' ' * (Spec.BUFSIZE - len(msg))
 
         self.server.socket.sendto(msg, self.addr)

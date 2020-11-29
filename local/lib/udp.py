@@ -1,10 +1,23 @@
 import socket, time
 
-class ErrorClient:
+class ErrorUDP:
+    '''
+    Basic printer for error.  
+    Use the `call` static method.
+    '''
 
     @staticmethod
-    def call(traceback):
-        print('{TCP} [ERROR]', traceback)
+    def call(traceback, warning=False):
+        '''
+        Display a message in the terminal.  
+        In the format: `"[UDP] [call type] traceback"`
+        '''
+        if warning:
+            call_type = '[WARNING]'
+        else:
+            call_type = '[ERROR]'
+        
+        print('[UDP]', call_type, traceback)
 
 
 class Spec:
@@ -32,7 +45,15 @@ class ClientUDP:
         Return True if the connection succeeds.
         '''
         try:
+            # send 4 times -> make sure the server receive it
             self.send(Spec.CONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.CONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.CONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.CONNECT_MSG)
+
             self.connected = True
             return True
         except:
@@ -44,6 +65,8 @@ class ClientUDP:
         In case of error: abort operation.  
         '''
         msg = msg.encode(Spec.FORMAT)
+
+        msg += b' ' * (Spec.BUFSIZE - len(msg))
 
         self._socket.sendto(msg, self.addr)
     
@@ -60,7 +83,7 @@ class ClientUDP:
 
             # receive msg
             msg, address = self._socket.recvfrom(Spec.BUFSIZE)
-            msg = msg.decode(Spec.FORMAT)
+            msg = msg.decode(Spec.FORMAT).strip()
 
             self.on_message(msg)
 
@@ -76,7 +99,17 @@ class ClientUDP:
     def disconnect(self):
         '''
         Send disconnection message to the server.  
+        Stop run loop if active.  
         Not to be implemented!    
         '''
-        self.send(Spec.DISCONNECT_MSG)
-        self.connected = False
+        if self.connected:
+            # send 4 times -> make sure the server receive it
+            self.send(Spec.DISCONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.DISCONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.DISCONNECT_MSG)
+            time.sleep(0.05)
+            self.send(Spec.DISCONNECT_MSG)
+            
+            self.connected = False

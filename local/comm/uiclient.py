@@ -26,7 +26,7 @@ class UIClient(ClientTCP):
             'sc'  : None, # script
             'scst': None, # script status (if it's ready or not)
             'rsca': None, # result of script analyse
-            'ign' : None, # notify as in game, contains opp's username
+            'ign' : None, # notify as in game, contains opp's username, id
             'igsh': None, # opponent's ship grid
         }
 
@@ -71,7 +71,7 @@ class UIClient(ClientTCP):
         identifier, content = msg.split(sep_m)
 
         if identifier != "sc":
-            print('[SERVER]', msg)
+            print('[TCP]', msg)
 
         content = self.processes[identifier](content)
 

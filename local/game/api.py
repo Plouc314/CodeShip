@@ -19,6 +19,14 @@ class API:
         cls._ships['opp'] = ship
         Opponent._set_blocks()
 
+    @classmethod
+    def run(cls):
+        '''
+        Update API's ships to keep them synchronize to the real ships.
+        '''
+        Ship._update_blocks()
+        Opponent._update_blocks()
+
 class Block:
 
     name = 'Block'
@@ -148,7 +156,8 @@ class Ship:
     @classmethod
     def _set_blocks(cls):
         '''
-        Create a API block for each block of the ship
+        Internal method.  
+        Create a API block for each block of the ship.
         '''
         cls.blocks = []
         cls.typed_blocks = {
@@ -164,6 +173,18 @@ class Ship:
             
             cls.blocks.append(api_block)
             cls.typed_blocks[block.name].append(api_block)
+
+    @classmethod
+    def _update_blocks(cls):
+        '''
+        Internal method.  
+        Loop through each block of the ship and remove the dead ones.
+        '''
+        for block in cls.blocks:
+            if not block.key in API._ships['own'].blocks.keys():
+                # remove block
+                cls.blocks.remove(block)
+                cls.typed_blocks[block.name].remove(block)
 
     @classmethod
     def get_blocks(cls, type:str=None):
@@ -251,6 +272,17 @@ class Opponent:
             api_block = map_block[block.name](key, 'opp')
             
             cls.blocks.append(api_block)
+
+    @classmethod
+    def _update_blocks(cls):
+        '''
+        Internal method.  
+        Loop through each block of the ship and remove the dead ones.
+        '''
+        for block in cls.blocks:
+            if not block.key in API._ships['opp'].blocks.keys():
+                # remove block
+                cls.blocks.remove(block)
 
     @classmethod
     def get_blocks(cls, type:str=None):

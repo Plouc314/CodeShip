@@ -4,7 +4,7 @@ import numpy as np
 class DataBase:
 
     df = None
-    filepath = 'db/data.csv'
+    filepath = 'db/data/data.csv'
 
     @classmethod
     def load(cls):
