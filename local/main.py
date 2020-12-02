@@ -30,7 +30,7 @@ while Interface.running:
 
     pressed, events = Interface.run()
 
-    if not app.in_game:
+    if not game.running:
         app.react_events(pressed, events)
 
         app.display()

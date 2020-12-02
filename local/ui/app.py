@@ -14,7 +14,6 @@ class App(Application):
         self.game = game
         
         self.username = None
-        self.in_game = False
         self.opponent = None
 
         pages = [
@@ -183,7 +182,7 @@ class App(Application):
             file.write(script)
         
         # set game
-        self.in_game = True
+        self.game.running = True
         self.game.set_own_id(int(pos_id))
         self.game.create_ships(own_grid, opp_grid)
         self.game.setup_interface(self.username, self.opponent)

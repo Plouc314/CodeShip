@@ -59,16 +59,20 @@ class ClientUDP:
         except:
             return False
 
-    def send(self, msg):
+    def send(self, msg, addr=None):
         '''
         Send the given message to the client.  
+        If `addr` is not specified: take default address.  
         In case of error: abort operation.  
         '''
         msg = msg.encode(Spec.FORMAT)
 
         msg += b' ' * (Spec.BUFSIZE - len(msg))
 
-        self._socket.sendto(msg, self.addr)
+        if addr == None:
+            addr = self.addr
+
+        self._socket.sendto(msg, addr)
     
     def run(self):
         '''
@@ -85,7 +89,8 @@ class ClientUDP:
             msg, address = self._socket.recvfrom(Spec.BUFSIZE)
             msg = msg.decode(Spec.FORMAT).strip()
 
-            self.on_message(msg)
+            if msg != Spec.DISCONNECT_MSG:
+                self.on_message(msg)
 
     @staticmethod
     def on_message(msg):
@@ -98,18 +103,10 @@ class ClientUDP:
 
     def disconnect(self):
         '''
-        Send disconnection message to the server.  
         Stop run loop if active.  
         Not to be implemented!    
         '''
-        if self.connected:
-            # send 4 times -> make sure the server receive it
-            self.send(Spec.DISCONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.DISCONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.DISCONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.DISCONNECT_MSG)
-            
-            self.connected = False
+        self.connected = False
+
+        # send msg to own socket to stop inf loop
+        self.send(Spec.DISCONNECT_MSG, addr=self._socket.getsockname())

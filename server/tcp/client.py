@@ -17,6 +17,9 @@ class Client(ClientTCP):
         self.logged = False
         self.username = None
 
+        # unique tag to identify the game in Interaction
+        self.game_tag = None
+
         # store the identifiers of the comm as key
         # the values are the methods called for each of the identifier
         self.identifiers = {
@@ -30,7 +33,8 @@ class Client(ClientTCP):
             'sc': self.save_script,
             'scst': self.set_script_status,
             'sca': self.script_analysis,
-            'wg': self.set_waiting_game_state
+            'wg': self.set_waiting_game_state,
+            'egst': self.end_game
         }
 
     def on_disconnect(self, content=None):
@@ -178,12 +182,7 @@ class Client(ClientTCP):
         if identifier in ["sc","sca"]:
             return
             
-        if self.username != None:
-            _id = self.username
-        else:
-            _id = self.ip
-
-        print(f'[TCP] |{_id}| {msg}')
+        self.print(msg)
 
     def login(self, content):
         '''
@@ -324,6 +323,17 @@ class Client(ClientTCP):
                 break
 
         self.send(f'rsca{sep_m}{int(fine)}')
+
+    def end_game(self, content):
+        '''
+        Set the user to be out (game finished) of his game in Interaction
+        '''
+        if int(content):
+            result = 'win'
+        else:
+            result = 'loss'
+
+        Interaction.set_game_result(self.game_tag, self.username, result)
 
     def set_script_status(self, content):
         '''

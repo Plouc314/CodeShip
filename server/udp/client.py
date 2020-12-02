@@ -18,6 +18,5 @@ class Client(ClientUDP):
         '''
         Send state to other client.
         '''
-
         if self.opp_client != None:
             self.opp_client.send(msg)

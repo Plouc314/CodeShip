@@ -12,15 +12,7 @@ class GameClient(ClientUDP):
 
         super().__init__(addr)
 
-        self.opponent_state = {
-            'pos': None,
-            'orien': None,
-            'hps': None,
-            'turrets': []
-        }
-
-        # contains opponent bullets (temporary)
-        self.bullets = []
+        self.reset_values()
 
     def start(self):
         '''
@@ -33,6 +25,20 @@ class GameClient(ClientUDP):
         self._thread = threading.Thread(target=self.run)
         self._thread.start()
         print("[UDP] Started client's thread.")
+
+    def reset_values(self):
+        '''
+        Reset all values stored in client.
+        '''
+        self.opponent_state = {
+            'pos': None,
+            'orien': None,
+            'hps': None,
+            'turrets': []
+        }
+
+        # contains opponent bullets (temporary)
+        self.bullets = []
 
     def on_message(self, msg):
         '''

@@ -16,8 +16,8 @@ POS_TIME = np.array([Spec.CENTER_X-Spec.DIM_MEDIUM_TEXT[0]//2, Y_TB])
 POS_CADRE1 = np.array([50,50])
 POS_CADRE2 = np.array([2550,50])
 DIM_CADRE = np.array([600, 400])
-
 DIM_USER = np.array([600, 80])
+POS_EXIT = np.array([2860, 50])
 
 ### components ###
 
@@ -31,7 +31,10 @@ cadre_2 = Form(DIM_CADRE, POS_CADRE2, marge=True)
 
 text_username2 = TextBox(DIM_USER, POS_CADRE2, text_color=C.WHITE, font=Font.f(60))
 
-states = ['base']
+button_quit = Button(Spec.DIM_MEDIUM_BUTTON, POS_EXIT, color=C.LIGHT_BLUE,
+                text="Quit", font=Font.f(30))
+
+states = ['base', 'end']
 
 components = [
     ('t time', text_time),
@@ -39,6 +42,7 @@ components = [
     ('t username1', text_username1),
     ('cadre 2', cadre_2),
     ('t username2', text_username2),
+    ('b quit', button_quit)
 ]
 
 class GameInterface(Page):
@@ -50,11 +54,22 @@ class GameInterface(Page):
 
         super().__init__(states, components, active_states='all')
 
+        self.set_states_components('end', 'b quit')
+        self.set_in_state_func('end', self.to_end)
+
     def start_clock(self):
         '''
         Set the time of the begining of the game
         '''
         self.start_time = time.time()
+
+    def to_end(self):
+        '''
+        Set the interface to the after-game state
+        '''
+        # reset color of player's cadres
+        self.set_color('cadre 1', C.XLIGHT_GREY)
+        self.set_color('cadre 2', C.XLIGHT_GREY)
 
     def react_events(self, pressed, events):
         

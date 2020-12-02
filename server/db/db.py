@@ -9,6 +9,7 @@ class DataBase:
     @classmethod
     def load(cls):
         cls.df = pd.read_csv(cls.filepath, index_col='username')
+
         cls.df.loc[:,['password','friend','dfr']] = cls.df.loc[:,['password','friend','dfr']].astype(str)
 
         cls.df['friend'].replace('nan', '', inplace=True)
@@ -63,7 +64,7 @@ class DataBase:
         cls.df['friend'] = cls.df['friend'].apply(mapper)
         cls.df['dfr'] = cls.df['dfr'].apply(mapper)
 
-        cls.df.to_csv('db/data.csv')
+        cls.df.to_csv(cls.filepath)
 
         cls.store_ships()
         cls.store_scripts()
@@ -144,7 +145,15 @@ class DataBase:
         if cls.is_username(username):
             return False
         
-        cls.df.loc[username,:] = [password,[],[],0]
+        cls.df.loc[username,:] = [
+            password,
+            [], # friends
+            [], # friend demands
+            0,  # script status
+            0,  # ship status
+            0,  # wins
+            0,  # loss
+        ]
         
         cls.ships[username] = np.zeros(cls.grid_shape)
         cls.scripts[username] = ''
@@ -202,3 +211,45 @@ class DataBase:
         '''
         if sender in cls.df.loc[target, 'dfr']:
             cls.df.loc[target, 'dfr'].remove(sender)
+    
+    @classmethod
+    def set_wins(cls, username, wins):
+        '''
+        Set the wins of a user
+        '''
+        cls.df.loc[username, 'wins'] = int(wins)
+
+    @classmethod
+    def get_wins(cls, username):
+        '''
+        Return the wins of a user
+        '''
+        return cls.df.loc[username, 'wins']
+    
+    @classmethod
+    def increment_wins(cls, username, step=1):
+        '''
+        Increment by `step` the number of wins of the user.
+        '''
+        cls.df.loc[username, 'wins'] += step
+
+    @classmethod
+    def set_loss(cls, username, loss):
+        '''
+        Set the loss of a user
+        '''
+        cls.df.loc[username, 'loss'] = int(loss)
+
+    @classmethod
+    def get_loss(cls, username):
+        '''
+        Return the loss of a user
+        '''
+        return cls.df.loc[username, 'loss']
+    
+    @classmethod
+    def increment_loss(cls, username, step=1):
+        '''
+        Increment by `step` the number of loss of the user.
+        '''
+        cls.df.loc[username, 'loss'] += step

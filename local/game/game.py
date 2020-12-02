@@ -11,13 +11,33 @@ class Game:
 
     def __init__(self, ui_client, connected=True):
 
-        self.interface = GameInterface(ui_client)
         self.ui_client = ui_client
         self.own_id = None
+
+        self.interface = GameInterface(ui_client)
+        self.interface.add_button_logic('b quit', self.quit_logic)
+
+        # if the game is running in main.py (meaning not the ui)
+        self._is_running = False
+
+        # if the game is active -> if the ship are moving...
+        self._is_game_active = False
 
         if connected:
             self.game_client = GameClient((ui_client.ip, Spec.PORT))
             BulletSystem.game_client = self.game_client
+
+    @property
+    def running(self):
+        return self._is_running
+    
+    @running.setter
+    def running(self, value):
+        if value:
+            self._is_running = True
+            self._is_game_active = True
+        else:
+            raise ValueError("Can't set running to False.")
 
     def create_ships(self, own_grid, opp_grid):
         '''
@@ -83,7 +103,30 @@ class Game:
 
         ship1.set_color(Spec.COLOR_P1)
         ship2.set_color(Spec.COLOR_P2)
-        
+
+    def check_end_game(self):
+        '''
+        Check if the game is ended.
+        '''
+        if len(self.own_ship.blocks) == 0:
+            self._is_game_active = False
+            self.interface.change_state('end')
+            self.game_client.reset_values()
+            self.ui_client.send_end_game(0)
+            
+        if len(self.opp_ship.blocks) == 0:
+            self._is_game_active = False
+            self.interface.change_state('end')
+            self.game_client.reset_values()
+            self.ui_client.send_end_game(1)
+
+    def quit_logic(self):
+        '''
+        Logic of the button quit of the interface.  
+        Quit the game, return to the ui.  
+        '''
+        self._is_running = False
+
     def run_script(self):
         '''
         Run the user's script
@@ -169,25 +212,27 @@ class Game:
     def run(self, pressed, events):
         '''
         '''
+        if self._is_game_active:
+            BulletSystem.run()
+            BulletSystem.update_opp_bullets()
+            API.run()
 
-        BulletSystem.run()
-        BulletSystem.update_opp_bullets()
-        API.run()
+            self.set_opp_state()
 
-        self.set_opp_state()
+            self.run_script()
 
-        self.run_script()
+            self.own_ship.run()
+            self.opp_ship.run(remote_control=True)
 
-        self.own_ship.run()
-        self.opp_ship.run(remote_control=True)
+            # send state to server
+            self.game_client.send_state(self.own_ship)
 
-        # send state to server
-        self.game_client.send_state(self.own_ship)
+            self.own_ship.display()
+            self.opp_ship.display()
 
-        self.own_ship.display()
-        self.opp_ship.display()
+            BulletSystem.display()
 
-        BulletSystem.display()
+            self.check_end_game()
 
         self.interface.react_events(pressed, events)
         self.interface.display()

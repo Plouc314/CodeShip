@@ -211,6 +211,13 @@ class UIClient(ClientTCP):
         '''
         self.send(f'wg{sep_m}{int(status)}')
 
+    def send_end_game(self, has_win):
+        '''
+        Send that the game is finished, send if user has win the game.
+        ID: egst
+        '''
+        self.send(f'egst{sep_m}{int(has_win)}')
+
 
 class ContextManager:
     '''

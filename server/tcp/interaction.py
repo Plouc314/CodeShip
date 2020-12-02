@@ -18,6 +18,11 @@ class Interaction:
     clients = {}
     waiting_game = []
 
+    # for each game: store a dict with {username: status}
+    # by default status=None, then it can equal either 'win' or 'loss'
+    games = {}
+
+
     @classmethod
     def send(cls, username, msg):
         '''
@@ -43,6 +48,48 @@ class Interaction:
         Return if the specified user is connected.
         '''
         return username in cls.clients.keys()
+
+    @classmethod
+    def set_game_result(cls, tag, username, result):
+        '''
+        Set the result of one of the user in a game.  
+        Check if all users of the games have set a result -> end game 
+
+        `int` tag: the unique tag of the game (stored in `.game_tag`)  
+        `str` result: either `"win"` or `"loss"`
+        '''
+        game = cls.games[tag]
+        game[username] = result
+
+        # check if both users have finished the game
+        if all(game.values()):
+            cls.end_game(tag)
+
+    @classmethod
+    def end_game(cls, tag):
+        '''
+        End a game, stop udp clients.  
+        '''
+        user1, user2 = cls.games[tag].keys()
+
+        # update DataBase
+        if cls.games[tag][user1] == 'win':
+            DataBase.increment_wins(user1)
+        else:
+            DataBase.increment_loss(user1)
+
+        if cls.games[tag][user2] == 'win':
+            DataBase.increment_wins(user2)
+        else:
+            DataBase.increment_loss(user2)
+
+        # update udp clients
+        ip1 = cls.clients[user1].ip
+        ip2 = cls.clients[user2].ip
+
+        cls.queue.put(['disconn', ip1, ip2])
+
+        cls.games.pop(tag)
 
     @classmethod
     def send_connection_state(cls, username, state):
@@ -109,11 +156,21 @@ class Interaction:
 
         cls.waiting_game = cls.waiting_game[:-2]
 
-        # connect client on udp server
-        addr1 = cls.clients[user1].addr
-        addr2 = cls.clients[user2].addr
+        # store game
+        tag = id(user1)
+        cls.games[tag] = {
+            user1: None,
+            user2: None
+        }
 
-        cls.queue.put(['conn', addr1, addr2])
+        cls.clients[user1].game_tag = tag
+        cls.clients[user2].game_tag = tag
+
+        # connect client on udp server
+        ip1 = cls.clients[user1].ip
+        ip2 = cls.clients[user2].ip
+
+        cls.queue.put(['conn', ip1, ip2])
 
         # notify clients on local
 

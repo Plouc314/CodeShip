@@ -56,7 +56,7 @@ class Spec:
     TURRET_MAX_SPEED = 2 # deg
 
     # bullet
-    DAMAGE_BULLET = 10
+    DAMAGE_BULLET = 20
     SPEED_BULLET = 40
     HIT_DURATION = 5
 
