@@ -19,6 +19,10 @@ class Ship:
     def __init__(self, team, color=None):
         
         self.team = team
+        
+        # auxiliar accuracy intensity
+        self.aux_acc = 0
+        self.aux_timer = 0
 
         # movement vectors
         self.speed = 0
@@ -80,6 +84,17 @@ class Ship:
         '''
         return np.array(self.form.get_pos(scaled=scaled))
 
+    def get_surface(self, surf_type):
+        '''
+        Return the specified surface,
+        can be:
+
+        - original: the unscaled & unrotated surface  
+        - main: the scaled & rotated main displayed surface  
+        - font: if set, the font surface  
+        '''
+        return self.form.get_surface(surf_type=surf_type)
+
     def get_mask(self):
         '''
         Return the pygame.mask.Mask object of the ship.
@@ -95,6 +110,24 @@ class Ship:
                 block.set_color(self.color, update_original=True)
         else:
             self.color = color
+
+    def set_auxiliary_acc(self, acc):
+        '''
+        Set an auxiliary source of acceleration,  
+        will last for `Spec.AUX_TIMER` frames.
+        '''
+        self.aux_acc = acc
+        self.aux_timer = 0
+
+    def update_aux_acc(self):
+        '''
+        In case of auxiliary acceleration,  
+        update acceleration, update timer.
+        '''
+        self.acc += self.aux_acc
+        self.aux_timer += 1
+        if self.aux_timer == Spec.AUX_TIMER:
+            self.aux_acc = 0
 
     def set_blocks(self, grid):
         '''
@@ -230,9 +263,19 @@ class Ship:
 
         self.form.rotate(angle)
 
-    def display(self):
+    def display(self, patch=None):
+        '''
+        Display the ship,  
+        if `patch` is specified, adjust the position of the ship of the `patch`.
+        '''
         self.form.set_pos(self.pos, scale=True)
-        self.form.display()
+        
+        if not patch is None:
+            pos = self.get_pos(scaled=True) + np.array(patch)
+        else:
+            pos = self.get_pos(scaled=True)
+
+        self.form.display(pos=pos)
     
     def run(self, remote_control=False):
         '''
@@ -320,6 +363,10 @@ class Ship:
 
         # compute acceleration
         self.acc = (total_force - 2 * self.speed) / self.mass
+
+        # manage auxiliary acceleration
+        if self.aux_acc != 0:
+            self.update_aux_acc()  
 
     def get_power_level(self):
         '''

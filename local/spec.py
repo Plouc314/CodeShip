@@ -9,6 +9,7 @@ class Spec:
     IP_PUBLIC = '188.62.158.181'
     IP_HOST1 = '127.0.0.1'
     IP_HOST2 = '192.168.1.122'
+    IP_HOST3 = '192.168.1.149'
     
     SEP_MAIN = '|'
     SEP_CONTENT = ','
@@ -45,6 +46,9 @@ class Spec:
     # ship movement
     MAX_CIRCULAR_ACC = 0.00025 # rad
     MAX_CIRCULAR_SPEED = 0.05 # rad
+    BOUNCE_ACC = 1
+    BOUNCE_ROTATION_MAGNITUDE = 0.1 # rad
+    AUX_TIMER = 30 # frame
 
     # block caracteristics
     HP_BLOCK = 100
@@ -52,7 +56,7 @@ class Spec:
     POWER_CONS = 10
     POWER_CONS_MOTOR = 20
     MOTOR_POWER = 10
-    TURRET_FIRE_DELAY = 2
+    TURRET_FIRE_DELAY = 20
     TURRET_MAX_SPEED = 2 # deg
 
     # bullet
@@ -76,6 +80,8 @@ class Spec:
     POS_P2 = np.array([2200, 500])
 
     ### ui ###
+
+    DIM_WINDOW = np.array([3200, 1600])
 
     CENTER_X = 1600
     CENTER_Y = 800
@@ -101,5 +107,6 @@ class Spec:
     PAGE_CONN = "conn"
     PAGE_FRIENDS = "friends"
     PAGE_SHIP = "ship"
+    PAGE_PROFIL = "profil"
 
     CHAT_MAX_MSG = 20

@@ -119,6 +119,17 @@ class Interaction:
             client.send(msg)
 
     @classmethod
+    def send_private_chat_msg(cls, sender, target, msg):
+        '''
+        Send a message to the user if connected,  
+        else abort msg.
+        '''
+        if cls.is_user(target):
+    
+            msg = f'pc{sep_m}{sender}{sep_c}{msg}'
+            cls.clients[target].send(msg)
+
+    @classmethod
     def send_demand_friend(cls, target, sender):
         '''
         Send the friend demand to the requested user.

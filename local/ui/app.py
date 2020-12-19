@@ -3,6 +3,7 @@ from ui.connection import Connection
 from ui.menu import Menu
 from ui.friends import Friends
 from ui.ship import Ship
+from ui.profil import Profil
 from spec import Spec
 import time
 
@@ -20,7 +21,8 @@ class App(Application):
             (Spec.PAGE_MENU, Menu(client)),
             (Spec.PAGE_CONN, Connection(client)),
             (Spec.PAGE_FRIENDS, Friends(client)),
-            (Spec.PAGE_SHIP, Ship(client))
+            (Spec.PAGE_SHIP, Ship(client)),
+            (Spec.PAGE_PROFIL, Profil(client))
         ]
 
         super().__init__(pages)
@@ -32,6 +34,7 @@ class App(Application):
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
         self.add_frame_function(self.look_game_notif, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.look_profil_infos, active_pages=Spec.PAGE_FRIENDS)
 
         # set log out logic
         page_menu = self.get_page(Spec.PAGE_MENU)
@@ -187,3 +190,19 @@ class App(Application):
         self.game.create_ships(own_grid, opp_grid)
         self.game.setup_interface(self.username, self.opponent)
         self.game.setup_api()
+    
+    def look_profil_infos(self):
+        '''
+        Check if receiving profil data.
+        '''
+
+        with self.client.get_data('rpd') as content:
+
+            if content == None:
+                return
+            
+            page_profil = self.get_page(Spec.PAGE_PROFIL)
+
+            page_profil.setup_page(**content)
+
+            self.change_page(Spec.PAGE_PROFIL)

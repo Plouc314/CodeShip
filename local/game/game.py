@@ -1,8 +1,10 @@
 from comm.gameclient import GameClient
 from game.ship import Ship
 from game.bulletsystem import BulletSystem
+from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
+from lib.plougame import Dimension
 from spec import Spec
 import importlib, traceback
 import numpy as np
@@ -16,6 +18,9 @@ class Game:
 
         self.interface = GameInterface(ui_client)
         self.interface.add_button_logic('b quit', self.quit_logic)
+
+        # patch the position where the ship are displayed to always display them centered
+        self.position_patch = np.array([0,0], dtype=int) # scaled
 
         # if the game is running in main.py (meaning not the ui)
         self._is_running = False
@@ -47,6 +52,7 @@ class Game:
         self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
 
         BulletSystem.set_ships((self.own_ship, self.opp_ship))
+        CollisionSystem.set_ships(self.own_ship, self.opp_ship)
 
         self.own_ship.compile()
         self.opp_ship.compile()
@@ -209,10 +215,22 @@ class Game:
                 turret.orien = orien
                 turret.rotate_surf(orien)
 
+    def compute_patch(self):
+        '''
+        Compute the patch to have the ship displayed centered.
+        '''
+        pos_own = self.own_ship.get_pos()
+        pos_opp = self.opp_ship.get_pos()
+
+        middle = (pos_own + pos_opp) / 2
+        patch = Spec.DIM_WINDOW / 2 - middle
+        self.position_patch = Dimension.scale(patch)
+
     def run(self, pressed, events):
         '''
         '''
         if self._is_game_active:
+            CollisionSystem.run()
             BulletSystem.run()
             BulletSystem.update_opp_bullets()
             API.run()
@@ -223,16 +241,17 @@ class Game:
 
             self.own_ship.run()
             self.opp_ship.run(remote_control=True)
+            self.compute_patch()
 
             # send state to server
             self.game_client.send_state(self.own_ship)
 
-            self.own_ship.display()
-            self.opp_ship.display()
-
-            BulletSystem.display()
-
             self.check_end_game()
+
+        self.own_ship.display(patch=self.position_patch)
+        self.opp_ship.display(patch=self.position_patch)
+
+        BulletSystem.display(patch=self.position_patch)
 
         self.interface.react_events(pressed, events)
         self.interface.display()

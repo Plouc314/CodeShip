@@ -129,8 +129,15 @@ class Friends(Page):
         self.set_states_components('add fr', ['c add fr', 'i username', 'b send'])
 
         self.add_button_logic('b add fr', self.add_friend)
-        self.add_button_logic('b back', self.go_back)
+        self.add_button_logic('b back', self.leave)
         self.add_button_logic('b send', self.send)
+
+    def leave(self):
+        '''
+        Leave page.
+        '''
+        self.change_state('base')
+        self.change_page(Spec.PAGE_MENU)
 
     def reset(self):
         '''
@@ -250,6 +257,7 @@ class Friends(Page):
         button_play = Button(Spec.DIM_SMALL_BUTTON, POS_PLAY, color=C.LIGHT_GREEN,
                         text="Play", font=Font.f(25))
 
+
         # add line
         scroll = self.get_component('s frs')
 
@@ -260,7 +268,23 @@ class Friends(Page):
             button_profil,
             button_play
         ])
+
+        # set buttons logic
+        line = scroll.get_line(-1)
+
+        button_profil.set_logic(self._get_profil_logic(line))
     
+    def _get_profil_logic(self, line):
+        '''
+        Return a function composing the logic of the profil buttons
+        '''
+        def logic():
+            username = line[1].get_text()
+
+            self.client.send_profil_demand(username)
+
+        return logic
+
     def _add_demand_friend_line(self, username):
         '''
         Add a line to the demand friend scroll list.

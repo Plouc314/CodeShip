@@ -27,6 +27,7 @@ class Client(ClientTCP):
             'lg': self.login,
             'sg': self.sign_up,
             'gc': self.general_chat,
+            'pc': self.private_chat,
             'dfr': self.demand_friend,
             'rdfr': self.response_demand_friend,
             'shcf': self.ship_config,
@@ -34,7 +35,8 @@ class Client(ClientTCP):
             'scst': self.set_script_status,
             'sca': self.script_analysis,
             'wg': self.set_waiting_game_state,
-            'egst': self.end_game
+            'egst': self.end_game,
+            'pd': self.profil_demand
         }
 
     def on_disconnect(self, content=None):
@@ -120,12 +122,16 @@ class Client(ClientTCP):
         if len(friends) != 0:
             self.send(msg)
 
-    def format_ship_grid(self):
+    def format_ship_grid(self, username=None):
         '''
         Return the ship grid formated as a string,  
-        separated by `SEP_CONTENT2`
+        if not username is given, send client's ship,  
+        separated by `SEP_CONTENT2`.
         '''
-        arr = DataBase.get_ship(self.username)
+        if username == None:
+            username = self.username
+
+        arr = DataBase.get_ship(username)
         string = ''
 
         for x in range(arr.shape[0]):
@@ -175,9 +181,15 @@ class Client(ClientTCP):
         Split the identifier and content of the message.  
         Call the method linked to the identifier.
         '''
-        identifier, content = msg.split(sep_m)
+        try:
+            identifier, content = msg.split(sep_m)
+        except:
+            self.print("Error occured in splitting opperation.", warning=True)
 
-        self.identifiers[identifier](content)
+        try:
+            self.identifiers[identifier](content)
+        except:
+            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
 
         if identifier in ["sc","sca"]:
             return
@@ -232,6 +244,29 @@ class Client(ClientTCP):
         Content: msg
         '''
         Interaction.send_general_chat_msg(self.username, content)
+
+    def private_chat(self, content):
+        '''
+        Send a message to the other user
+        Content: username, msg
+        '''
+        target, msg = content.split(sep_c)
+
+        Interaction.send_private_chat_msg(self.username, target, msg)        
+
+    def profil_demand(self, username):
+        '''
+        Get the stats of a user,  
+        send stats to user
+        '''
+        wins = DataBase.get_wins(username)
+        loss = DataBase.get_loss(username)
+        ship = DataBase.get_ship(username)
+
+        msg = f'rpd{sep_m}{username}{sep_c}{wins}{sep_c}{loss}{sep_c}'
+        msg += self.format_ship_grid(username=username)
+
+        self.send(msg)
 
     def demand_friend(self, content):
         '''
@@ -356,7 +391,7 @@ class Client(ClientTCP):
         '''
         Interaction.set_user_waiting_game(self.username, int(content))
 
-    def print(self, string):
+    def print(self, string, warning=False):
         '''
         Print a string to the terminal.  
         '''
@@ -366,4 +401,9 @@ class Client(ClientTCP):
         else:
             id = self.ip
 
-        print(f'[TCP] |{id}| {string}')
+        if warning:
+            warn = '[WARNING] '
+        else:
+            warn = ''
+
+        print(f'[TCP] {warn}|{id}| {string}')

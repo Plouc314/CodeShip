@@ -18,11 +18,12 @@ DIM_SCROLL = (
 
 class Chat(SubPage):
 
-    def __init__(self, pos, general_chat=True, client=None):
+    def __init__(self, pos, general_chat=True, client=None, target=None):
         
         self.MAX_MSG = Spec.CHAT_MAX_MSG
 
         self.is_general_chat = general_chat
+        self.target = target
         self.client = client
 
         # create components
@@ -62,6 +63,8 @@ class Chat(SubPage):
 
         if self.is_general_chat:
             self.client.send_general_chat_msg(msg)
+        else:
+            self.client.send_private_chat_msg(self.target, msg)
 
         self.add_msg(self.client.username, msg)
 
@@ -97,3 +100,22 @@ class Chat(SubPage):
                             text=msg, centered=False)
 
         return [text_username, text_msg]
+    
+    def get_messages(self):
+        '''
+        Return all the messages of the chat,  
+        in format `list`: `{username, message}`
+        '''
+        scroll = self.get_component('scroll')
+        msgs = []
+
+        for i in range(len(scroll)):
+
+            line = scroll.get_line(i)
+
+            username = line[0].get_text()
+            msg = line[1].get_text()
+
+            msgs.append({'username':username, 'message':msg})
+        
+        return msgs

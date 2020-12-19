@@ -21,6 +21,8 @@ class UIClient(ClientTCP):
             'rdfr': None, # response on friend demand
             'dfr' :   [], # friend demands (from other users) 
             'gc'  :   [], # message on general chat
+            'pc'  :   [], # message on private chat
+            'rpd' : None, # response to profil demand
             'sh'  : None, # ship array
             'shst': None, # ship status
             'sc'  : None, # script
@@ -38,7 +40,9 @@ class UIClient(ClientTCP):
             'frs' : self.on_friends,
             'rdfr': lambda x: int(x),
             'dfr' : lambda x: x,
-            'gc'  : self.on_general_chat,
+            'gc'  : self.on_chat_msg,
+            'pc'  : self.on_chat_msg,
+            'rpd' : self.on_profil_infos,
             'sh'  : self.on_ship,
             'shst': lambda x: int(x),
             'sc'  : lambda x: x,
@@ -90,8 +94,10 @@ class UIClient(ClientTCP):
         '''
         return ContextManager(self, identifier)
 
-    def on_general_chat(self, content):
-        '''Return chat msg in format: `[username, message]`'''
+    def on_chat_msg(self, content):
+        '''
+        Return chat msg in format: `[username, message]`
+        '''
         return content.split(sep_c)
 
     def on_friends(self, content):
@@ -101,6 +107,20 @@ class UIClient(ClientTCP):
         content = content.split(sep_c)
         content = [data.split(sep_c2) for data in content]
         return [[username, int(conn)] for username, conn in content]
+
+    def on_profil_infos(self, content):
+        '''
+        Return the infos in format: `{username, wins, loss, grid}`
+        '''
+        username, wins, loss, grid = content.split(sep_c)
+
+        wins = int(wins)
+        loss = int(loss)
+
+        grid = np.array(grid.split(sep_c2), dtype=int)
+        grid = grid.reshape(Spec.SHAPE_GRID_SHIP)
+
+        return {'username':username, 'wins':wins, 'loss':loss, 'grid':grid}
 
     def on_ship(self, content):
         '''
@@ -149,6 +169,15 @@ class UIClient(ClientTCP):
         ID : gc
         '''
         msg = f'gc{sep_m}{message}'
+
+        self.send(msg)
+
+    def send_private_chat_msg(self, username, message):
+        '''
+        Send a message on the general chat.
+        ID : pc
+        '''
+        msg = f'pc{sep_m}{username}{sep_c}{message}'
 
         self.send(msg)
 
@@ -218,6 +247,12 @@ class UIClient(ClientTCP):
         '''
         self.send(f'egst{sep_m}{int(has_win)}')
 
+    def send_profil_demand(self, username):
+        '''
+        Send a demand for the server to send info about the user
+        ID: pd
+        '''
+        self.send(f'pd{sep_m}{username}')
 
 class ContextManager:
     '''
@@ -234,6 +269,8 @@ class ContextManager:
             'rdfr': None,
             'dfr' :   [],
             'gc'  :   [],
+            'pc'  :   [],
+            'rpd' : None,
             'sh'  : None,
             'shst': None,
             'sc'  : None,

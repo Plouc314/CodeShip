@@ -200,15 +200,19 @@ class BulletSystem:
         cls.check_collision()
     
     @classmethod
-    def display(cls):
+    def display(cls, patch=None):
         '''
-        Display every bullet & explosion
+        Display every bullet & explosion,  
+        if `patch` is specified, adjust the position of the bullets of the `patch`.
         '''
+        patch = np.array(patch)
         for bullet in cls.bullets:
-            bullet.display()
+            pos = np.array(bullet.get_pos(scaled=True)) + patch
+            bullet.display(pos=pos)
         
         for expl in cls.explosions:
-            expl.display()
+            pos = np.array(expl.get_pos(scaled=True)) + patch
+            expl.display(pos=pos)
     
     @classmethod
     def check_in_dim(cls):

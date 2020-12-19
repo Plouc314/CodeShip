@@ -327,7 +327,7 @@ class Form:
         
         Arguments:
             surface : can specify the surface to display on, by the default: the window screen
-            pos : can specify position where the form is displayed
+            pos : can specify position where the form is displayed (scaled pos)
             marge : if the marges are also displayed
         '''
 

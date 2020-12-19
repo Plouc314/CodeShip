@@ -9,13 +9,13 @@ import random
 
 def main():
 
-    opp_pos = Opponent.get_position()
-    own_pos = Ship.get_position()
+    #opp_pos = Opponent.get_position()
+    #own_pos = Ship.get_position()
 
-    dist = ((opp_pos[0] - own_pos[0])**2 + (opp_pos[1] - own_pos[1])**2)**0.5
+    #dist = ((opp_pos[0] - own_pos[0])**2 + (opp_pos[1] - own_pos[1])**2)**0.5
 
-    if dist < 1000:
-        Ship.set_power_engines(0)
+    #if dist < 1000:
+    Ship.set_power_engines(1)
 
     # fire turrets
     turrets = Ship.get_blocks("Turret")

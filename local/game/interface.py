@@ -70,6 +70,8 @@ class GameInterface(Page):
         # reset color of player's cadres
         self.set_color('cadre 1', C.XLIGHT_GREY)
         self.set_color('cadre 2', C.XLIGHT_GREY)
+        self.set_color('t username1', C.XLIGHT_GREY)
+        self.set_color('t username2', C.XLIGHT_GREY)
 
     def react_events(self, pressed, events):
         
