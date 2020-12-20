@@ -46,7 +46,8 @@ class Game:
 
     def create_ships(self, own_grid, opp_grid):
         '''
-        Create the ships, given the grids.
+        Create the ships, given the grids.  
+        Must have set id before (call `set_own_id`)
         '''
         self.own_ship = Ship.from_grid(Spec.OWN_TEAM, own_grid)
         self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
@@ -57,6 +58,7 @@ class Game:
         self.own_ship.compile()
         self.opp_ship.compile()
 
+        self._set_id_ships()
         self.set_ships_start_pos()
 
     def setup_api(self, script=None):
@@ -74,9 +76,21 @@ class Game:
 
     def set_own_id(self, own_id):
         '''
-        Set the id use to set the position, color of the ships.
+        Set the id use to set the position, color of the ships.  
         '''
         self.own_id = bool(own_id)
+
+    def _set_id_ships(self):
+        '''
+        Create `.id_ships` that store the ships according to their id.
+        '''
+        self.id_ships = {}
+        if self.own_id:
+            self.id_ships[1] = self.own_ship
+            self.id_ships[2] = self.opp_ship
+        else:
+            self.id_ships[1] = self.opp_ship
+            self.id_ships[2] = self.own_ship
 
     def setup_interface(self, own_username, opp_username):
         '''
@@ -94,37 +108,35 @@ class Game:
         Set the position of the ships at the begining of the game.  
         Set their color according to their position.  
         '''
-        if self.own_id:
-            ship1 = self.own_ship
-            ship2 = self.opp_ship
-        else:
-            ship1 = self.opp_ship
-            ship2 = self.own_ship
-
         # return opponent ship to make them face each other
-        ship2.orien = np.pi
+        self.id_ships[2].orien = np.pi
 
-        ship1.set_pos(Spec.POS_P1)
-        ship2.set_pos(Spec.POS_P2)
+        self.id_ships[1].set_pos(Spec.POS_P1)
+        self.id_ships[2].set_pos(Spec.POS_P2)
 
-        ship1.set_color(Spec.COLOR_P1)
-        ship2.set_color(Spec.COLOR_P2)
+        self.id_ships[1].set_color(Spec.COLOR_P1)
+        self.id_ships[2].set_color(Spec.COLOR_P2)
 
     def check_end_game(self):
         '''
         Check if the game is ended.
         '''
-        if len(self.own_ship.blocks) == 0:
-            self._is_game_active = False
-            self.interface.change_state('end')
-            self.game_client.reset_values()
-            self.ui_client.send_end_game(0)
+        ended = False
+
+        if len(self.own_ship.typed_blocks['Generator']) == 0:
+            ended = True
+            has_win = False
             
-        if len(self.opp_ship.blocks) == 0:
+        if len(self.opp_ship.typed_blocks['Generator']) == 0:
+            ended = True
+            has_win = True
+        
+        if ended:
             self._is_game_active = False
-            self.interface.change_state('end')
+            self.interface.set_end_game(has_win)
             self.game_client.reset_values()
-            self.ui_client.send_end_game(1)
+            BulletSystem.reset()
+            self.ui_client.send_end_game(int(has_win))
 
     def quit_logic(self):
         '''
@@ -132,6 +144,8 @@ class Game:
         Quit the game, return to the ui.  
         '''
         self._is_running = False
+        # reset game interface
+        self.interface.change_state('base')
 
     def run_script(self):
         '''
@@ -219,8 +233,8 @@ class Game:
         '''
         Compute the patch to have the ship displayed centered.
         '''
-        pos_own = self.own_ship.get_pos()
-        pos_opp = self.opp_ship.get_pos()
+        pos_own = self.own_ship.get_pos(center=True)
+        pos_opp = self.opp_ship.get_pos(center=True)
 
         middle = (pos_own + pos_opp) / 2
         patch = Spec.DIM_WINDOW / 2 - middle
@@ -254,6 +268,7 @@ class Game:
         BulletSystem.display(patch=self.position_patch)
 
         self.interface.react_events(pressed, events)
+        self.interface.update(*self.id_ships.values())
         self.interface.display()
 
         

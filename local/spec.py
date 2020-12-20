@@ -74,8 +74,8 @@ class Spec:
     OPP_TEAM = 2
     COLOR_P1 = C.BLUE
     COLOR_P2 = C.PURPLE
-    LCOLOR_P1 = C.LIGHT_BLUE
-    LCOLOR_P2 = C.LIGHT_PURPLE
+    DCOLOR_P1 = C.DARK_BLUE
+    DCOLOR_P2 = C.DARK_PURPLE
     POS_P1 = np.array([400, 500])
     POS_P2 = np.array([2200, 500])
 

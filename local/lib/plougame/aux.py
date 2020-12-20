@@ -134,6 +134,7 @@ class C:
     PURPLE = (180, 57, 199)
     LIGHT_PURPLE = (210, 87, 229)
     
+    DARK_YELLOW = (219, 207, 40)
     YELLOW = (253, 240, 49)
 
 class Font:

@@ -116,6 +116,15 @@ class BulletSystem:
         cls.ships = list(ships)
 
     @classmethod
+    def reset(cls):
+        '''
+        Reset the bulletsystem.
+        '''
+        cls.bulletts = []
+        cls.explosions = []
+        cls.ships = []
+
+    @classmethod
     def add_bullet(cls, bullet):
         '''
         Add a bullet to be managed by the bullet system.
@@ -215,14 +224,15 @@ class BulletSystem:
             expl.display(pos=pos)
     
     @classmethod
-    def check_in_dim(cls):
+    def check_in_dim(cls, margin_factor=2):
         '''
-        For each bullet, check if its in the screen dimension,  
+        For each bullet, check if its in the screen dimension,
+        with a margin factor to handeln ships moving outside initial screen.  
         if not: remove the bullet.
         '''
         # get scaled window dimension
-        window_x = Dimension.get_x(scaled=True)
-        window_y = Dimension.get_y(scaled=True)
+        window_x = margin_factor*Dimension.get_x(scaled=True)
+        window_y = margin_factor*Dimension.get_y(scaled=True)
 
         for bullet in cls.bullets:
             x, y = bullet.get_pos(scaled=True)

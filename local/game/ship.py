@@ -77,12 +77,16 @@ class Ship:
         self.pos[:] = pos
         self.form.set_pos(self.pos, scale=scaled)
 
-    def get_pos(self, scaled=False):
+    def get_pos(self, scaled=False, center=False):
         '''
         Return the position of the ship (ship's form).  
-        If `scaled=True`, the position will be scaled to the current window's dimension.
+        If `scaled=True`, the position will be scaled to the current window's dimension.  
+        If `center=True`, return the center of the ship.
         '''
-        return np.array(self.form.get_pos(scaled=scaled))
+        if center:
+            return np.array(self.form.get_center(scale=scaled))
+        else:
+            return np.array(self.form.get_pos(scaled=scaled))
 
     def get_surface(self, surf_type):
         '''
@@ -161,13 +165,14 @@ class Ship:
         
         # set the mass of the ship
         self.mass = 4 * n_block
+        self.initial_n_block = n_block
 
         self.create_blocks_lists()
 
     def create_blocks_lists(self):
         '''
         Create lists of each type of blocks.  
-        Store them in .typed_blocks.
+        Store them in `.typed_blocks`.
         '''
         for block in self.blocks.values():
             self.typed_blocks[block.name].append(block)
@@ -185,6 +190,9 @@ class Ship:
         
         else:
             self.blocks = {key:item for key, item in self.blocks.items() if not item is block}
+
+        # update mass of ship
+        self.mass -= 4
 
         self.typed_blocks[block.name].remove(block)
         block.delete()
@@ -361,8 +369,10 @@ class Ship:
         for block in self.typed_blocks['Engine']:
             total_force += block.get_engine_power()
 
+        primary_acc = np.sign(total_force) * (abs(total_force) - 2 * self.speed)
+
         # compute acceleration
-        self.acc = (total_force - 2 * self.speed) / self.mass
+        self.acc = primary_acc / self.mass
 
         # manage auxiliary acceleration
         if self.aux_acc != 0:
