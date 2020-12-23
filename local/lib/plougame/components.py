@@ -547,7 +547,9 @@ class ScrollList(Form):
     with a scroll bar.  
 
     The lines can be either a built-in object like: Form, Button, TextBox, ...
-    Or a list of multiple of them.
+    Or a list of multiple of them.  
+    In the case of a list, the position of each element will be considered as relative position
+    to the line of the element (and not to the whole window).
 
     Arguments:
     - bar_color: the color used for the scroll bar
@@ -557,6 +559,8 @@ class ScrollList(Form):
     - add_line: Add a line to the instance
     - remove_line: Remove a line from the instance
     - clear: Clear the lines of the instance
+    - set_cursor_place: Set where the cursor is placed (up/down/...)
+    - set_active_state: Set if an element is active or not
     - run: React to user inputs on the scroll bar, call the objects in lines run methods
     - display: display the scroll list
     '''
@@ -571,9 +575,16 @@ class ScrollList(Form):
         self.WIDTH_SCROLL_BAR = Spec.WIDTH_SCROLL_BAR
 
         self._lines = list(lines)
+        self._are_actives = [] # bool value for each element: is displayed
         self._bar_color = bar_color
 
         self._selected = False
+
+        # all unscaled x positions
+        self._rel_positions = []
+
+        # set the total y dimension of the lines
+        self._tot_y = 0
 
         self._set_elements()
 
@@ -612,6 +623,9 @@ class ScrollList(Form):
         rel_pos = [element.get_pos() for element in line]
         self._rel_positions.insert(index, rel_pos)
 
+        are_active = [True for element in line]
+        self._are_actives.insert(index, are_active)
+
         # update tot_y, scroll bar
         self._tot_y += line[0].get_dim()[1]
 
@@ -621,9 +635,13 @@ class ScrollList(Form):
         '''
         Remove a line,  
         If `index` is specified remove the line at the given index.  
-        If `line` is specified remove the given line.
+        If `line` is specified remove the given line.    
+        If nothing is specified remove the last line.
         '''
-        if index == None:
+        if line != None:
+            index = self._lines.find(line)
+
+        elif index == None:
             index = len(self._lines) - 1
         
         line = self._lines[index]
@@ -631,6 +649,7 @@ class ScrollList(Form):
         self._lines.pop(index)
 
         self._rel_positions.pop(index)
+        self._are_actives.pop(index)
 
         # update tot_y, scroll bar
         self._tot_y -= line[0].get_dim()[1]
@@ -643,13 +662,58 @@ class ScrollList(Form):
         '''
         self._lines = []
         self._rel_positions = []
+        self._are_actives = []
         self._tot_y = 0
 
         self._update_scroll_cursor_dim()
 
+    def set_cursor_place(self, up=False, down=False, percentage: float=None):
+        '''
+        Set the cursor place, given one of the following arguments:  
+        `up`: if `True` the cursor is set on top.  
+        `down`: if `True` the cursor is set at the bottom.  
+        `percentage`: value `∈ [0, 1]` that specify the position of the cursor; up is 0, down is 1.
+        '''
+        if up:
+            per = 0
+        elif down:
+            per = 1
+        elif percentage != None:
+            per = percentage
+        else:
+            raise ValueError("No argument given.")
+            
+        y = per * (self._sc_dim[1] - self._scroll_cursor._sc_dim[1])
+        y += self._scroll_cursor._sc_dim[1]//2
+
+        self._update_scroll_cursor_pos(mouse_y=y)
+
+    def set_active_state(self, value:bool, idx_line=None, idx_element=None, line=None, element=None):
+        '''
+        Set if an element is active;
+        an active element is displayed and react to user events,  
+        given the line/index and the element/index.
+        '''
+        if idx_line == None:
+            if line in self._lines:
+                idx_line = self._lines.index(line)
+            else:
+                return
+
+        if idx_element == None:
+            if element in self._lines[idx_line]:
+                idx_element = self._lines[idx_line].index(element)
+            else:
+                return
+        
+        self._are_actives[idx_line][idx_element] = value
+
     def run(self, events, pressed):
         '''
-        React to the user input, update the scroll cursor, the displayed part of the list.
+        React to the user input,
+        update the scroll cursor,
+        the displayed part of the list.  
+        Execute the `run` function of the elements that have one.
         '''
         # update selected attr
         if not self._selected:
@@ -675,9 +739,9 @@ class ScrollList(Form):
         '''
         For each element, check if it has a `run` method, and if it's the case, run it.
         '''
-        for line in self._lines:
-            for element in line:
-                if hasattr(element, "run"):
+        for idx_l, line in enumerate(self._lines):
+            for idx_e, element in enumerate(line):
+                if hasattr(element, "run") and self._are_actives[idx_l][idx_e]:
                     element.run(events, pressed)
 
     def _set_elements(self):
@@ -686,10 +750,7 @@ class ScrollList(Form):
         Set the tot_y attr,  
         Store all relative positions of the elements.
         '''
-        # all unscaled x positions
         self._rel_positions = []
-
-        # set the total y dimension of the lines
         self._tot_y = 0
 
         for i, line in enumerate(self._lines):
@@ -700,11 +761,14 @@ class ScrollList(Form):
 
             # get all x pos
             rel_pos = []
+            are_active = []
 
             for element in self._lines[i]:
                 rel_pos.append(element.get_pos())
+                are_active.append(True)
 
             self._rel_positions.append(rel_pos)
+            self._are_actives.append(are_active)
 
             # increment the tot_y
             self._tot_y += self._lines[i][0].get_dim()[1]
@@ -723,16 +787,18 @@ class ScrollList(Form):
         
         self._scroll_cursor.set_dim(dim, scale=True)
 
-    def _update_scroll_cursor_pos(self):
+    def _update_scroll_cursor_pos(self, mouse_y=None):
         '''
-        When scroll bar is selected, 
-        update its position according to the mouse position.  
+        Update scroll bar position,  
+        if `mouse_y=None`: update its position according to the mouse position,
+        else update it given `mouse_y`.  
         Update the limits of the displayed elements.
         '''
-        mouse_y = pygame.mouse.get_pos()[1]
- 
-        # add the potential dif pos
-        mouse_y -= Dimension.scale(self._scroll_cursor._dif_pos_on_it[1])
+        if mouse_y == None:
+            mouse_y = pygame.mouse.get_pos()[1]
+    
+            # add the potential dif pos
+            mouse_y -= Dimension.scale(self._scroll_cursor._dif_pos_on_it[1])
 
         mouse_y = self._y_in_boundaries(mouse_y)
 
@@ -747,9 +813,9 @@ class ScrollList(Form):
         # update scroll cursor state
         # handeln the marge
         rel_y = mouse_y - self._scroll_cursor._sc_dim[1]//2
-
+        
         self._cursor_y_per = rel_y / self._sc_dim[1]
-
+        
         # update limits
         self._top_lim = (self._tot_y * self._cursor_y_per)
         self._bottom_lim = (self._tot_y * self._cursor_y_per) + self._unsc_dim[1]
@@ -888,7 +954,14 @@ class ScrollList(Form):
         '''
         surface = self.get_surface('main')
 
-        for rel_pos, element in zip(self._rel_positions[idx_line], self._lines[idx_line]):
+        for idx_ele in range(len(self._lines[idx_line])):
+
+            rel_pos = self._rel_positions[idx_line][idx_ele]
+            element = self._lines[idx_line][idx_ele]
+            is_active = self._are_actives[idx_line][idx_ele]
+
+            if not is_active:
+                continue
 
             # set the relative position -> display on scoll list surface    
             rel_pos = Dimension.scale([rel_pos[0], rel_pos[1] + y])

@@ -117,6 +117,29 @@ class Game:
         self.id_ships[1].set_color(Spec.COLOR_P1)
         self.id_ships[2].set_color(Spec.COLOR_P2)
 
+    def handeln_out_ship(self):
+        '''
+        Check if own ship is in the perimeter (window)
+        '''
+        pos = self.own_ship.get_pos()
+        dim_ship = Spec.DIM_BLOCK * Spec.SIZE_GRID_SHIP
+        
+        # right
+        if pos[0] > Spec.DIM_WINDOW[0]:
+            self.own_ship.set_pos( (-dim_ship[0], pos[1]) )
+        
+        # left
+        if pos[0] + dim_ship[0] < 0:
+            self.own_ship.set_pos( (Spec.DIM_WINDOW[0], pos[1]) )
+
+        # down
+        if pos[1] > Spec.DIM_WINDOW[1]:
+            self.own_ship.set_pos( (pos[0], -dim_ship[1]) )
+
+        # up
+        if pos[1] + dim_ship[1] < 0:
+            self.own_ship.set_pos( (pos[0], Spec.DIM_WINDOW[1]) )
+
     def check_end_game(self):
         '''
         Check if the game is ended.
@@ -136,6 +159,7 @@ class Game:
             self.interface.set_end_game(has_win)
             self.game_client.reset_values()
             BulletSystem.reset()
+            CollisionSystem.reset()
             self.ui_client.send_end_game(int(has_win))
 
     def quit_logic(self):
@@ -196,11 +220,19 @@ class Game:
         '''
         pos = self.game_client.opponent_state['pos']
         if pos is not None:
-            self.opp_ship.set_pos(pos, scaled=True)
+            self.opp_ship.set_pos(pos)
         
         orien = self.game_client.opponent_state['orien']
         if orien:
             self.opp_ship.orien = orien
+
+        speed = self.game_client.opponent_state['speed']
+        if speed is not None:
+            self.opp_ship.speed = speed
+
+        acc = self.game_client.opponent_state['acc']
+        if acc is not None:
+            self.opp_ship.acc = acc
 
         # set hp
         hps = self.game_client.opponent_state['hps']
@@ -229,19 +261,9 @@ class Game:
                 turret.orien = orien
                 turret.rotate_surf(orien)
 
-    def compute_patch(self):
-        '''
-        Compute the patch to have the ship displayed centered.
-        '''
-        pos_own = self.own_ship.get_pos(center=True)
-        pos_opp = self.opp_ship.get_pos(center=True)
-
-        middle = (pos_own + pos_opp) / 2
-        patch = Spec.DIM_WINDOW / 2 - middle
-        self.position_patch = Dimension.scale(patch)
-
     def run(self, pressed, events):
         '''
+        Run the game.
         '''
         if self._is_game_active:
             CollisionSystem.run()
@@ -255,17 +277,17 @@ class Game:
 
             self.own_ship.run()
             self.opp_ship.run(remote_control=True)
-            self.compute_patch()
+            self.handeln_out_ship()
 
             # send state to server
             self.game_client.send_state(self.own_ship)
 
             self.check_end_game()
 
-        self.own_ship.display(patch=self.position_patch)
-        self.opp_ship.display(patch=self.position_patch)
+        self.own_ship.display()
+        self.opp_ship.display()
 
-        BulletSystem.display(patch=self.position_patch)
+        BulletSystem.display()
 
         self.interface.react_events(pressed, events)
         self.interface.update(*self.id_ships.values())

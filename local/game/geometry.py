@@ -16,5 +16,20 @@ def get_cartesian(r, alpha):
     y = r * np.sin(alpha)
     return np.array([x,y])
 
-def get_length(vect):
+def get_norm(vect):
     return np.sqrt(vect[0]**2 + vect[1]**2)
+
+def to_vect(d, angle):
+    '''
+    Return a `np.ndarray` of the vector resulting of the polar coordinate given.  
+    `angle`: radian
+    '''
+    x = np.cos(angle) * d
+    y = np.sin(angle) * d
+    return np.array([x,y], dtype=float)
+
+def cal_direction(a, b):
+    '''
+    Calculate the angle of the vector a to b
+    '''
+    return np.arctan2(b[1]-a[1], b[0]-a[0])

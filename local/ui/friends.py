@@ -34,6 +34,7 @@ DIM_CONN = np.array([30,30])
 POS_CONN = np.array([500,25])
 POS_PROFIL = np.array([700,20])
 POS_PLAY = np.array([930,20])
+POS_NOTIF = np.array([560, 25])
 
 DIM_CADRE_LINE = np.array([1160,80])
 
@@ -229,6 +230,32 @@ class Friends(Page):
 
             self._add_demand_friend_line(username)
 
+    def update_notifs(self, unreads):
+        '''
+        Update all the notif of the friends,  
+        given a dict of the number of unread messages,
+        format: `key: usernames value: n_unread`
+        '''
+        scroll = self.get_component('s frs')
+        for i in range(len(scroll)):
+            line = scroll.get_line(i)
+            notif = line[5]
+            
+            username = line[1].get_text()
+        
+            # check that the profil page has initiated the user
+            if not username in unreads.keys():
+                continue
+            
+            n_unread = unreads[username]
+            
+            if n_unread == 0:
+                scroll.set_active_state(False, i, 5)
+            
+            else:
+                notif.set_text(str(n_unread))
+                scroll.set_active_state(True, i, 5)
+
     def _get_color_connected(self, username):
         '''
         return color corresponding of if the friend is connected.
@@ -257,6 +284,8 @@ class Friends(Page):
         button_play = Button(Spec.DIM_SMALL_BUTTON, POS_PLAY, color=C.LIGHT_GREEN,
                         text="Play", font=Font.f(25))
 
+        notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE,
+                    text='0', font=Font.f(25))
 
         # add line
         scroll = self.get_component('s frs')
@@ -266,13 +295,17 @@ class Friends(Page):
             text_username, 
             form_connected, 
             button_profil,
-            button_play
+            button_play,
+            notif
         ])
 
         # set buttons logic
         line = scroll.get_line(-1)
-
+        
         button_profil.set_logic(self._get_profil_logic(line))
+
+        # set notif state
+        scroll.set_active_state(False, line=line, element=notif)
     
     def _get_profil_logic(self, line):
         '''

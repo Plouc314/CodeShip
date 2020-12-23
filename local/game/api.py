@@ -203,14 +203,28 @@ class Ship:
             return cls.typed_blocks[type]
     
     @classmethod
-    def get_speed(cls):
-        ''' Return the speed of the ship. '''
-        return API._ships['own'].speed
+    def get_speed(cls, scalar=False):
+        '''
+        Return the speed of the ship.
+        
+        Parameters
+        ------
+        `scalar: bool`  
+        if scalar=False : return the vector speed, else return the norm of the vector.
+        '''
+        return API._ships['own'].get_speed(scalar=scalar)
     
     @classmethod
-    def get_acceleration(cls):
-        '''Return the acceleration of the ship'''
-        return API._ships['own'].acc
+    def get_acceleration(cls, scalar=False):
+        '''
+        Return the acceleration of the ship.
+        
+        Parameters
+        ------
+        `scalar: bool`  
+        if scalar=False : return the vector acceleration, else return the norm of the vector.
+        '''
+        return API._ships['own'].get_acc(scalar=scalar)
 
     @classmethod
     def get_orientation(cls):
@@ -301,14 +315,28 @@ class Opponent:
             return cls.typed_blocks[type]
     
     @classmethod
-    def get_speed(cls):
-        ''' Return the speed of the ship. '''
-        return API._ships['opp'].speed
+    def get_speed(cls, scalar=False):
+        '''
+        Return the speed of the ship.
+        
+        Parameters
+        ------
+        `scalar: bool`  
+        if scalar=False : return the vector speed, else return the norm of the vector.
+        '''
+        return API._ships['own'].get_speed(scalar=scalar)
     
     @classmethod
-    def get_acceleration(cls):
-        '''Return the acceleration of the ship'''
-        return API._ships['opp'].acc
+    def get_acceleration(cls, scalar=False):
+        '''
+        Return the acceleration of the ship.
+        
+        Parameters
+        ------
+        `scalar: bool`  
+        if scalar=False : return the vector acceleration, else return the norm of the vector.
+        '''
+        return API._ships['own'].get_acc(scalar=scalar)
 
     @classmethod
     def get_orientation(cls):

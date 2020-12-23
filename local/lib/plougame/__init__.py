@@ -7,6 +7,13 @@ Plougame is an extension of the pygame module, it is written to create GUI while
 The main features are: static object Interface, Form, TextBox, Button, InputText & Cadre
 '''
 
+# TODO:
+# - generalize the nomenclature: scale/scaled
+# - create .copy method for all components
+# - Page: add frame func, in/out page func
+# - Form: init marge value stored -> has marge when displayed
+# - remove Cadre object
+
 import pygame
 
 pygame.init()

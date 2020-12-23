@@ -19,12 +19,12 @@ POS_CADRE2 = np.array([2550,50])
 DIM_CADRE = np.array([600, 400])
 DIM_USER = np.array([400, 80])
 POS_USER = np.array([100, 20])
-POS_EXIT = np.array([2860, 50])
 DIM_TEXT = np.array([200, 60])
 DIM_HP = np.array([330, 40])
 POS_HP = X_TB2 + Y_TB + np.array([0, 10])
 DIM_TWIN = np.array([600, 200])
-POS_TWIN = np.array([Spec.CENTER_X-300, Spec.CENTER_Y-100])
+POS_TWIN = np.array([Spec.CENTER_X-300, 200])
+POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 220])
 
 ### components ###
 
@@ -95,6 +95,7 @@ class GameInterface(Page):
     def __init__(self, client):
 
         self.start_time = None
+        self.clock_active = False
         self.client = client
 
         super().__init__(states, components, active_states='all')
@@ -105,6 +106,7 @@ class GameInterface(Page):
         '''
         Set the time of the begining of the game
         '''
+        self.clock_active = True
         self.start_time = time.time()
 
     def set_end_game(self, has_win):
@@ -119,6 +121,9 @@ class GameInterface(Page):
         else:
             text.set_text('You lost...')
             text.set_color(C.RED, marge=True)
+
+        # stop the clock
+        self.clock_active = False
 
         self.change_state('end')
 
@@ -149,6 +154,7 @@ class GameInterface(Page):
 
         text = self.get_component(f't engine value{team}')
         text.set_text(f'{100*total_force}%')
+        #text.set_text(f'{ship.acc:.2f} {ship.speed:.2f}')
 
     def update(self, ship1, ship2):
         '''
@@ -156,9 +162,10 @@ class GameInterface(Page):
         ship1 should correspond to user1 and same for ship2.
         '''
         # update time
-        current_time = time.time() - self.start_time
-        string = time.strftime("%M:%S", time.gmtime(current_time))
-        self.set_text('t time', string)
+        if self.clock_active:
+            current_time = time.time() - self.start_time
+            string = time.strftime("%M:%S", time.gmtime(current_time))
+            self.set_text('t time', string)
 
         self.set_hp(1, ship1)
         self.set_hp(2, ship2)

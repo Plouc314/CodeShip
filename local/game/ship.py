@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
 from lib.plougame import Interface, Form, Dimension, C
-from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_length
+from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_norm, to_vect
 from spec import Spec
 
 map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
@@ -20,13 +20,14 @@ class Ship:
         
         self.team = team
         
-        # auxiliar accuracy intensity
+        # auxiliar acceleration
+        self.is_aux_acc = False
         self.aux_acc = 0
         self.aux_timer = 0
 
         # movement vectors
-        self.speed = 0
-        self.acc = 0
+        self.speed = np.array([0,0], dtype=float)
+        self.acc = np.array([0,0], dtype=float)
         self.orien = 0 # rad
         self.circular_speed = 0
         self.circular_acc = 0
@@ -72,10 +73,13 @@ class Ship:
     def set_pos(self, pos, scaled=False):
         '''
         Set the position of the ship (ship's form).  
-        If `scaled=True`, the position will be scaled to the current window's dimension.
+        `scaled` parameter specify if the given position is scaled to the current window's dimension.
         '''
+        if scaled:
+            pos = Dimension.inv_scale(pos)
+        
         self.pos[:] = pos
-        self.form.set_pos(self.pos, scale=scaled)
+        self.form.set_pos(self.pos, scale=(not scaled))
 
     def get_pos(self, scaled=False, center=False):
         '''
@@ -105,6 +109,28 @@ class Ship:
         '''
         return pygame.mask.from_surface(self.form.get_surface('main'))
 
+    def get_speed(self, scalar=False):
+        '''
+        Return the speed of the ship,  
+        if `scalar=False`: return the vector speed,
+        else return the norm of the vector.
+        '''
+        if scalar:
+            return get_norm(self.speed)
+        else:
+            return self.speed
+
+    def get_acc(self, scalar=False):
+        '''
+        Return the acceleration of the ship,  
+        if `scalar=False`: return the vector acceleration,
+        else return the norm of the vector.
+        '''
+        if scalar:
+            return get_norm(self.acc)
+        else:
+            return self.acc
+
     def set_color(self, color):
         '''Set the color of the ship'''
         if self.has_blocks:
@@ -118,20 +144,29 @@ class Ship:
     def set_auxiliary_acc(self, acc):
         '''
         Set an auxiliary source of acceleration,  
-        will last for `Spec.AUX_TIMER` frames.
+        `acc` is a vector (`np.dnarray`).  
+        It will last for `Spec.AUX_TIMER` frames.
         '''
+        self.is_aux_acc = True
         self.aux_acc = acc
         self.aux_timer = 0
 
-    def update_aux_acc(self):
+    def get_auxiliary_acc(self):
         '''
-        In case of auxiliary acceleration,  
-        update acceleration, update timer.
+        If a auxiliary force of acceleration is set, 
+        will return it and update the timer.
         '''
-        self.acc += self.aux_acc
-        self.aux_timer += 1
+        if not self.is_aux_acc:
+            return np.zeros(2)
+        
         if self.aux_timer == Spec.AUX_TIMER:
+            self.is_aux_acc = False
+            self.aux_timer = 0
             self.aux_acc = 0
+        
+        self.aux_timer += 1
+
+        return self.aux_acc
 
     def set_blocks(self, grid):
         '''
@@ -271,17 +306,13 @@ class Ship:
 
         self.form.rotate(angle)
 
-    def display(self, patch=None):
+    def display(self):
         '''
-        Display the ship,  
-        if `patch` is specified, adjust the position of the ship of the `patch`.
+        Display the ship
         '''
         self.form.set_pos(self.pos, scale=True)
         
-        if not patch is None:
-            pos = self.get_pos(scaled=True) + np.array(patch)
-        else:
-            pos = self.get_pos(scaled=True)
+        pos = self.get_pos(scaled=True)
 
         self.form.display(pos=pos)
     
@@ -318,11 +349,7 @@ class Ship:
         self.compute_circular_speed()
         
         self.orien += self.circular_speed
-
-        x = np.cos(self.orien) * self.speed + self.pos[0]
-        y = np.sin(self.orien) * self.speed + self.pos[1]
-
-        self.pos[:] = (x, y)
+        self.pos += self.speed.astype(int)
 
     def run_blocks(self):
         '''
@@ -343,8 +370,16 @@ class Ship:
         '''Update the speed of the ship'''
         self.speed += self.acc
 
+        norm_speed = get_norm(self.speed)
+
+        if norm_speed == 0:
+            return
+
+        self.speed *= Spec.AIR_RESISTANCE ** max(1, np.log10(norm_speed))
+
     def compute_circular_speed(self):
         '''Update the circular speed of the ship'''
+        self.circular_speed *= Spec.AIR_RESISTANCE
         self.circular_speed += self.circular_acc
 
         if abs(self.circular_speed) > Spec.MAX_CIRCULAR_SPEED:
@@ -365,18 +400,21 @@ class Ship:
         Compute the acceleration of the ship.
         '''
         # get total motor force
-        total_force = 0
-        for block in self.typed_blocks['Engine']:
-            total_force += block.get_engine_power()
-
-        primary_acc = np.sign(total_force) * (abs(total_force) - 2 * self.speed)
+        total_force = self.get_engines_power()
+        total_force = to_vect(total_force, self.orien)
 
         # compute acceleration
-        self.acc = primary_acc / self.mass
+        self.acc = total_force / self.mass
+        self.acc += self.get_auxiliary_acc()
 
-        # manage auxiliary acceleration
-        if self.aux_acc != 0:
-            self.update_aux_acc()  
+    def get_engines_power(self):
+        '''
+        Return the sum of the power of all the engines.
+        '''
+        force = 0
+        for block in self.typed_blocks['Engine']:
+            force += block.get_engine_force()
+        return force 
 
     def get_power_level(self):
         '''

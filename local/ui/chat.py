@@ -82,6 +82,7 @@ class Chat(SubPage):
         scroll = self.get_component('scroll')
 
         scroll.add_line(self._create_msg(username, msg, user_color))
+        scroll.set_cursor_place(down=True)
 
         # check if there is to many message
         if len(scroll) > self.MAX_MSG:

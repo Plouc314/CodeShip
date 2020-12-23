@@ -29,9 +29,10 @@ class App(Application):
 
         self.add_frame_function(self.look_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.look_demand_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
-        self.add_frame_function(self.manage_notif, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.manage_notif, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.look_private_chat_msg, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS, Spec.PAGE_PROFIL])
         self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
         self.add_frame_function(self.look_game_notif, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_profil_infos, active_pages=Spec.PAGE_FRIENDS)
@@ -42,21 +43,27 @@ class App(Application):
 
     def manage_notif(self):
         '''
-        Manage the notif TextBox of page Menu that indicates the number of
-        active friend demands.
+        Manage the notifs of page Menu & page friends that indicates the number of
+        active friend demands and unread messages.
         '''
         page_fr = self.get_page(Spec.PAGE_FRIENDS)
         page_menu = self.get_page(Spec.PAGE_MENU)
+        page_profil = self.get_page(Spec.PAGE_PROFIL)
+        
+        # update friends page notifs
+        page_fr.update_notifs(page_profil.unreads)
+
         notif = page_menu.get_component('notif')
 
-        n_dfr  = page_fr.get_n_dfr()
+        n_notif = page_fr.get_n_dfr()
+        n_notif += page_profil.get_n_unreads()
 
-        if n_dfr == 0:
+        if n_notif == 0:
             page_menu.change_display_state('notif', False)
         
         else:
             page_menu.change_display_state('notif', True)
-            notif.set_text(str(n_dfr))
+            notif.set_text(str(n_notif))
 
     def logic_logout(self):
         '''
@@ -65,6 +72,7 @@ class App(Application):
         page_menu = self.get_page(Spec.PAGE_MENU)
         page_fr = self.get_page(Spec.PAGE_FRIENDS)
         page_conn = self.get_page(Spec.PAGE_CONN)
+        page_profil = self.get_page(Spec.PAGE_PROFIL)
 
         self.client.send_logout()
 
@@ -75,6 +83,7 @@ class App(Application):
         page_menu.change_state('unlogged')
         page_menu.get_component('chat').reset()
         page_fr.reset()
+        page_profil.reset()
         
     def look_comm_login(self):
         '''
@@ -114,6 +123,17 @@ class App(Application):
 
             for username, msg in contents:
                 chat.add_msg(username, msg)
+
+    def look_private_chat_msg(self):
+        '''
+        Check if the server sent a message on the private chat.
+        '''
+        with self.client.get_data('pc') as contents:
+
+            profil = self.get_page(Spec.PAGE_PROFIL)
+
+            for username, msg in contents:
+                profil.add_message(username, msg)
 
     def look_rdfr(self):
         '''

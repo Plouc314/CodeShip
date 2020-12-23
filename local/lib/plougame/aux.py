@@ -75,7 +75,7 @@ class Dimension:
         try:
             iter(x)
         
-        except TypeError: # not iterable            
+        except TypeError: # not iterable          
             x = round(x*f, fp)
 
         else: # iterable
@@ -95,12 +95,19 @@ class Dimension:
 
         '''
         f = 1/cls._f
-        if type(x) == list or type(x) == tuple:
+        
+        # check if x is iterable
+        try:
+            iter(x)
+        
+        except: # not iterable
+            x = round(x*f, fp)
+        
+        else: # iterable
             x = list(x)
             for i in range(len(x)):
                 x[i] = round(x[i]*f, fp)
-        else:
-            x = round(x*f, fp)
+            
         return x
 
     @classmethod

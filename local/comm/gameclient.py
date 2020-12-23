@@ -33,6 +33,8 @@ class GameClient(ClientUDP):
         self.opponent_state = {
             'pos': None,
             'orien': None,
+            'speed':None,
+            'acc':None,
             'hps': None,
             'turrets': []
         }
@@ -74,10 +76,16 @@ class GameClient(ClientUDP):
         '''
         # get part of string that corresponds to the extracted info
         string = string.split(sep_m)[0]
-        pos_x, pos_y, orien = string.split(sep_c)
+        pos, orien, speed, acc = string.split(sep_c)
 
-        self.opponent_state['pos'] = np.array([pos_x, pos_y], dtype=int)
+        pos = np.array(pos.split(sep_c2), dtype=int)
+        speed = np.array(speed.split(sep_c2), dtype=float)
+        acc = np.array(acc.split(sep_c2), dtype=float)
+
+        self.opponent_state['pos'] = pos
         self.opponent_state['orien'] = float(orien)
+        self.opponent_state['speed'] = speed
+        self.opponent_state['acc'] = acc
 
     def extract_hps(self, string):
         '''
@@ -129,13 +137,16 @@ class GameClient(ClientUDP):
         '''
         Create the msg send to the server at each frame.
         '''
-
         msg = ''
 
-        # add position, orientation
+        # add position, orientation, speed, acc
         pos = ship.get_pos()
-        msg += f'{int(pos[0])}{sep_c}{int(pos[1])}'
+        msg += f'{int(pos[0])}{sep_c2}{int(pos[1])}'
         msg += f'{sep_c}{ship.orien:.4f}'
+        speed = ship.get_speed()
+        msg += f'{sep_c}{speed[0]:.2f}{sep_c2}{speed[1]:.2f}'
+        acc = ship.get_acc()
+        msg += f'{sep_c}{acc[0]:.2f}{sep_c2}{acc[1]:.2f}'
 
         msg += sep_m
 

@@ -20,7 +20,7 @@ class Form:
         - set_color : set a new color to uni-color surface or font
         - on_it : return if the mouse is on the Form's surface
         - rotate : rotate the surface of a given angle
-        - compile : return  a pygame.Surface object of the instance
+        - compile : return a pygame.Surface object of the instance
         - get_mask : return a pygame.mask.Mask object of the instance
         - copy : return a copy of the instance
     '''
@@ -90,14 +90,13 @@ class Form:
 
     def set_surface(self, surface=None, with_font=False):
         '''
-        Set the surface attribute, 
-        
+        Set the surface attribute,  
         a dict: main surface, original surface (when custom), font surface (optional), surface type (intern purposes)
         
         Arguments:
             surface : can be either a pygame.Surface or numpy.ndarray object
-            with_font : if a custom surface is set & is partly transparent & with_font=True, the blanks will be filled with the COLOR attribute
-            note : if surface not specified, set a uni-color surface with the current COLOR attribute
+            with_font : if a custom surface is set & is partly transparent & with_font=True, the blanks will be filled with the color attribute
+            note : if surface not specified, set a uni-color surface with the current color attribute
         '''
 
         # dict with type, original surf, main surf, font surf

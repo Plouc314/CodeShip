@@ -37,14 +37,14 @@ text_username = TextBox(None, (X_TB1, Y_TB), dynamic_dim=True,
 button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB2), color=C.LIGHT_BLUE,
                     text="Friends", font=Font.f(40))
 
-button_ship = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB3, Y_TB2), color=C.LIGHT_BLUE,
-                    text="Ship editor", font=Font.f(40))
+button_editor = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB3, Y_TB2), color=C.LIGHT_BLUE,
+                    text="Editor", font=Font.f(40))
 
 button_play = Button(Spec.DIM_BIG_BUTTON, POS_PLAY, color=C.LIGHT_BLUE,
                     text="Play", font=Font.f(60))
 
 notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE,
-                    text='0', font=Font.f(20))
+                    text='0', font=Font.f(25))
 
 chat = Chat(POS_CHAT, general_chat=True)
 
@@ -57,7 +57,7 @@ components = [
     ('b logout', button_logout),
     ('t username', text_username),
     ('b friends', button_friends),
-    ('b ship', button_ship),
+    ('b editor', button_editor),
     ('b play', button_play),
     ('notif', notif),
     ('chat', chat)
@@ -77,11 +77,11 @@ class Menu(Page):
         self.set_states_components(None, 'title')
         self.set_states_components('unlogged', ['b conn'])
         self.set_states_components('logged',
-        ['t username', 'b friends', 'b ship', 'chat', 'b logout', 'b play'])
+        ['t username', 'b friends', 'b editor', 'chat', 'b logout', 'b play'])
 
         self.add_button_logic('b conn', self.b_conn)
         self.add_button_logic('b friends', self.b_friends)
-        self.add_button_logic('b ship', self.b_ship)
+        self.add_button_logic('b editor', self.b_ship)
         self.add_button_logic('b play', self.b_play)
 
         self.set_out_state_func('unlogged', self.out_unlogged)

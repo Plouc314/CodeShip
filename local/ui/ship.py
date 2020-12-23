@@ -415,33 +415,69 @@ class Ship(Page):
         '''
         Check of the ship is made in one continuous form.
         '''
-        for x in range(self.grid.shape[0]):
-            for y in range(self.grid.shape[0]):
-                
-                if self.grid[x,y] > 0:
-                    if not self._check_block_connected(x,y):
-                        return False
-        
-        return True
+        # will contain every connected block's coordinate
+        self.block_chain = []
+
+        # get a block
+        n_active_block = 0
+        first_block = None
+        for block in self.blocks:
+            if block.type > 0:
+                n_active_block += 1
+                first_block = block
+
+        if n_active_block == 0:
+            return False
+
+        # add first block to chain
+        self.block_chain.append(first_block.coord)
+
+        self._is_connected_chain(*first_block.coord)
+
+        # check that every block is in the block chain
+        return len(self.block_chain) == n_active_block
+
+    def _is_connected_chain(self, x, y):
+        '''
+        Get all blocks connected to the given one,  
+        add each of them to the block chain if they're not already in it.  
+        If no new block is found, stop.
+        '''
+        coords = self._check_block_connected(x, y)
+
+        new = False
+
+        for coord in coords:
+            if not coord in self.block_chain:
+                new = True
+                self.block_chain.append(coord)
+
+        if not new:
+            return
+
+        for coord in coords:
+            self._is_connected_chain(*coord)
 
     def _check_block_connected(self, x, y):
         '''
-        Check that the block at the given coord is linked to at least one other block
+        Return a list of the block's coord that are next the given coordinate
         '''
+        coords = []
+        
         if x != 0:
             if self.grid[x - 1, y] > 0:
-                return True
+                coords.append((x-1, y))
         
         if x != Spec.SIZE_GRID_SHIP - 1:
             if self.grid[x + 1, y] > 0:
-                return True
+                coords.append((x+1, y))
         
         if y != 0:
             if self.grid[x, y - 1] > 0:
-                return True
+                coords.append((x, y-1))
         
         if y != Spec.SIZE_GRID_SHIP - 1:
             if self.grid[x, y + 1] > 0:
-                return True
+                coords.append((x, y+1))
         
-        return False
+        return coords

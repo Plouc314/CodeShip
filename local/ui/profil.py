@@ -82,9 +82,14 @@ class Profil(Page):
 
         self.client = client
         chat.client = client
+        
+        # username of current active friend
+        self.target = None
 
         # store the messages of every private conv
         self.convs = {}
+        # store a count of the number of unread messages by conv
+        self.unreads = {}
 
         super().__init__(states, components, active_states='all')
 
@@ -92,11 +97,47 @@ class Profil(Page):
 
     def on_leave(self):
         '''
-        Leave page,  
-        store messages
+        Leave page,
+        reset target,
+        store messages.
         '''
+        self.target = None
         self.store_messages()
         self.go_back()
+
+    def reset(self):
+        '''
+        Clear convs, unreads and chat.
+        '''
+        self.target = None
+        self.convs = {}
+        self.unreads = {}
+        self.get_component('chat').reset()
+
+    def get_n_unreads(self):
+        '''
+        Return the total number of unreads message
+        '''
+        return sum(self.unreads.values())
+
+    def add_message(self, sender, msg):
+        '''
+        Add a message to the profil page (from the server).  
+        Can be the active friend or not.
+        '''
+        # initialise conv if not done yet
+        if not sender in self.convs.keys():
+            self.convs[sender] = []
+            self.unreads[sender] = 0
+
+        # if is current target -> add msg to chat
+        if sender == self.target:
+            chat = self.get_component('chat')
+            chat.add_msg(sender, msg)
+        
+        else: # store msg for later
+            self.convs[sender].append({'username':sender, 'message':msg})
+            self.unreads[sender] += 1
 
     def store_messages(self):
         '''
@@ -124,8 +165,9 @@ class Profil(Page):
 
     def setup_page(self, username, wins, loss, grid):
         '''
-        Set the page given the all the infos
+        Set up the page given the all the infos
         '''
+        self.target = username
         self.set_text('title', username)
         self.set_text('t games', str(wins + loss))
         self.set_text('t wins', str(wins))
@@ -133,7 +175,13 @@ class Profil(Page):
 
         self.get_component('chat').target = username
         self.set_chat(username)
+        self.setup_ship(grid)
+        self.unreads[username] = 0
 
+    def setup_ship(self, grid):
+        '''
+        Create the ship surface
+        '''
         # create ship surface
         form_ship = self.get_component('f ship')
         
@@ -145,5 +193,3 @@ class Profil(Page):
             ship.compile()
 
             form_ship.set_surface(ship.get_surface('original'))
-
-        

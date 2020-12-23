@@ -46,8 +46,9 @@ class Spec:
     # ship movement
     MAX_CIRCULAR_ACC = 0.00025 # rad
     MAX_CIRCULAR_SPEED = 0.05 # rad
-    BOUNCE_ACC = 1
-    BOUNCE_ROTATION_MAGNITUDE = 0.1 # rad
+    AIR_RESISTANCE = .98
+    BOUNCE_ACC_FACTOR = 1.5
+    BOUNCE_CIRCULAR_SPEED = 0.01 # rad
     AUX_TIMER = 30 # frame
 
     # block caracteristics
@@ -55,7 +56,7 @@ class Spec:
     POWER_ENERGIE = 50
     POWER_CONS = 10
     POWER_CONS_MOTOR = 20
-    MOTOR_POWER = 10
+    MOTOR_FORCE = 10
     TURRET_FIRE_DELAY = 20
     TURRET_MAX_SPEED = 2 # deg
 
