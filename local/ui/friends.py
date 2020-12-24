@@ -1,7 +1,7 @@
 import pygame
 from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from ui.chat import Chat
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 Y_TB = 100

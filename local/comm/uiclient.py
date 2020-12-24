@@ -1,6 +1,6 @@
 import threading
 from lib.tcp import ClientTCP
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2

@@ -1,6 +1,6 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
 from ui.chat import Chat
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 ### TOP BAR ###

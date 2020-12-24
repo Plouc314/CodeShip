@@ -2,7 +2,7 @@ import pygame
 from lib.plougame import Interface, Page, Form, TextBox, InputText, Cadre, Button, Font, C
 from ui.chat import Chat
 from game.ship import Ship
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 ### TOP BAR ###

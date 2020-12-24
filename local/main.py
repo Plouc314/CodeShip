@@ -1,14 +1,13 @@
 import pygame
 from lib.plougame import Interface, C
 
-
 # first setup the interface -> to create Form objects
 Interface.setup((3200,1800), 'CodeShip', font_color=C.WHITE, static=False)
 
 from game.game import Game
 from ui.app import App
 from comm.uiclient import UIClient
-from spec import Spec
+from lib.spec import Spec
 import sys
 
 # get addr

@@ -1,7 +1,7 @@
 import pygame
 from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from ui.script_analyser import ScriptAnalyser
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 DIM_BLOCK = np.array([150,150])
@@ -251,12 +251,12 @@ class Ship(Page):
         self.get_component('script analyser').in_base()
 
         # set grid ship
-        with self.client.get_data('sh') as ship_arr:
+        ship_arr = self.client.in_data['sh']
 
-            if ship_arr is None:
-                return
+        if ship_arr is None:
+            return
             
-            self.set_grid(ship_arr)
+        self.set_grid(ship_arr)
 
     def _create_blocks(self):
         '''

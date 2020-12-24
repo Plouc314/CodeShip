@@ -4,7 +4,7 @@ from ui.menu import Menu
 from ui.friends import Friends
 from ui.ship import Ship
 from ui.profil import Profil
-from spec import Spec
+from lib.spec import Spec
 import time
 
 class App(Application):
@@ -194,9 +194,7 @@ class App(Application):
 
             opp_grid = grid
         
-        with self.client.get_data('sh') as grid:
-
-            own_grid = grid
+        own_grid = self.client.in_data['sh']
         
         # load & store script
         script = self.client.in_data['sc']
@@ -205,11 +203,7 @@ class App(Application):
             file.write(script)
         
         # set game
-        self.game.running = True
-        self.game.set_own_id(int(pos_id))
-        self.game.create_ships(own_grid, opp_grid)
-        self.game.setup_interface(self.username, self.opponent)
-        self.game.setup_api()
+        self.game.setup(int(pos_id), own_grid, opp_grid, self.username, self.opponent)
     
     def look_profil_infos(self):
         '''

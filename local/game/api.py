@@ -3,7 +3,7 @@ from game.block import (Block as BaseBlock,
                 Generator as BaseGenerator, 
                 Shield as BaseShield, 
                 Turret as BaseTurret)
-from spec import Spec
+from lib.spec import Spec
 
 class API:
 

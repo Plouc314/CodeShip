@@ -163,9 +163,6 @@ class Client(ClientTCP):
         Send to client that he's entering in a game.  
         pos_id specify the starting position of the ship.
         '''
-        # notify in game | opponent username, the position id of the ship
-        self.send(f'ign{sep_m}{opp_client.username}{sep_c}{int(pos_id)}')
-
         # send script
         script = DataBase.get_script(self.username)
         self.send(f'sc{sep_m}{script}')
@@ -175,6 +172,9 @@ class Client(ClientTCP):
 
         # send own ship grid
         self.send(f'sh{sep_m}{self.format_ship_grid()}')
+
+        # notify in game | opponent username, the position id of the ship
+        self.send(f'ign{sep_m}{opp_client.username}{sep_c}{int(pos_id)}')
 
     def on_message(self, msg):
         '''

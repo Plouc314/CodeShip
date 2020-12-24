@@ -1,7 +1,9 @@
 import numpy as np
-from lib.plougame.aux import C
+from lib.plougame.auxiliary import C
 
 class Spec:
+
+    VERSION = 1.0
 
     ### comm ###
 

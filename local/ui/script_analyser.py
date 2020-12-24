@@ -1,7 +1,7 @@
 import pygame
 from lib.plougame import SubPage, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from game.game import Game
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 import importlib, traceback, time
 

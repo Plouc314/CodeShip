@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad
-from spec import Spec
+from lib.spec import Spec
 
 # load images
 folder = "game/imgs/"
@@ -106,14 +106,14 @@ class BulletSystem:
     game_client = None
     bullets = []
     explosions = []
-    ships = []
+    own_ship = None
 
     @classmethod
-    def set_ships(cls, ships):
+    def set_ship(cls, own_ship):
         '''
-        Set a reference of each ship, use for the collisions.
+        Set a reference of own ship, use for the collisions.
         '''
-        cls.ships = list(ships)
+        cls.own_ship = own_ship
 
     @classmethod
     def reset(cls):
@@ -122,7 +122,7 @@ class BulletSystem:
         '''
         cls.bulletts = []
         cls.explosions = []
-        cls.ships = []
+        cls.own_ship = None
 
     @classmethod
     def add_bullet(cls, bullet):
@@ -244,28 +244,27 @@ class BulletSystem:
     @classmethod
     def check_collision(cls):
         '''
-        Check if one of the ship has been hit by one of the bullet.
+        Check if own ship has been hit by one of the bullet.
         '''
-        for ship in cls.ships:
-            mask_ship = ship.get_mask()
+        mask_ship = cls.own_ship.get_mask()
 
-            for bullet in cls.bullets:
-                
-                if bullet.team == ship.team:
-                    continue
+        for bullet in cls.bullets:
+            
+            if bullet.team == cls.own_ship.team:
+                continue
 
-                pos_bullet = bullet.get_pos(scaled=True)
+            pos_bullet = bullet.get_pos(scaled=True)
 
-                pos_ship = ship.get_pos(scaled=True)
+            pos_ship = cls.own_ship.get_pos(scaled=True)
 
-                offset = np.array(pos_bullet - pos_ship, dtype='int32')
+            offset = np.array(pos_bullet - pos_ship, dtype='int32')
 
-                intersect = mask_ship.overlap(bullet.mask, offset)
+            intersect = mask_ship.overlap(bullet.mask, offset)
 
-                if not intersect is None: 
-                    # collision occured
-                    ship.handeln_collision(bullet, pos_bullet)
-                    cls.handeln_collision(bullet, pos_bullet)
+            if not intersect is None: 
+                # collision occured
+                cls.own_ship.handeln_collision(bullet, pos_bullet)
+                cls.handeln_collision(bullet, pos_bullet)
 
     @classmethod
     def handeln_collision(cls, bullet, intersect):

@@ -5,7 +5,7 @@ from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
 from lib.plougame import Dimension
-from spec import Spec
+from lib.spec import Spec
 import importlib, traceback
 import numpy as np
 
@@ -44,6 +44,21 @@ class Game:
         else:
             raise ValueError("Can't set running to False.")
 
+    def setup(self, own_id, own_grid, opp_grid, own_username, opp_username):
+        '''
+        Set up `Game` instance for the game,
+        given:  
+        `own_id` : Set the id use to set the position, color of the ships.  
+        `own/opp grid` : the grids used to create the ships.  
+        `own/opp username` : the usernames used to set up the game's interface.  
+        '''
+        self.reset_values()
+        self.running = True
+        self.own_id = bool(own_id)
+        self.create_ships(own_grid, opp_grid)
+        self.setup_interface(own_username, opp_username)
+        self.setup_api()
+
     def create_ships(self, own_grid, opp_grid):
         '''
         Create the ships, given the grids.  
@@ -52,7 +67,7 @@ class Game:
         self.own_ship = Ship.from_grid(Spec.OWN_TEAM, own_grid)
         self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
 
-        BulletSystem.set_ships((self.own_ship, self.opp_ship))
+        BulletSystem.set_ship(self.own_ship)
         CollisionSystem.set_ships(self.own_ship, self.opp_ship)
 
         self.own_ship.compile()
@@ -73,12 +88,6 @@ class Game:
             self.script = importlib.import_module('script')
         else:
             self.script = script
-
-    def set_own_id(self, own_id):
-        '''
-        Set the id use to set the position, color of the ships.  
-        '''
-        self.own_id = bool(own_id)
 
     def _set_id_ships(self):
         '''
@@ -116,6 +125,14 @@ class Game:
 
         self.id_ships[1].set_color(Spec.COLOR_P1)
         self.id_ships[2].set_color(Spec.COLOR_P2)
+
+    def reset_values(self):
+        '''
+        Reset values of third party components.
+        '''
+        self.game_client.reset_values()
+        BulletSystem.reset()
+        CollisionSystem.reset()
 
     def handeln_out_ship(self):
         '''
@@ -157,9 +174,6 @@ class Game:
         if ended:
             self._is_game_active = False
             self.interface.set_end_game(has_win)
-            self.game_client.reset_values()
-            BulletSystem.reset()
-            CollisionSystem.reset()
             self.ui_client.send_end_game(int(has_win))
 
     def quit_logic(self):
@@ -190,7 +204,7 @@ class Game:
             - tuple, In case of error (else None): the error type, message & traceback
         '''
         # set ships
-        self.set_own_id(np.random.choice([0, 1]))
+        self.own_id = bool(np.random.choice([0, 1]))
         self.create_ships(grid, grid)
         self.setup_api(script=script_module)
 

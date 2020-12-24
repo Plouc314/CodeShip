@@ -1,27 +1,27 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
-from spec import Spec
+from lib.spec import Spec
 import numpy as np
 
 ### base ###
 
 X_BUTTON = Spec.CENTER_X - Spec.DIM_BIG_BUTTON[0]//2
-POS_LOG = np.array([X_BUTTON,600], dtype='int16')
-POS_SIGN = np.array([X_BUTTON,800], dtype='int16')
+POS_LOG = np.array([X_BUTTON,600])
+POS_SIGN = np.array([X_BUTTON,800])
 
 ### login / signup ###
 
 X_SPACE = 50
 X_TEXT = Spec.CENTER_X - Spec.DIM_MEDIUM_TEXT[0] - X_SPACE//2
 
-POS_USER = np.array([X_TEXT,600], dtype='int16')
-POS_PASS = np.array([X_TEXT,800], dtype='int16')
-POS_INP_USER = np.array([Spec.CENTER_X + X_SPACE//2, 600], dtype='int16')
-POS_INP_PASS = np.array([Spec.CENTER_X + X_SPACE//2, 800], dtype='int16')
+POS_USER = np.array([X_TEXT,600])
+POS_PASS = np.array([X_TEXT,800])
+POS_INP_USER = np.array([Spec.CENTER_X + X_SPACE//2, 600])
+POS_INP_PASS = np.array([Spec.CENTER_X + X_SPACE//2, 800])
 
-POS_DONE = np.array([2200,1200], dtype='int16')
-POS_BACK = np.array([100,100], dtype='int16')
+POS_DONE = np.array([2200,1200])
+POS_BACK = np.array([100,100])
 
-POS_ERROR = np.array([2120,1140], dtype='int16') 
+POS_ERROR = np.array([2120,1140]) 
 
 ### Components ###
 
