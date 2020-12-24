@@ -21,7 +21,7 @@ pygame.init()
 from .interface import Interface
 from .form import Form
 from .components import Cadre, TextBox, Button, InputText, ScrollList
-from .aux import Dimension, Font, C
+from .auxiliary import Dimension, Font, C
 from .spec import Specifications
 
 from .page import Page, SubPage

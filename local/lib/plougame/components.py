@@ -1,7 +1,7 @@
 import pygame
 from .form import Form
 from .helper import Delayer, center_text, get_pressed_key, rl, get_dark_color, get_light_color
-from .aux import Dimension, Font, C
+from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
 
 class Cadre(Form):

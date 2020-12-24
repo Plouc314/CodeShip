@@ -1,6 +1,6 @@
 import pygame
 from .helper import mean, rl, get_dark_color, get_light_color
-from .aux import Dimension, Font, C
+from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
 
 class Form:

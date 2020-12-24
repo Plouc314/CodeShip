@@ -1,4 +1,4 @@
-from .aux import Dimension
+from .auxiliary import Dimension
 from .components import Button, InputText, ScrollList
 from .interface import Interface
 

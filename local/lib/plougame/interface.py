@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 from .form import Form
-from .aux import Dimension, Font, C
+from .auxiliary import Dimension, Font, C
 from .helper import rl
 from .spec import Specifications as Spec
 import time
