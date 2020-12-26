@@ -110,17 +110,19 @@ class UIClient(ClientTCP):
 
     def on_profil_infos(self, content):
         '''
-        Return the infos in format: `{username, wins, loss, grid}`
+        Return the infos in format: `{username, wins, loss, friends, grid}`
         '''
-        username, wins, loss, grid = content.split(sep_c)
+        username, wins, loss, friends, grid = content.split(sep_c)
 
         wins = int(wins)
         loss = int(loss)
 
+        friends = friends.split(sep_c2)
+
         grid = np.array(grid.split(sep_c2), dtype=int)
         grid = grid.reshape(Spec.SHAPE_GRID_SHIP)
 
-        return {'username':username, 'wins':wins, 'loss':loss, 'grid':grid}
+        return {'username':username, 'wins':wins, 'loss':loss, 'friends':friends, 'grid':grid}
 
     def on_ship(self, content):
         '''

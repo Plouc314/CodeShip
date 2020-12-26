@@ -120,6 +120,10 @@ class Block(Form):
     
     @is_active.setter
     def is_active(self, value):
+        # don't update signal if new value is equal to old one
+        if self.active == value:
+            return
+
         self.active = value
         # update the signal on the ship
         if self.name != 'Block':

@@ -11,7 +11,7 @@ X_TB1 = 100
 X_TB2 = 400
 X_TB3 = 700
 
-POS_CHAT = np.array([2000, 900])
+POS_CHAT = np.array([2100, 1000])
 POS_ERROR_CONN = np.array([X_TB1, Y_TB + 100])
 POS_ERROR_PLAY = np.array([1800, 420])
 POS_NOTIF = np.array([X_TB2 + 230, Y_TB2-20])
@@ -72,6 +72,8 @@ class Menu(Page):
         # set client in chat
         chat.client = client
 
+        self.waiting_game = False
+
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
@@ -104,29 +106,56 @@ class Menu(Page):
         self.change_display_state('t error', False)
         self.get_component('t error').set_pos(POS_ERROR_PLAY, scale=True)
 
+    def reset_play(self):
+        '''
+        Set the play button in his normal state
+        '''
+        self.waiting_game = False
+            
+        # change button text
+        button = self.get_component('b play')
+        button.font = Font.f(60)
+        button.set_text("Play")
+
     def b_play(self):
         '''
-        Check if the user is ready to start a game,  
-        if yes: set the user waiting for a game
+        If not waiting for a game:
+        Check if the user is ready to start a game,
+        if yes: set the user waiting for a game.  
+        Else:
+        Cancel waiting for game.
         '''
-        # get status without context manager
-        # -> keep info for potential later call
-        ship_status = self.client.in_data['shst']
-        script_status = self.client.in_data['scst']
+        if not self.waiting_game:
+            # get status without context manager
+            # -> keep info for potential later call
+            ship_status = self.client.in_data['shst']
+            script_status = self.client.in_data['scst']
 
-        if ship_status == 0:
-            self.change_display_state('t error', True)
-            self.set_text('t error', "The ship is not ready.")
-            return
+            if ship_status == 0:
+                self.change_display_state('t error', True)
+                self.set_text('t error', "The ship is not ready.")
+                return
 
-        if script_status == 0:
-            self.change_display_state('t error', True)
-            self.set_text('t error', "The script is not ready.")
-            return
+            if script_status == 0:
+                self.change_display_state('t error', True)
+                self.set_text('t error', "The script is not ready.")
+                return
 
-        # set the user waiting to enter the game
-        self.client.send_wait_game_status(True)
+            self.waiting_game = True
+
+            # set the user waiting to enter the game
+            self.client.send_wait_game_status(True)
+            
+            # change button text
+            button = self.get_component('b play')
+            button.font = Font.f(30)
+            button.set_text("Waiting for opponent...")
         
+        else:
+            # remove the user from waiting list
+            self.client.send_wait_game_status(False)
+
+            self.reset_play()
 
     def b_friends(self):
         # go to the friends page

@@ -262,8 +262,21 @@ class Client(ClientTCP):
         wins = DataBase.get_wins(username)
         loss = DataBase.get_loss(username)
         ship = DataBase.get_ship(username)
+        friends = DataBase.get_friends(username)
 
+        # add stats
         msg = f'rpd{sep_m}{username}{sep_c}{wins}{sep_c}{loss}{sep_c}'
+        
+        # add friends
+        for friend in friends:
+            if friend != self.username:
+                msg += friend + sep_c2
+        
+        if msg[-1] == sep_c2:
+            msg = msg[:-1]
+        msg += sep_c
+
+        # add ship's grid
         msg += self.format_ship_grid(username=username)
 
         self.send(msg)
@@ -273,12 +286,25 @@ class Client(ClientTCP):
         Manage the friend demand
         Content: target username
         '''
+        is_error = False
+
+        # check target is not user
+        if content == self.username:
+            is_error = True
+
         # check requested user exist
         if not DataBase.is_user(content):
+            is_error = True
+        
+        # check not already friends
+        if content in DataBase.get_friends(self.username):
+            is_error = True
+
+        if is_error:
             # send error in friend demand
             self.send(f'rdfr{sep_m}0')
             return
-        
+
         DataBase.add_friend_demand(content, self.username)
 
         # check if requested user is connected

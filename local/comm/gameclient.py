@@ -36,6 +36,7 @@ class GameClient(ClientUDP):
             'speed':None,
             'acc':None,
             'hps': None,
+            'actives': None,
             'turrets': []
         }
 
@@ -52,9 +53,9 @@ class GameClient(ClientUDP):
         except:
             ErrorUDP.call("Extraction of ship's information failed.", warning=True)
 
-        # get blocks' hp
+        # get blocks' info
         try:
-            self.extract_hps(msg)
+            self.extract_blocks_info(msg)
         except:
             ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
 
@@ -87,17 +88,29 @@ class GameClient(ClientUDP):
         self.opponent_state['speed'] = speed
         self.opponent_state['acc'] = acc
 
-    def extract_hps(self, string):
+    def extract_blocks_info(self, string):
         '''
-        Extract the hp of the blocks.
+        Extract the info of the blocks.  
+        Hps and activation
         '''
         # get part of string that corresponds to the extracted info
         string = string.split(sep_m)[1]
 
-        hps = string.split(sep_c)
+        infos = string.split(sep_c)
+        hps, actives = [], []
+
+        for info in infos:
+            hp, active = info.split(sep_c2)
+            hps.append(hp)
+            actives.append(active)
+
         hps = np.array(hps, dtype=int)
         hps = hps.reshape(Spec.SHAPE_GRID_SHIP)
         self.opponent_state['hps'] = hps
+
+        actives = np.array(actives, dtype=int)
+        actives = actives.reshape(Spec.SHAPE_GRID_SHIP)
+        self.opponent_state['actives'] = actives
 
     def extract_bullets(self, string):
         '''
@@ -150,18 +163,21 @@ class GameClient(ClientUDP):
 
         msg += sep_m
 
-        # add blocks' hp
+        # add blocks' info
         for x in range(Spec.SIZE_GRID_SHIP):
             for y in range(Spec.SIZE_GRID_SHIP):
                 
                 block = ship.get_block_by_coord((x,y))
 
+                # add hp and if block is activated
                 if block == None:
                     hp = 0
+                    activate = 0
                 else:
                     hp = block.hp
+                    activate = int(block.is_active)
                 
-                msg += str(hp) + sep_c
+                msg += f'{hp}{sep_c2}{activate}{sep_c}'
         
         # remove last separator
         msg = msg[:-1]

@@ -180,7 +180,7 @@ class Friends(Page):
         Get the response from the server of if the friend demand occured an error.
         '''
         inp = self.get_component('i username')
-        text = self.get_component('t rdfr') 
+        text = self.get_component('t rdfr')
         username = inp.get_text()
         
         self.change_display_state('t rdfr', True)
@@ -195,7 +195,7 @@ class Friends(Page):
             inp.reset_text(pretext="Try again...")
 
             text.set_color(C.DARK_RED)
-            text.set_text(f'There is no user named "{username}".')
+            text.set_text('Something went wrong...')
 
     def set_friend(self, username, connected):
         '''

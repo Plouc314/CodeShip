@@ -92,28 +92,30 @@ Y_TB = 100
 X_TB1 = 100
 
 Y_GR = 330
-X_GR1 = 600
-X_GR2 = 790
+X_GR1 = 300
+X_GR2 = 490
 
-X_LB = 1520
+X_LB = 1220
 Y_LB1 = 400
-Y_LB2 = 570
-Y_LB3 = 740
-Y_LB4 = 910
-Y_LB5 = 1080
+Y_LB2 = 585
+Y_LB3 = 770
+Y_LB4 = 955
+Y_LB5 = 1140
 
+DIM_BUTTON_BLOCK = np.array([160, 160])
 DIM_GR_BUTT = np.array([180, 60])
 DIM_GR_TEXT = np.array([280, 60])
+DIM_TEXT_BLOCK = np.array([400, 160])
 
-POS_GRID = np.array([600, 400])
-POS_INFO = np.array([600, 1320])
+POS_GRID = np.array([300, 400])
+POS_INFO = np.array([300, 1320])
 
-POS_SCRIPT = np.array([1800, 400])
+POS_SCRIPT = np.array([1820, 400])
 
 ### base ###
 
 title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
-                text="Ship editor", font=Font.f(80))
+                text="Editor", font=Font.f(80))
 
 button_back = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
                 text="Back", font=Font.f(30))
@@ -130,11 +132,14 @@ text_info = TextBox(None, POS_INFO, color=C.DARK_GREEN,
 text_credits = TextBox(DIM_GR_TEXT, (X_GR2, Y_GR),
                     text="", font=Font.f(30), marge=True)
 
-button_block = Block((X_LB, Y_LB1), DIM_BLOCK, 1, color=C.LIGHT_GREEN)
-button_generator = Block((X_LB, Y_LB2), DIM_BLOCK, 2, color=C.LIGHT_GREEN)
-button_shield = Block((X_LB, Y_LB3), DIM_BLOCK, 3, color=C.LIGHT_GREEN)
-button_turret = Block((X_LB, Y_LB4), DIM_BLOCK, 4, color=C.LIGHT_GREEN)
-button_engine = Block((X_LB, Y_LB5), DIM_BLOCK, 5, color=C.LIGHT_GREEN)
+text_block = TextBox(DIM_TEXT_BLOCK, (0,0), color=C.XLIGHT_GREY,
+                    text="", font=Font.f(30), marge=True)
+
+button_block = Block((X_LB, Y_LB1), DIM_BUTTON_BLOCK, 1, color=C.LIGHT_GREEN)
+button_generator = Block((X_LB, Y_LB2), DIM_BUTTON_BLOCK, 2, color=C.LIGHT_GREEN)
+button_shield = Block((X_LB, Y_LB3), DIM_BUTTON_BLOCK, 3, color=C.LIGHT_GREEN)
+button_turret = Block((X_LB, Y_LB4), DIM_BUTTON_BLOCK, 4, color=C.LIGHT_GREEN)
+button_engine = Block((X_LB, Y_LB5), DIM_BUTTON_BLOCK, 5, color=C.LIGHT_GREEN)
 
 script_analyser = ScriptAnalyser(POS_SCRIPT)
 
@@ -147,6 +152,7 @@ components = [
     ('b save', button_save),
     ('t info', text_info),
     ('t credits', text_credits),
+    ('t block', text_block),
     ('b block', button_block),
     ('b generator', button_generator),
     ('b engine', button_engine),
@@ -154,6 +160,45 @@ components = [
     ('b turret', button_turret),
     ('script analyser', script_analyser)
 ]
+
+desc_block = f'''
+Block
+No utility except to add hps.
+Price: {Spec.PRICE_BLOCK}   HP: {Spec.HP_BLOCK}
+Power consumption: 0
+'''
+desc_generator = f'''
+Generator
+Powers up the other blocks.
+Price: {Spec.PRICE_GENERATOR}   HP: {Spec.HP_BLOCK}
+Power output: {Spec.POWER_ENERGIE}
+'''
+desc_shield = f'''
+Shield
+Not implemented yet.
+Price: {Spec.PRICE_SHIELD}   HP: {Spec.HP_BLOCK}
+Power consumption: {Spec.POWER_CONS}
+'''
+desc_turret = f'''
+Turret
+Can rotate, shoots bullets.
+Price: {Spec.PRICE_TURRET}   HP: {Spec.HP_BLOCK}
+Power consumption: {Spec.POWER_CONS}
+'''
+desc_engine = f'''
+Engine
+Drives the ship forward.
+Price: {Spec.PRICE_ENGINE}   HP: {Spec.HP_BLOCK}
+Power consumption: {Spec.POWER_CONS_MOTOR}
+'''
+
+map_blocks = {
+    'b block': desc_block.strip(),
+    'b generator': desc_generator.strip(),
+    'b engine': desc_engine.strip(),
+    'b shield': desc_shield.strip(),
+    'b turret': desc_turret.strip()
+}
 
 map_credits = {
     0:0,
@@ -326,6 +371,8 @@ class Ship(Page):
         if self.get_state() != "edit":
             return
 
+        self.manage_text_block()
+
         for block in self.blocks:
             if block.pushed(events):
                 
@@ -351,7 +398,38 @@ class Ship(Page):
         if self.is_grab_active:
             self.grab_block.display()
 
-    def _change_grid_block(self, block):
+    def manage_text_block(self):
+        '''
+        Manage the text block, 
+        if it's displayed,
+        what text does it display
+        '''
+        # reset text block
+        self.change_display_state('t block', False)
+
+        for name, text in map_blocks.items():
+            block = self.get_component(name)
+            
+            if block.on_it():
+                self._set_text_block(block, text)
+
+    def _set_text_block(self, block:Block, text:str):
+        '''
+        Set the text block corresponding to the active block.
+        '''
+        text_block = self.get_component('t block')
+
+        # set pos of block text
+        x, y = block.get_pos()
+        x += DIM_BUTTON_BLOCK[0]
+
+        text_block.set_pos((x,y), scale=True)
+
+        text_block.set_text(text)
+
+        self.change_display_state('t block', True)
+
+    def _change_grid_block(self, block: Block):
         '''
         Change the caracteristic of a block of the grid by the cara of the grap block
         '''

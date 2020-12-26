@@ -72,6 +72,10 @@ class Button(Form):
                 if event.type == pygame.MOUSEBUTTONUP:
                     return True
 
+    def set_text(self, text):
+        ''' Set the text'''
+        self._text = text
+
     def get_text(self):
         ''' Return the text '''
         return self._text
@@ -639,7 +643,10 @@ class ScrollList(Form):
         If nothing is specified remove the last line.
         '''
         if line != None:
-            index = self._lines.find(line)
+            if line in self._lines:
+                index = self._lines.index(line)
+            else:
+                raise ValueError("Given line is not part of scroll list.")
 
         elif index == None:
             index = len(self._lines) - 1

@@ -107,20 +107,22 @@ class BulletSystem:
     bullets = []
     explosions = []
     own_ship = None
+    opp_ship = None
 
     @classmethod
-    def set_ship(cls, own_ship):
+    def set_ships(cls, own_ship, opp_ship):
         '''
-        Set a reference of own ship, use for the collisions.
+        Set a reference of both ships, use for the collisions.
         '''
         cls.own_ship = own_ship
+        cls.opp_ship = opp_ship
 
     @classmethod
     def reset(cls):
         '''
         Reset the bulletsystem.
         '''
-        cls.bulletts = []
+        cls.bullets = []
         cls.explosions = []
         cls.own_ship = None
 
@@ -206,7 +208,7 @@ class BulletSystem:
             bullet.update_state()
         
         cls.check_in_dim()
-        cls.check_collision()
+        cls.handeln_collision()
     
     @classmethod
     def display(cls):
@@ -223,51 +225,73 @@ class BulletSystem:
             expl.display(pos=pos)
     
     @classmethod
-    def check_in_dim(cls, margin_factor=2):
+    def check_in_dim(cls):
         '''
         For each bullet, check if its in the screen dimension,
         with a margin factor to handeln ships moving outside initial screen.  
         if not: remove the bullet.
         '''
+        margin = Dimension.scale(Spec.DIM_SHIP)[0]
         # get scaled window dimension
-        window_x = margin_factor*Dimension.get_x(scaled=True)
-        window_y = margin_factor*Dimension.get_y(scaled=True)
+        window_x = Dimension.get_x(scaled=True)
+        window_y = Dimension.get_y(scaled=True)
 
         for bullet in cls.bullets:
             x, y = bullet.get_pos(scaled=True)
             
-            if not (0 < y < window_y) or not (0 < x < window_x):
+            if not (-margin < y < window_y + margin) or not (-margin < x < window_x + margin):
                 # remove bullet
                 bullet.delete()
                 cls.bullets.remove(bullet)
 
     @classmethod
-    def check_collision(cls):
+    def handeln_collision(cls):
+        '''
+        Check if one of the ships is hit by a bullet,  
+        handeln collision effects.
+        '''
+        is_collision, bullet = cls.is_collision(cls.own_ship)
+        if is_collision:
+            pos_bullet = bullet.get_pos(scaled=True)
+            cls.own_ship.handeln_collision(bullet, pos_bullet)
+            cls.handeln_collision_effect(bullet, pos_bullet)
+
+        is_collision, bullet = cls.is_collision(cls.opp_ship)
+        if is_collision:
+            # remove damage from bullet -> other client handeln it
+            bullet.damage = 0
+            
+            pos_bullet = bullet.get_pos(scaled=True)
+            cls.opp_ship.handeln_collision(bullet, pos_bullet)
+            cls.handeln_collision_effect(bullet, pos_bullet)
+
+    @classmethod
+    def is_collision(cls, ship):
         '''
         Check if own ship has been hit by one of the bullet.
         '''
-        mask_ship = cls.own_ship.get_mask()
+        mask_ship = ship.get_mask()
 
         for bullet in cls.bullets:
             
-            if bullet.team == cls.own_ship.team:
+            if bullet.team == ship.team:
                 continue
 
             pos_bullet = bullet.get_pos(scaled=True)
 
-            pos_ship = cls.own_ship.get_pos(scaled=True)
+            pos_ship = ship.get_pos(scaled=True)
 
             offset = np.array(pos_bullet - pos_ship, dtype='int32')
 
             intersect = mask_ship.overlap(bullet.mask, offset)
 
-            if not intersect is None: 
-                # collision occured
-                cls.own_ship.handeln_collision(bullet, pos_bullet)
-                cls.handeln_collision(bullet, pos_bullet)
+            if not intersect is None:
+                return True, bullet
+        
+        return False, None
 
     @classmethod
-    def handeln_collision(cls, bullet, intersect):
+    def handeln_collision_effect(cls, bullet, intersect):
         '''
         Remove bullet.  
         Create an explosion object.

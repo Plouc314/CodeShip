@@ -67,7 +67,7 @@ class Game:
         self.own_ship = Ship.from_grid(Spec.OWN_TEAM, own_grid)
         self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
 
-        BulletSystem.set_ship(self.own_ship)
+        BulletSystem.set_ships(self.own_ship, self.opp_ship)
         CollisionSystem.set_ships(self.own_ship, self.opp_ship)
 
         self.own_ship.compile()
@@ -248,10 +248,11 @@ class Game:
         if acc is not None:
             self.opp_ship.acc = acc
 
-        # set hp
+        # blocks info
         hps = self.game_client.opponent_state['hps']
+        actives = self.game_client.opponent_state['actives']
 
-        if not hps is None:
+        if not hps is None and not actives is None:
 
             for x in range(Spec.SIZE_GRID_SHIP):
                 for y in range(Spec.SIZE_GRID_SHIP):
@@ -262,6 +263,7 @@ class Game:
                         continue
 
                     block.hp = hps[x,y]
+                    block.is_active = bool(actives[x,y])
 
                     if block.hp <= 0:
                         self.opp_ship.remove_block(block=block)

@@ -2,7 +2,7 @@ import pygame
 from lib.plougame import Interface, C
 
 # first setup the interface -> to create Form objects
-Interface.setup((3200,1800), 'CodeShip', font_color=C.WHITE, static=False)
+Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=True)
 
 from game.game import Game
 from ui.app import App

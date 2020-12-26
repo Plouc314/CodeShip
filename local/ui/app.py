@@ -33,7 +33,7 @@ class App(Application):
         self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_private_chat_msg, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS, Spec.PAGE_PROFIL])
-        self.add_frame_function(self.look_rdfr, active_pages=Spec.PAGE_FRIENDS)
+        self.add_frame_function(self.look_rdfr, active_pages=[Spec.PAGE_FRIENDS, Spec.PAGE_PROFIL])
         self.add_frame_function(self.look_game_notif, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_profil_infos, active_pages=Spec.PAGE_FRIENDS)
 
@@ -143,10 +143,11 @@ class App(Application):
 
             if content == None:
                 return
-            
-            page_fr = self.get_page(Spec.PAGE_FRIENDS)
 
-            page_fr.set_rdfr(content)
+            page = self.get_active_page()
+            # check that page has set_rdfr method
+            if hasattr(page, 'set_rdfr'):
+                page.set_rdfr(content)
 
     def look_friends(self):
         '''
@@ -187,6 +188,7 @@ class App(Application):
             self.in_game = True
             self.opponent = username
         
+        # wait to be sure to receive every info
         time.sleep(.1)
 
         # if notified -> get opp's grid
@@ -205,6 +207,10 @@ class App(Application):
         # set game
         self.game.setup(int(pos_id), own_grid, opp_grid, self.username, self.opponent)
     
+        # set menu's play button to normal state
+        page_menu = self.get_page(Spec.PAGE_MENU)
+        page_menu.reset_play()
+
     def look_profil_infos(self):
         '''
         Check if receiving profil data.

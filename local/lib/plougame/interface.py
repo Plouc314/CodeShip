@@ -8,10 +8,11 @@ import time
 
 class Interface:
     '''
-    Manage the window and all the gui objects (Form, Button, ...), update the screen and mangae the fps.
-    The window always appear in fullscreen (to be fixed), the window can be resized and all objects will be rescaled auto.
+    Manage the window and all the gui objects (Form, Button, ...), update the screen
+    and mangae the fps. The window can be resized and all objects will be rescaled auto.
 
-    Work with pygame, screen object store as an attribute. So can create own pygame object and add them to the Interface using .add_resizable_objects.
+    Work with pygame, screen object store as an attribute. So can create own pygame object
+    and add them to the Interface using .add_resizable_objects.
 
     Must be setup (using .setup method) before be used.
 
@@ -31,49 +32,45 @@ class Interface:
     stats_ndisplay = 0
 
     @classmethod
-    def setup(cls, dim: (int, int), win_title: str, *, font_color=C.WHITE, static=False):
+    def setup(cls, dim: (int, int), title: str, *, fullscreen=False,
+            background_color=C.WHITE, static=False):
         '''
         Arguments:
             - dim : default window dimension, used to set other object's dimension
-            - win_title : the title of the window
-            - font_color : the default color of the window
+            - title : the title of the window
+            - background_color : the default color of the window
             - static
         '''
         
         # setup Dimension
         Dimension.set_dim(dim)
 
-        cls.font_color = font_color
+        cls.background_color = background_color
         cls._is_static = static
 
         # static interfaces
         cls._n_first_frames = Spec.N_FIRST_FRAMES
         cls._is_active_current_frame = True 
 
-        # create screen in full screen dimension: resize to specified dim
-
-        infoObject = pygame.display.Info()
-        x, y = infoObject.current_w, infoObject.current_h
-
-        # rescale y -> top bar
-        #y = round(y*.98)
-        fullscreen_dim = (x,y)
-
-        cls.screen = pygame.display.set_mode(fullscreen_dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
-        cls.screen.fill(cls.font_color)
-        pygame.display.set_caption(win_title)
-
+        # create screen
+        if fullscreen:
+            dim = cls._get_screen_dim()
+        
+        cls.screen = pygame.display.set_mode(dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
+        cls.screen.fill(cls.background_color)
         cls.set_screen(cls.screen)
+
+        pygame.display.set_caption(title)
 
         # set references to Form object
         Form._interface = cls
         Form.screen = cls.screen
 
-        cls.x_padding = Form((0,0),(0,0),cls.font_color, rescale=False)
-        cls.y_padding = Form((0,0),(0,0),cls.font_color, rescale=False)
+        cls.x_padding = Form((0,0),(0,0),cls.background_color, rescale=False)
+        cls.y_padding = Form((0,0),(0,0),cls.background_color, rescale=False)
 
         # rescale window to correct dim
-        cls._rescale(fullscreen_dim)
+        cls._rescale(dim)
         
     @classmethod
     def set_screen(cls, screen):
@@ -132,7 +129,7 @@ class Interface:
         Execute once a frame
         Update the screen, get the input for current frame, check for quit events...
         Return:
-            - pressed : pygame object (pygame.get_pressed)
+            - pressed : pygame object (pygame.key.get_pressed)
             - events : pygame object (pygame.event.get)
         '''
         cls.clock.tick(Spec.FPS)
@@ -140,11 +137,11 @@ class Interface:
         pressed = pygame.key.get_pressed()
         events = pygame.event.get()
 
-        cls._react_basic_inputs(pressed, events)
+        is_resize = cls._react_basic_inputs(pressed, events)
 
         if not cls._is_static:
             # dynamic interface
-            cls._display(fill=fill)
+            cls._display(fill=fill, update=(not is_resize))
 
             return pressed, events
         
@@ -155,7 +152,7 @@ class Interface:
             cls._is_active_current_frame = False
             cls.stats_display += 1
 
-            cls._display(fill=fill)
+            cls._display(fill=fill, update=(not is_resize))
             
         else:
             cls.stats_ndisplay += 1
@@ -219,23 +216,26 @@ class Interface:
             rz_obj.on_resize(scale_factor)
 
     @classmethod
-    def _display(cls, fill=True):
+    def _display(cls, fill=True, update=True):
         '''
-        Fill the basic screen, display the margin, all pygame.Surface blited on screen
+        Fill the basic screen, display the margins, all pygame.Surface blited on screen.
         '''
         cls.x_padding.display()
         cls.y_padding.display()
 
-        pygame.display.update()
+        if update:
+            pygame.display.update()
 
         if fill:
-            cls.screen.fill(cls.font_color)
+            cls.screen.fill(cls.background_color)
 
     @classmethod
-    def _react_basic_inputs(cls, pressed, events):
+    def _react_basic_inputs(cls, pressed, events) -> bool:
         '''
-        React to the basic user inputs such as window resize or quit event...
+        React to the basic user inputs such as window resize or quit event.  
+        Return if the window has been resized.
         '''
+        is_resize = False
         for event in events:
             # check quit
             if event.type == pygame.QUIT:
@@ -243,9 +243,12 @@ class Interface:
             # check window resize
             if event.type == VIDEORESIZE:
                 cls._rescale(event.dict['size'])
+                is_resize = True
                 
         if pressed[pygame.K_ESCAPE]:
             cls.running = False
+
+        return is_resize
 
     @classmethod
     def _is_inputs(cls, pressed, events):
@@ -266,3 +269,11 @@ class Interface:
             return True
 
         return False
+    
+    @classmethod
+    def _get_screen_dim(cls):
+        '''
+        Return the dimension of the screen.
+        '''
+        infoObject = pygame.display.Info()
+        return infoObject.current_w, infoObject.current_h

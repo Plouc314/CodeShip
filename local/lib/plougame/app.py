@@ -105,7 +105,13 @@ class Application:
 
         self.change_page(new_page)
 
-    def get_page(self, name):
+    def get_active_page(self) -> Page:
+        '''
+        Return the active page.
+        '''
+        return self._pages[self._active_page]
+
+    def get_page(self, name) -> Page:
         '''
         Return the page with the given name.
         '''

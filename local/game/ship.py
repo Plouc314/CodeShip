@@ -320,10 +320,10 @@ class Ship:
         '''
         Execute all the ship's method that need to be executed during a frame.
         '''
-        self.control_power_level()
         self.run_blocks()
 
         if not remote_control:
+            self.control_power_level()
             self.update_turrets()
             self.update_state()
         
