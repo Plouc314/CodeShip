@@ -5,7 +5,7 @@ from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
 from lib.plougame import Dimension
-from lib.spec import Spec
+from data.spec import Spec
 import importlib, traceback
 import numpy as np
 

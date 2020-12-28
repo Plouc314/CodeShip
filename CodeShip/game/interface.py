@@ -3,7 +3,7 @@ import time
 import numpy as np
 from lib.plougame import Page, Form, Cadre, TextBox, Button, InputText, Font, C
 from game.api import API
-from lib.spec import Spec
+from data.spec import Spec
 
 ### TOP BAR
 

@@ -1,5 +1,5 @@
 from lib.plougame import Interface, SubPage, TextBox, ScrollList, InputText, Button, Font, C
-from lib.spec import Spec
+from data.spec import Spec
 import numpy as np
 
 ### MESSAGE ###

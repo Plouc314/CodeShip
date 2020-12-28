@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad
-from lib.spec import Spec
+from data.spec import Spec
 
 # load images
 folder = "game/imgs/"

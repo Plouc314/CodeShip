@@ -7,7 +7,7 @@ Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=Tr
 from game.game import Game
 from ui.app import App
 from comm.uiclient import UIClient
-from lib.spec import Spec
+from data.spec import Spec
 import sys
 
 # get addr

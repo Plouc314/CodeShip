@@ -1,7 +1,7 @@
 import pygame
 from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from ui.script_analyser import ScriptAnalyser
-from lib.spec import Spec
+from data.spec import Spec
 import numpy as np
 
 DIM_BLOCK = np.array([150,150])

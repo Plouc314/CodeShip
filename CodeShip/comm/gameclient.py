@@ -1,7 +1,7 @@
 import threading
 from lib.udp import ClientUDP, ErrorUDP
 from game.bulletsystem import BulletSystem, Bullet
-from lib.spec import Spec
+from data.spec import Spec
 import numpy as np
 
 sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2

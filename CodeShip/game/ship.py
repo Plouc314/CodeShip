@@ -4,7 +4,7 @@ import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
 from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_norm, to_vect
-from lib.spec import Spec
+from data.spec import Spec
 
 map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
 

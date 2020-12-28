@@ -4,7 +4,7 @@ from lib.plougame import Form, C
 from lib.plougame.helper import Delayer
 from game.bulletsystem import Bullet, BulletSystem
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_norm
-from lib.spec import Spec
+from data.spec import Spec
 
 
 # load imgs

@@ -4,7 +4,7 @@ from ui.menu import Menu
 from ui.friends import Friends
 from ui.ship import Ship
 from ui.profil import Profil
-from lib.spec import Spec
+from data.spec import Spec
 import time
 
 class App(Application):

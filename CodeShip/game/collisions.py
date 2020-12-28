@@ -1,7 +1,7 @@
 import pygame, numpy as np
 from lib.plougame.helper import Delayer
 from game.geometry import get_deg, get_norm, to_vect, cal_direction
-from lib.spec import Spec
+from data.spec import Spec
 
 collision_deco = Delayer(15)
 
