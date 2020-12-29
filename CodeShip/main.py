@@ -8,6 +8,7 @@ from game.game import Game
 from ui.app import App
 from comm.uiclient import UIClient
 from data.spec import Spec
+from lib.counter import Counter
 import sys
 
 # get addr
@@ -27,6 +28,8 @@ client = UIClient((ip, Spec.PORT))
 game = Game(client)
 app = App(client, game)
 
+Interface.run = Counter.add_func(Interface.run)
+
 while Interface.running:
 
     pressed, events = Interface.run()
@@ -38,6 +41,8 @@ while Interface.running:
 
     else:
         game.run(pressed, events)
+
+Counter.print_result()
 
 client.disconnect()
 game.game_client.disconnect()

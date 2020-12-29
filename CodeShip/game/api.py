@@ -10,12 +10,12 @@ class API:
     _ships = {'own':None, 'opp':None}
 
     @classmethod
-    def set_ship(cls, ship):
+    def set_ship(cls, ship: BaseShip):
         cls._ships['own'] = ship
         Ship._set_blocks()
 
     @classmethod
-    def set_opponent_ship(cls, ship):
+    def set_opponent_ship(cls, ship: BaseShip):
         cls._ships['opp'] = ship
         Opponent._set_blocks()
 

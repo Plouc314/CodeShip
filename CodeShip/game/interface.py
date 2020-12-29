@@ -4,6 +4,7 @@ import numpy as np
 from lib.plougame import Page, Form, Cadre, TextBox, Button, InputText, Font, C
 from game.api import API
 from data.spec import Spec
+from lib.counter import Counter
 
 ### TOP BAR
 
@@ -156,6 +157,7 @@ class GameInterface(Page):
         text.set_text(f'{100*total_force}%')
         #text.set_text(f'{ship.acc:.2f} {ship.speed:.2f}')
 
+    @Counter.add_func
     def update(self, ship1, ship2):
         '''
         Update the interface's infos given the ships,  
@@ -181,3 +183,5 @@ class GameInterface(Page):
         '''
         self.set_text('t username1', user1)
         self.set_text('t username2', user2)
+
+GameInterface.display = Counter.add_func(GameInterface.display)

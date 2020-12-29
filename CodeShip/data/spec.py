@@ -10,7 +10,7 @@ class Spec:
     PORT = 5050
     IP_PUBLIC = '188.62.158.181'
     IP_HOST1 = '127.0.0.1'
-    IP_HOST2 = '192.168.1.122'
+    IP_HOST2 = '192.168.1.113'
     IP_HOST3 = '192.168.1.149'
     
     SEP_MAIN = '|'
@@ -31,6 +31,9 @@ class Spec:
     # signal
     DIM_SIGNAL = np.array([20,20])
     POS_SIGNAL = np.array([10,10])
+
+    # script
+    SCRIPT_EXEC_TIME = 0.005
 
     # grid dimension
     SIZE_GRID_SHIP = 6

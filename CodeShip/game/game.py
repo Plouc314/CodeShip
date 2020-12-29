@@ -5,8 +5,9 @@ from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
 from lib.plougame import Dimension
+from lib.counter import Counter
 from data.spec import Spec
-import importlib, traceback
+import importlib, traceback, time
 import numpy as np
 
 class Game:
@@ -185,6 +186,20 @@ class Game:
         # reset game interface
         self.interface.change_state('base')
 
+    def _get_traceback(self, error):
+        '''
+        Return a formated traceback of the given error.
+        '''
+        tb = e.__traceback__
+        tb = traceback.extract_tb(tb).format()
+
+        error_type = e.__class__.__name__
+        error_msg = str(e)
+
+        tb.append(f'{error_type}: {error_msg}')
+        return tb
+
+    @Counter.add_func
     def run_script(self):
         '''
         Run the user's script
@@ -208,26 +223,24 @@ class Game:
         self.create_ships(grid, grid)
         self.setup_api(script=script_module)
 
-        is_error = False
-
         try:
+            st = time.time()
             self.script.main()
+            duration = time.time() - st
         
         except Exception as e:
 
-            is_error = True
+            tb = self._get_traceback(e)
 
-            tb = e.__traceback__
-            tb = traceback.extract_tb(tb).format()
-
-            error_type = e.__class__.__name__
-            error_msg = str(e)
+            return 'runtime', tb
         
-        if is_error:
-            return True, (error_type, error_msg, tb)
-        else:
-            return False, None
+        # check execution time
+        if duration > Spec.SCRIPT_EXEC_TIME:
+            return 'execution time', None
 
+        return None, None
+
+    @Counter.add_func
     def set_opp_state(self):
         '''
         Set opponent state according to comm from server
@@ -254,29 +267,24 @@ class Game:
 
         if not hps is None and not actives is None:
 
-            for x in range(Spec.SIZE_GRID_SHIP):
-                for y in range(Spec.SIZE_GRID_SHIP):
-                    
-                    block = self.opp_ship.get_block_by_coord((x,y))
+            for block in self.opp_ship.blocks.values():
+                x, y = block.coord
 
-                    if not block:
-                        continue
+                block.hp = hps[x,y]
+                block.is_active = bool(actives[x,y])
 
-                    block.hp = hps[x,y]
-                    block.is_active = bool(actives[x,y])
-
-                    if block.hp <= 0:
-                        self.opp_ship.remove_block(block=block)
+                if block.hp <= 0:
+                    self.opp_ship.remove_block(block=block)
 
         # set turrets' orien
         oriens = self.game_client.opponent_state['turrets']
 
         if len(oriens) != 0:
-            
             for turret, orien in zip(self.opp_ship.typed_blocks['Turret'], oriens):
                 turret.orien = orien
                 turret.rotate_surf(orien)
 
+    @Counter.add_func
     def run(self, pressed, events):
         '''
         Run the game.

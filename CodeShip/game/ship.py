@@ -3,6 +3,7 @@ import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
 from lib.plougame import Interface, Form, Dimension, C
+from lib.counter import Counter
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_norm, to_vect
 from data.spec import Spec
 
@@ -36,6 +37,7 @@ class Ship:
 
         # blocks
         self.typed_blocks = {'Block':[], 'Generator':[], 'Engine':[], 'Shield':[], 'Turret':[]}
+        self._mask = None
 
         if color:
             self.color = color
@@ -62,11 +64,15 @@ class Ship:
 
         return cls.from_grid(grid, team, color=color)
 
-    def get_block_by_coord(self, coord):
+    def get_block_by_coord(self, coord, blocks=None):
         '''
-        Return the block with the corresponding coord
+        Return the block with the corresponding coord.  
+        If `blocks` is specified, loop through the specified blocks.
         '''
-        for block in self.blocks.values():
+        if blocks == None:
+            blocks = self.blocks.values()
+
+        for block in blocks:
             if np.all(block.coord == coord):
                 return block
 
@@ -107,7 +113,7 @@ class Ship:
         '''
         Return the pygame.mask.Mask object of the ship.
         '''
-        return pygame.mask.from_surface(self.form.get_surface('main'))
+        return self._mask
 
     def get_speed(self, scalar=False):
         '''
@@ -283,7 +289,10 @@ class Ship:
         self.form = Form(dim_surf, self.pos, surface=surface)
 
         self.set_signals()
-    
+
+        # create first mask
+        self._mask = pygame.mask.from_surface(self.form.get_surface('main'))
+
     def set_signals(self):
         '''
         Set the signal of all the blocks of the ship.  
@@ -306,6 +315,7 @@ class Ship:
 
         self.form.rotate(angle)
 
+    @Counter.add_func
     def display(self):
         '''
         Display the ship
@@ -316,6 +326,7 @@ class Ship:
 
         self.form.display(pos=pos)
     
+    @Counter.add_func
     def run(self, remote_control=False):
         '''
         Execute all the ship's method that need to be executed during a frame.
@@ -330,6 +341,9 @@ class Ship:
         # update main surface
         self.form.set_surface(surface=self.form.get_surface('original'))
         self.rotate_surf(self.orien)
+        
+        # udapte mask
+        self._mask = pygame.mask.from_surface(self.form.get_surface('main'))
 
     def update_turrets(self):
         '''

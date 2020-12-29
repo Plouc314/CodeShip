@@ -196,13 +196,14 @@ class ScriptAnalyser(SubPage):
             return False
         
         # try runtime script
-        is_error, infos = self.game.test_script(self.grid, self.script_module)
+        error_type, tb_lines = self.game.test_script(self.grid, self.script_module)
 
-        if is_error:
-            error_type, error_msg, tb_lines = infos
-            tb_lines.append(f'{error_type}: {error_msg}')
-
+        if error_type == 'runtime':
             self.set_error('runtime', tb_lines)
+            return False
+
+        elif error_type == 'execution time':
+            self.set_error_text('execution time')
             return False
 
         return True
@@ -234,13 +235,16 @@ class ScriptAnalyser(SubPage):
         self.change_display_state('t info', True)
 
         if error_type == 'import':
-            msg = f"Error occured while importing script."
+            msg = "Error occured while importing script."
         
         elif error_type == "runtime":
-            msg = f"Error occured while testing main()."
+            msg = "Error occured while testing main()."
         
         elif error_type == 'cheat':
-            msg = f'Potential maliscious piece of code detected.'
+            msg = 'Potential maliscious piece of code detected.'
+
+        elif error_type == 'execution time':
+            msg = 'Execution time is too long.'
 
         self.set_text('t info', msg)
         self.set_color('t info', C.DARK_RED)

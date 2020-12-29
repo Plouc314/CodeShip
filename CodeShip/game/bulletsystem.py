@@ -3,6 +3,7 @@ import numpy as np
 from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad
 from data.spec import Spec
+from lib.counter import Counter
 
 # load images
 folder = "game/imgs/"
@@ -56,7 +57,6 @@ class Bullet(Form):
 
         self.set_pos((x,y))
 
-
 class Explosion(Form):
     '''
     Visual effect of an explosion
@@ -72,13 +72,25 @@ class Explosion(Form):
         self.lifetime = Spec.TIME_EXPL
         self.to_delete = False
 
-    def choose_dim(self):
+    @classmethod
+    def setup_states(cls):
         '''
-        Return a random new dimension.
+        Set up states used to update explosions.  
+        state format: `{dim, image}`
         '''
-        low = Spec.DIM_MIN_EXPL[0]
-        high = Spec.DIM_MAX_EXPL[0]
-        return np.random.randint(low, high, size=2)
+        cls.states = []
+
+        for i in range(3):
+            # set dimension
+            low = Spec.DIM_MIN_EXPL[0]
+            high = Spec.DIM_MAX_EXPL[0]
+            dim = np.random.randint(low, high, size=2)
+
+            # apply rotation
+            angle = np.random.randint(360)
+            img = pygame.transform.rotate(img_expl, angle)
+
+            cls.states.append({'dim':dim, 'image':img})
 
     def update_state(self):
         '''
@@ -90,12 +102,12 @@ class Explosion(Form):
             self.to_delete = True
             return
 
-        dim = self.choose_dim()
-        self.set_dim(dim, scale=True)
+        state = np.random.choice(self.states)
 
-        angle = np.random.randint(360)
-        self.rotate(angle)
+        self.set_dim(state['dim'], scale=True)
+        self.set_surface(state['image'])
 
+Explosion.setup_states()
 
 class BulletSystem:
     '''
@@ -191,6 +203,7 @@ class BulletSystem:
         cls.game_client.bullets = []
 
     @classmethod
+    @Counter.add_func
     def run(cls):
         '''
         Manage the bullets and explosions,  
@@ -211,6 +224,7 @@ class BulletSystem:
         cls.handeln_collision()
     
     @classmethod
+    @Counter.add_func
     def display(cls):
         '''
         Display every bullet & explosion,  

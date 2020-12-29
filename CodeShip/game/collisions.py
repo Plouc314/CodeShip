@@ -2,6 +2,7 @@ import pygame, numpy as np
 from lib.plougame.helper import Delayer
 from game.geometry import get_deg, get_norm, to_vect, cal_direction
 from data.spec import Spec
+from lib.counter import Counter
 
 collision_deco = Delayer(15)
 
@@ -63,6 +64,7 @@ class CollisionSystem:
             cls.bounce()
 
     @classmethod
+    @Counter.add_func
     @collision_deco
     def is_collision(cls):
         '''

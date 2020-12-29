@@ -3,6 +3,7 @@ from lib.udp import ClientUDP, ErrorUDP
 from game.bulletsystem import BulletSystem, Bullet
 from data.spec import Spec
 import numpy as np
+from lib.counter import Counter
 
 sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
 
@@ -146,6 +147,7 @@ class GameClient(ClientUDP):
         
         self.opponent_state['turrets'] = [float(orien) for orien in oriens]
 
+    @Counter.add_func
     def send_state(self, ship):
         '''
         Create the msg send to the server at each frame.
@@ -164,16 +166,19 @@ class GameClient(ClientUDP):
         msg += sep_m
 
         # add blocks' info
+        blocks = list(ship.blocks.values())
+
         for x in range(Spec.SIZE_GRID_SHIP):
             for y in range(Spec.SIZE_GRID_SHIP):
                 
-                block = ship.get_block_by_coord((x,y))
+                block = ship.get_block_by_coord((x,y), blocks=blocks)
 
                 # add hp and if block is activated
                 if block == None:
                     hp = 0
                     activate = 0
                 else:
+                    blocks.remove(block)
                     hp = block.hp
                     activate = int(block.is_active)
                 
