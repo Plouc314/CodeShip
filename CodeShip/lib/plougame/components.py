@@ -181,6 +181,9 @@ class TextBox(Form):
 
     Methods:
         - set_text : pass a string, can be on multiple lines
+        - get_text : Return text attribute
+        - set_text : Set text attribute
+        - set_centered : Set if the text is centered
         - display
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *,
@@ -216,6 +219,13 @@ class TextBox(Form):
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
+    def set_centered(self, value: bool):
+        '''
+        Set if the text is centered
+        (same as `centered` argument in `__init__` method).
+        '''
+        self._centered = value
+
     def _set_dim_as_to_text(self):
         '''
         Set the dim of the instance according to the text.
@@ -233,7 +243,7 @@ class TextBox(Form):
 
         self.set_dim(dim)
 
-    def display_lines_text(self, surface=None, pos=None):
+    def _display_lines_text(self, surface=None, pos=None):
         '''
         Display the text, can be on multiple lines.  
         If a surface is specified, display on it, else display on the screen.
@@ -264,7 +274,7 @@ class TextBox(Form):
         '''
         super().display(marge=self._as_marge, surface=surface, pos=pos)
 
-        self.display_lines_text(surface=surface, pos=pos)
+        self._display_lines_text(surface=surface, pos=pos)
 
     def __repr__(self):
         return "TextBox Object"    

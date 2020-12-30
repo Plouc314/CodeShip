@@ -87,10 +87,10 @@ class Spec:
 
     ### ui ###
 
-    DIM_WINDOW = np.array([3200, 1600])
+    DIM_WINDOW = np.array([3200, 1800])
 
     CENTER_X = 1600
-    CENTER_Y = 800
+    CENTER_Y = 900
 
     POS_TITLE = np.array([1400, 100])
     DIM_TITLE = np.array([400,100])

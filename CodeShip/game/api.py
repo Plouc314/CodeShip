@@ -4,6 +4,7 @@ from game.block import (Block as BaseBlock,
                 Shield as BaseShield, 
                 Turret as BaseTurret)
 from data.spec import Spec
+from typing import List, Set, Dict, Tuple, Union
 
 class API:
 
@@ -53,7 +54,7 @@ class Block:
 
         API._ships[self.team].blocks[self.key].is_active = False
 
-    def get_hp(self):
+    def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
         return API._ships[self.team].blocks[self.key].hp
 
@@ -85,7 +86,7 @@ class Turret(Block):
     def __init__(self, key, team):
         super().__init__(key, team)
     
-    def is_rotating(self):
+    def is_rotating(self) -> bool:
         '''
         Return if the turret is rotating.
         '''
@@ -187,20 +188,24 @@ class Ship:
                 cls.typed_blocks[block.name].remove(block)
 
     @classmethod
-    def get_blocks(cls, type:str=None):
+    def get_blocks(cls, _type : str = None):
         ''' 
         Return the blocks of the ship.
 
         Parameters
         ------
-        `type: str`    
+        _type: `str`  
         Can specify a type, can be one of those: `Block`, `Generator`, `Engine`, `Shield`, `Turret`.  
         In that case, return all the blocks of the specified type.
         '''
-        if type == None:
-            return cls.blocks
+        if _type == None:
+            # assign type to blocks -> get doc in script
+            values: List[Union[map_block]] = cls.blocks
+            return values
         else:
-            return cls.typed_blocks[type]
+            # assign type to blocks -> get doc in script
+            values: List[Union[map_block]] = cls.typed_blocks[_type]
+            return values
     
     @classmethod
     def get_speed(cls, scalar=False):
@@ -299,20 +304,24 @@ class Opponent:
                 cls.blocks.remove(block)
 
     @classmethod
-    def get_blocks(cls, type:str=None):
+    def get_blocks(cls, _type: str = None):
         ''' 
         Return the blocks of the ship.
 
         Parameters
         ------
-        `type: str`    
+        `_type: str`    
         Can specify a type, can be one of those: `Block`, `Generator`, `Engine`, `Shield`, `Turret`.  
         In that case, return all the blocks of the specified type.
         '''
-        if type == None:
-            return cls.blocks
+        if _type == None:
+            # assign type to blocks -> get doc in script
+            values: List[Union[map_block]] = cls.blocks
+            return values
         else:
-            return cls.typed_blocks[type]
+            # assign type to blocks -> get doc in script
+            values: List[Union[map_block]] = cls.typed_blocks[_type]
+            return values
     
     @classmethod
     def get_speed(cls, scalar=False):

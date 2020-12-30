@@ -1,5 +1,5 @@
 {
-    "version": 1.0,
+    "version": 1.1,
     "files": [
         "comm/gameclient.py",
         "comm/uiclient.py",
@@ -35,7 +35,6 @@
         "lib/udp.py",
         "main.py",
         "requirements.txt",
-        "script.py",
         "ui/app.py",
         "ui/chat.py",
         "ui/connection.py",

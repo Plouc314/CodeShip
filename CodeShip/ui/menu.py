@@ -1,5 +1,6 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
 from ui.chat import Chat
+from ui.updater import Updater
 from data.spec import Spec
 import numpy as np
 
@@ -11,6 +12,7 @@ X_TB1 = 100
 X_TB2 = 400
 X_TB3 = 700
 
+POS_UPDATER = np.array([2500, 300])
 POS_CHAT = np.array([2100, 1000])
 POS_ERROR_CONN = np.array([X_TB1, Y_TB + 100])
 POS_ERROR_PLAY = np.array([1800, 420])
@@ -47,6 +49,7 @@ notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE
                     text='0', font=Font.f(25))
 
 chat = Chat(POS_CHAT, general_chat=True)
+updater = Updater(POS_UPDATER)
 
 states = ['unlogged', 'logged']
 
@@ -60,7 +63,8 @@ components = [
     ('b editor', button_editor),
     ('b play', button_play),
     ('notif', notif),
-    ('chat', chat)
+    ('chat', chat),
+    ('updater', updater)
 ]
 
 class Menu(Page):
@@ -77,7 +81,7 @@ class Menu(Page):
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
-        self.set_states_components('unlogged', ['b conn'])
+        self.set_states_components('unlogged', ['b conn', 'updater'])
         self.set_states_components('logged',
         ['t username', 'b friends', 'b editor', 'chat', 'b logout', 'b play'])
 

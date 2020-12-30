@@ -1,6 +1,7 @@
 from .auxiliary import Dimension
 from .components import Button, InputText, ScrollList
 from .interface import Interface
+from typing import List, Set, Dict, Tuple, Union
 
 class Page:
     '''
@@ -30,7 +31,7 @@ class Page:
     - change_display_state: Set if a component is displayed, independently of the active state
     '''
 
-    def __init__(self, states, components, active_states='none'):
+    def __init__(self, states: List[str], components: List, active_states='none'):
         
         self._states = list(states)
         self._states_history = [states[0]]
@@ -122,7 +123,7 @@ class Page:
 
         self._out_states[state] = func
 
-    def get_state(self):
+    def get_state(self) -> str:
         ''' Return the active state. '''
         return self._active_state
 
@@ -276,7 +277,7 @@ class Page:
 
         comp_info['displayed'] = is_displayed
 
-    def get_text(self, name):
+    def get_text(self, name) -> str:
         '''
         Return the text of an InputText component.
         '''
@@ -398,8 +399,27 @@ class Page:
 
 
 class SubPage(Page):
+    '''
+    Child object of `Page`.  
 
-    def __init__(self, states, components, pos, active_states='none'):
+    Act as a Form-like object, can be set as one of the component of a Page.  
+    The position of the components of the `SubPage` is relative to the position
+    of the `SubPage`.
+
+    Parameter
+    ---
+    states : `list[str]`  
+    Same as for `Page`
+
+    components : `list`  
+    Same as for `Page`  
+
+    pos : `[int, int]`  
+    The position where to display the `SubPage` (unscaled)
+    '''
+
+    def __init__(self, states: List[str], components: List, pos: [int, int], 
+            active_states='none'):
 
         super().__init__(states, components, active_states=active_states)
 
