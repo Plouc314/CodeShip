@@ -172,26 +172,56 @@ class TextBox(Form):
 
     Inherited from Form.
 
-    Arguments:
-        - text_color : color of the text
-        - centered : if the text is centered
-        - text : the text that is present at the beginning
-        - marge : if it has marge or not
-        - dynamic_dim : if True, the dimention will be adjusted to the text
+    Parameters
+    ---
 
-    Methods:
-        - set_text : pass a string, can be on multiple lines
-        - get_text : Return text attribute
-        - set_text : Set text attribute
-        - set_centered : Set if the text is centered
-        - display
+    `text_color`: tuple  
+    The color of the text
+    
+    `centered`: bool  
+    if the text is centered
+
+    `text`: str  
+    the text that is present at the beginning
+    
+    `marge`: bool  
+    if it has marge or not
+    
+    `dynamic_dim`: bool  
+    if True, the dimention will be adjusted to the text
+    
+    `continuous_text`: bool  
+    if True, the space (y dimension) between the lines will
+    be the minimal one (unlike the default setting where each line is placed to
+    occupy the entire space)
+
+    Methods
+    ---
+
+    `set_text`  
+    pass a string, can be on multiple lines
+
+    `get_text`  
+    Return text attribute
+
+    `set_text`  
+    Set text attribute
+
+    `set_centered`  
+    Set if the text is centered
+
+    `display`  
+    Display the instance on the screen
+
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *,
-                    text_color=C.BLACK, centered=True, font=Font.f(50), marge=False, 
-                    scale_dim=True, scale_pos=True, dynamic_dim=False):
+                    text_color=C.BLACK, centered=True, 
+                    font=Font.f(50), marge=False, 
+                    scale_dim=True, scale_pos=True, 
+                    dynamic_dim=False, continuous_text=False):
         
         if dynamic_dim:
-            # set a defalt dimension to doesn't produce any errors in Form.__init__
+            # set a default dimension to doesn't produce any error in Form.__init__
             dim = (10,10)
 
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=marge)
@@ -203,7 +233,8 @@ class TextBox(Form):
         self._text_color = text_color
         self._as_marge = marge
         self._is_dynamic = dynamic_dim
-
+        self._continuous_text = continuous_text
+            
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
@@ -234,12 +265,12 @@ class TextBox(Form):
         width, height = self.font['font'].size(biggest_line)
 
         dim = [
-            width + 2 * self._rs_marge_text,
-            len(self._lines) * (height + 1 * self._rs_marge_text)
+            width + self._rs_marge_text,
+            len(self._lines) * (height + self._rs_marge_text // 2)
         ]
 
         # add a bit more marges
-        dim[1] += 2 * self._rs_marge_text
+        dim[1] += self._rs_marge_text
 
         self.set_dim(dim)
 
@@ -254,9 +285,13 @@ class TextBox(Form):
         if pos is None:
             pos = self._sc_pos
 
-        # split the box in n part for n lines
-        y_line = round(self._sc_dim[1]/len(self._lines))
-        
+        if not self._continuous_text:
+            # split the box in n part for n lines
+            y_line = round(self._sc_dim[1]/len(self._lines))
+        else:
+            width, height = self.font['font'].size(self._lines[0])
+            y_line = height + self._rs_marge_text
+
         for i, line in enumerate(self._lines):
             x_marge, y_marge = center_text((self._sc_dim[0], y_line), self.font['font'], line)
         

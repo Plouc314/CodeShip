@@ -1,9 +1,16 @@
 import numpy as np
+import json
 from lib.plougame.auxiliary import C
+
+# load json data
+with open("data/data.json", 'r') as file:
+    data = json.load(file)
 
 class Spec:
 
     VERSION = 1.0
+
+    JSON_DATA = data
 
     ### comm ###
 

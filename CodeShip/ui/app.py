@@ -51,42 +51,16 @@ class App(Application):
         '''
         Manage updater downloadings.
         '''
-        # get server .json data
-        if self.updater.is_thread_active and not self.updater.updating:
-            
-            end = False
+        self.updater.run()
 
-            if self.updater.has_server_data:
-                end = True
-                # check if version is up to date
-                if self.updater.is_outdated():
-                    self.updater.update()
-                    self.updater.set_update_state()
-                else:
-                    self.updater.set_ok_state()
-            
-            elif self.updater.is_connection_error:
-                end = True
-                self.updater.set_error_state()
+        # check if game can be launch
+        if self.updater.ready:
+            # set connection button
+            page_menu = self.get_page(Spec.PAGE_MENU)
+            page_menu.set_states_components('unlogged', 'b conn')
 
-            if end:
-                self.updater.stop_thread('server')
-
-        # update
-        if self.updater.is_thread_active and self.updater.updating:
-            
-            end = False
-
-            if self.updater.is_update_done:
-                end = True
-                self.updater.set_ok_state()
-            
-            elif self.updater.is_connection_error:
-                end = True
-                self.updater.set_error_state()
-            
-            if end:
-                self.updater.stop_thread('update')
+            # stop run this function, no need to
+            self.set_frame_function_state(self.manage_updater, False)
 
     def manage_notif(self):
         '''

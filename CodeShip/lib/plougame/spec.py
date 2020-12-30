@@ -13,7 +13,7 @@ class Specifications:
 
     CURSOR_WIDTH = 2
     MARGE_WIDTH = 4
-    MARGE_TEXT = 5
+    MARGE_TEXT = 10
     WIDTH_SCROLL_BAR = 40
 
     @classmethod

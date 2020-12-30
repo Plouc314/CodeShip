@@ -1,6 +1,7 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
 from ui.chat import Chat
 from ui.updater import Updater
+from ui.doc import Doc
 from data.spec import Spec
 import numpy as np
 
@@ -12,12 +13,13 @@ X_TB1 = 100
 X_TB2 = 400
 X_TB3 = 700
 
-POS_UPDATER = np.array([2500, 300])
+POS_UPDATER = np.array([X_TB1, 300])
 POS_CHAT = np.array([2100, 1000])
 POS_ERROR_CONN = np.array([X_TB1, Y_TB + 100])
 POS_ERROR_PLAY = np.array([1800, 420])
 POS_NOTIF = np.array([X_TB2 + 230, Y_TB2-20])
 POS_PLAY = np.array([1440, 400])
+POS_DOC = np.array([900, 300])
 
 ### Components ###
 
@@ -25,7 +27,7 @@ title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE,
                             text="CodeShip", font=Font.f(80))
         
 text_error = TextBox(None, POS_ERROR_CONN, color=C.DARK_RED, dynamic_dim=True,
-                    text="", font=Font.f(25), marge=True, text_color=C.WHITE)
+                    text="", font=Font.f(30), marge=True, text_color=C.WHITE)
 
 button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
                     text="Connect", font=Font.f(40))
@@ -50,6 +52,7 @@ notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE
 
 chat = Chat(POS_CHAT, general_chat=True)
 updater = Updater(POS_UPDATER)
+doc = Doc(POS_DOC)
 
 states = ['unlogged', 'logged']
 
@@ -64,7 +67,8 @@ components = [
     ('b play', button_play),
     ('notif', notif),
     ('chat', chat),
-    ('updater', updater)
+    ('updater', updater),
+    ('doc', doc)
 ]
 
 class Menu(Page):
@@ -81,7 +85,7 @@ class Menu(Page):
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
-        self.set_states_components('unlogged', ['b conn', 'updater'])
+        self.set_states_components('unlogged', ['doc', 'updater'])
         self.set_states_components('logged',
         ['t username', 'b friends', 'b editor', 'chat', 'b logout', 'b play'])
 

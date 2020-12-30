@@ -14,9 +14,9 @@ POS_INFO = np.array([30, 100])
 cadre = Cadre(DIM_CADRE, (0,0))
 
 text_state = TextBox(Spec.DIM_MEDIUM_TEXT, POS_TEXT, text='Looking for update...',
-            font=Font.f(40), text_color=C.GREY)
+            font=Font.f(45), text_color=C.GREY)
 
-text_info = TextBox(DIM_INFO, POS_INFO, font=Font.f(30))
+text_info = TextBox(DIM_INFO, POS_INFO, font=Font.f(35))
 
 components = [
     ('cadre', cadre),
@@ -33,12 +33,59 @@ class Updater(SubPage):
     def __init__(self, pos):
         
         self.is_thread_active = False
+        self.thread_update = None
+        self.thread_server = None
+
+        self.ready = False
         self.is_connection_error = False
         self.has_server_data = False
         self.is_update_done = False
         self.updating = False
 
         super().__init__(states, components, pos, active_states='all')
+
+    def run(self):
+        '''
+        Manage threads, update.  
+        `ready` attribute will be set to True when the game will be ready to launch.
+        '''
+        # get server .json data
+        if self.is_thread_active and not self.updating:
+            
+            end = False
+
+            if self.has_server_data:
+                end = True
+                # check if version is up to date
+                if self.is_outdated():
+                    self.update()
+                    self.set_update_state()
+                else:
+                    self.ready = True
+                    self.set_ok_state()
+            
+            elif self.is_connection_error:
+                end = True
+                self.set_error_state()
+
+            if end:
+                self.stop_thread('server')
+
+        # update
+        if self.is_thread_active and self.updating:
+            
+            end = False
+
+            if self.is_update_done:
+                end = True
+                self.set_restart_state()
+            
+            elif self.is_connection_error:
+                end = True
+                self.set_error_state()
+            
+            if end:
+                self.stop_thread('update')
 
     def stop_thread(self, name):
         '''
@@ -99,6 +146,14 @@ class Updater(SubPage):
         self.get_component('t info').set_centered(False)
         # text info's text is set in self._update
 
+    def set_restart_state(self):
+        '''
+        Set text info that the game needs to be restarted.
+        '''
+        self.set_text('t state', "Update done")
+        self.get_component('t info').set_centered(True)
+        self.set_text('t info', "Latest version installed.\n Please restart the game.")
+
     def set_ok_state(self):
         '''
         Set text info that the game is up to date.
@@ -112,10 +167,7 @@ class Updater(SubPage):
         Return if the local game is an outdated version
         (if an update has been released).
         '''
-        with open('data/data.json', 'r') as file:
-            self.local_data = json.load(file)
-        
-        return self.local_data['version'] != self.server_data['version']
+        return Spec.JSON_DATA['version'] != self.server_data['version']
 
     def update(self):
         '''
@@ -130,6 +182,7 @@ class Updater(SubPage):
         '''
         self.is_thread_active = True
         self.updating = True
+        self.update_json_data()
         self.thread_update = threading.Thread(target=self._udpate)
         self.thread_update.start()
 
@@ -174,5 +227,17 @@ class Updater(SubPage):
             else:
                 with open(filename, 'w') as file:
                     file.write(scr.text)
-        
+
+        time.sleep(.5) # for the wow effect        
         self.is_update_done = True
+
+    def update_json_data(self):
+        '''
+        Update local data.json file with data from github
+        '''
+        Spec.JSON_DATA['version'] = self.server_data['version']
+        Spec.JSON_DATA['files'] = self.server_data['files']
+        Spec.JSON_DATA['doc'] = self.server_data['doc']
+
+        with open('data/data.json', 'w') as file:
+            json.dump(Spec.JSON_DATA, file, indent=4)

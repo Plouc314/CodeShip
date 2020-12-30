@@ -1,5 +1,5 @@
 {
-    "version": 1.1,
+    "version": 1.0,
     "files": [
         "comm/gameclient.py",
         "comm/uiclient.py",
@@ -30,13 +30,13 @@
         "lib/plougame/page.py",
         "lib/plougame/spec.py",
         "data/spec.py",
-        "data/data.json",
         "lib/tcp.py",
         "lib/udp.py",
         "main.py",
         "requirements.txt",
         "ui/app.py",
         "ui/chat.py",
+        "ui/doc.py",
         "ui/connection.py",
         "ui/friends.py",
         "ui/menu.py",
@@ -44,5 +44,9 @@
         "ui/script_analyser.py",
         "ui/ship.py",
         "ui/updater.py"
-    ]
+    ],
+    "doc": {
+        "general": "CodeShip is a two-player 2D game where each player has a ship.\nThe aim of the game is to destroy the opponent's ship.\n\nA ship is made up of different types of blocks, each of them having a specific purpose.\nEach player designs his own ship, with a limited amound of credits, so that\nbuilding the ship is already part of the game's strategy.",
+        "ship": "A ship is made up blocks placed in a 6x6 grid. It is these blocks which will define \nthe characteristics of the ship, which are: the mass, health (hitpoints), power output,\nmaximum velocity and acceleration, fire power.\n\nFor example, the ship's hitpoints are simply defined as the sum of the hitpoints of\nthe blocks that make it up."
+    }
 }
