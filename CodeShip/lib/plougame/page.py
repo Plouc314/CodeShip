@@ -1,34 +1,47 @@
 from .auxiliary import Dimension
-from .components import Button, InputText, ScrollList
+from .form import Form
+from .components import TextBox, Button, InputText, ScrollList
 from .interface import Interface
 from typing import List, Set, Dict, Tuple, Union
 
 class Page:
     '''
-    Page object, manage the components (Form like objects) of a page.  
+    Page object  
+    Manage the components (Form-like objects) attached to it.
+    Can have multiple state, with dedicated components for each state.
+    Designed to be used along with `Application` object.  
 
-    Arguments:
-    - states: All the possible states of the page
-    - components: list, (name, object)
-        Take all the components of the page.
-    - active_states: take either 'none' or 'all', the default active states of the components
+    Parameters
+    ---
+    `states`: list[str]  
+    All the possible states of the page
     
-    Methods:
-    - add_component: Add a component to the page
-    - remove_component: Remove a component from the page
-    - get_component: Get the specified component
-    - has_component: Return if the page has the component
-    - set_states_components: Set the states of one or more components
-    - change_state: Change the active state of the page
-    - go_back: Change the state to be the previous one
-    - add_button_logic: Add a function to be executed when button is pushed
-    - react_events, display
-    - get_text: Get the text of an InputText component
-    - set_text: Set the text of a component
-    - set_in_state_func: Set a function to be executed when entering the state
-    - set_out_state_func: Set a function to be executed when getting out of the state
-    - change_page: Set a call for an Application object to change the current page
-    - change_display_state: Set if a component is displayed, independently of the active state
+    `components`: list[tuple[name, object]]  
+    Take all the components of the page.
+    
+    `active_states`: str  
+    Take either `"none"` or `"all"`, the default active states of the components.
+    
+    Methods
+    ---
+    `add_component`: Add a component to the page  
+    `remove_component`: Remove a component from the page  
+    `get_component`: Get the specified component  
+    `has_component`: Return if the page has the component  
+    `set_states_components`: Set the states of one or more components  
+    `change_state`: Change the active state of the page  
+    `go_back`: Change the state to be the previous one  
+    `add_button_logic`: Add a function to be executed when button is pushed  
+    `react_events`: Execute `run` function of components that have one and 
+    `react_events` function of `SubPage` components, must be executed each frame
+    (done automatically when instance in `Application`).  
+    `get_text`: Get the text of a component  
+    `set_text`: Set the text of a component  
+    `set_in_state_func`: Set a function to be executed when entering the state  
+    `set_out_state_func`: Set a function to be executed when getting out of the state  
+    `change_page`: Set a call for an Application object to change the current page  
+    `change_display_state`: Set if a component is displayed, independently of the active state  
+    `display`: Display the instance.  
     '''
 
     def __init__(self, states: List[str], components: List, active_states='none'):
@@ -132,7 +145,6 @@ class Page:
         Change the active state to be the one before the current.  
         So if we pass from `state1` to `state2` and call `go_back`, we will be at `state1`.
         '''
-        
         # check if can go back
         if len(self._states_history) < 2:
             # set a call -> go back of one page
@@ -146,7 +158,7 @@ class Page:
 
         self.change_state(new_state)
 
-    def get_component(self, name):
+    def get_component(self, name) -> Union[Form, TextBox, Button, InputText, ScrollList]:
         '''
         Return the component with the specified name.
         '''
@@ -404,18 +416,23 @@ class SubPage(Page):
 
     Act as a Form-like object, can be set as one of the component of a Page.  
     The position of the components of the `SubPage` is relative to the position
-    of the `SubPage`.
+    of the `SubPage` and NOT to the upper left corner of the window.
 
     Parameter
     ---
-    states : `list[str]`  
+    `states`: list[str]  
     Same as for `Page`
 
-    components : `list`  
+    `component`: list  
     Same as for `Page`  
 
-    pos : `[int, int]`  
-    The position where to display the `SubPage` (unscaled)
+    `pos`: [int, int]  
+    The position where to display the `SubPage` (unscaled)  
+
+    Methods
+    ---
+    All `Page` methods.  
+    `set_pos`: Set the position of the instance.
     '''
 
     def __init__(self, states: List[str], components: List, pos: [int, int], 

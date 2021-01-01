@@ -1,10 +1,18 @@
 '''
 Plougame
+======
 
--------
+Plougame is an extension of the pygame module, 
+it is written to create GUI while still using raw pygame beside.
 
-Plougame is an extension of the pygame module, it is written to create GUI while still using raw pygame beside.
-The main features are: static object Interface, Form, TextBox, Button, InputText, ScrollList & Cadre
+The extension is organised in three layers of abstraction, 
+which are, from the less abstract to the greater one:
+
+1) Form-like objects: Object derived from `Form`
+
+2) Page-like objects: Objects derived from `Page`
+
+3) Application-like objects: Objects derived from `Application`
 '''
 
 # TODO:

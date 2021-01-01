@@ -8,18 +8,19 @@ import time
 
 class Interface:
     '''
-    Manage the window and all the gui objects (Form, Button, ...), update the screen
+    Manage the window and all the module's objects (Form-like objects), update the screen
     and mangae the fps. The window can be resized and all objects will be rescaled auto.
 
     Work with pygame, screen object store as an attribute. So can create own pygame object
     and add them to the Interface using .add_resizable_objects.
 
-    Must be setup (using .setup method) before be used.
+    Must be setup (using `setup` method) before be used.
 
-    Methods:
-        - setup : Initialize the module, create the window
-        - add_resizable_objects : Add custom objects to be rescaled auto by Interface
-        - run : update the screen, get the input for current frame, check for quit events...
+    Methods
+    ---
+    `setup`: Initialize the module, create the window  
+    `add_resizable_objects`: Add custom objects to be rescaled auto by Interface  
+    `run`: Update the screen, get the inputs for current frame, check for quit events...  
     '''
     clock = pygame.time.Clock()
     running = True
@@ -35,11 +36,22 @@ class Interface:
     def setup(cls, dim: (int, int), title: str, *, fullscreen=False,
             background_color=C.WHITE, static=False):
         '''
-        Arguments:
-            - dim : default window dimension, used to set other object's dimension
-            - title : the title of the window
-            - background_color : the default color of the window
-            - static
+        Parameters
+        ---
+        `dim`: [int, int]  
+        Default window dimension, used to set other object's dimension
+        
+        `title`: str  
+        The title of the window.
+        
+        `fullscreen`: bool  
+        If True, the window will open in fullscreen mode.
+
+        `background_color`: tuple  
+        The background color of the window.
+        
+        `static`: bool  
+        To be implemented.
         '''
         
         # setup Dimension
@@ -58,7 +70,7 @@ class Interface:
         
         cls.screen = pygame.display.set_mode(dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
         cls.screen.fill(cls.background_color)
-        cls.set_screen(cls.screen)
+        cls._set_screen(cls.screen)
 
         pygame.display.set_caption(title)
 
@@ -73,7 +85,7 @@ class Interface:
         cls._rescale(dim)
         
     @classmethod
-    def set_screen(cls, screen):
+    def _set_screen(cls, screen):
         '''Set a pygame sreen object'''
 
         for gui_obj in cls._gui_objects:
@@ -126,11 +138,20 @@ class Interface:
     @classmethod
     def run(cls, fill=True):
         '''
-        Execute once a frame
-        Update the screen, get the input for current frame, check for quit events...
-        Return:
-            - pressed : pygame object (pygame.key.get_pressed)
-            - events : pygame object (pygame.event.get)
+        Update the screen, get the inputs of the current frame, check for quit events...  
+        To be executed once a frame.  
+        If `fill=False`, the screen won't be filled with the background color.  
+        Return values used in `react_events` and `run` methods.
+
+        Return
+        ---
+        `pressed`: list  
+        Value to give to methods with argument: `pressed`, 
+        obtained with `pygame.key.get_pressed`.
+        
+        `events`: list  
+        Value to give to methods with argument: `events`, 
+        obtained with `pygame.event.get`.
         '''
         cls.clock.tick(Spec.FPS)
 

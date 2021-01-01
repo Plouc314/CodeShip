@@ -1,8 +1,10 @@
 import pygame
+import functools
 from .form import Form
 from .helper import Delayer, center_text, get_pressed_key, rl, get_dark_color, get_light_color
 from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
+from typing import List, Dict, Tuple, Union
 
 class Cadre(Form):
     '''
@@ -34,21 +36,48 @@ class Cadre(Form):
 
 class Button(Form):
     ''' 
-    It's a button, can display text, has marge, can be pushed.
+    Button, can display text, can be pushed.
 
     Inherited from Form.
 
-    Arguments:
-        - text_color : color of the text
-        - centered : if the text is centered
-        - highlight : if the surface is highlighted when the mouse pass on it
-        - surface : can set a custom surface, can be an image, numpy.ndarray, pygame.Surface
-        - surf_font_color : if a custom surface is set & is partly transparent, surf_font color will fill the blanks
-        - text : the text that is present at the beginning
+    Parameters
+    ---
+    `text_color`: tuple  
+    The color of the text
     
-    Methods:
-        - pushed : Return if the surface has been clicked
-        - display
+    `centered`: bool  
+    If the text is centered
+
+    `text`: str
+    The text that is present at the beginning
+
+    `font`: dict[int, pygame.font]  
+    The font used to display the text, strongly recommended to use `Font.f()`
+    (as in default value).
+
+    `highlight`:  
+    If the surface is highlighted (color changes slightly) when the mouse passes over it.
+
+    `surface`:  
+    can set a custom surface, can be an image, numpy.ndarray, pygame.Surface.
+
+    `with_font`: bool  
+    If True and a custom surface is specified, potential empty pixels in the surface
+    will be filled with the given `color`.
+
+    `has_marge`: bool  
+    If it has marge or not.
+
+    Methods
+    ---
+    `set_text`: Set the text displayed  
+    `get_text`: Return text attribute  
+    `pushed`: Return if the instance has been clicked.  
+    `set_logic`: Define the function executed when the button is pushed
+    (must execute `run` method).  
+    `run`: Execute logic function (set with `set_logic`) when `pushed` return True,
+    if logic is set must be executed each frame (done automatically when instance in `Page`).  
+    `display`: Display the instance.  
     '''
     def __init__(self, dim, pos, color=C.WHITE, text='', *, text_color=C.BLACK,
                 centered=True, font=Font.f(50), surface=None, with_font=False,
@@ -72,11 +101,11 @@ class Button(Form):
                 if event.type == pygame.MOUSEBUTTONUP:
                     return True
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         ''' Set the text'''
         self._text = text
 
-    def get_text(self):
+    def get_text(self) -> str:
         ''' Return the text '''
         return self._text
 
@@ -174,46 +203,38 @@ class TextBox(Form):
 
     Parameters
     ---
-
     `text_color`: tuple  
     The color of the text
     
     `centered`: bool  
-    if the text is centered
+    If the text is centered
 
-    `text`: str  
-    the text that is present at the beginning
+    `text`: str/list  
+    The text that is present at the beginning
     
+    `font`: dict[int, pygame.font]  
+    The font used to display the text, strongly recommended to use `Font.f()`
+    (as in default value).
+
     `marge`: bool  
-    if it has marge or not
+    If it has marge or not
     
     `dynamic_dim`: bool  
-    if True, the dimention will be adjusted to the text
+    If True, the dimention will be adjusted to the text
     
     `continuous_text`: bool  
-    if True, the space (y dimension) between the lines will
+    If True, the space (y dimension) between the lines will
     be the minimal one (unlike the default setting where each line is placed to
     occupy the entire space)
 
     Methods
     ---
-
-    `set_text`  
-    pass a string, can be on multiple lines
-
-    `get_text`  
-    Return text attribute
-
-    `set_text`  
-    Set text attribute
-
-    `set_centered`  
-    Set if the text is centered
-
-    `display`  
-    Display the instance on the screen
-
+    `set_text`: Set the text displayed, can be on multiple lines  
+    `get_text`: Return text attribute  
+    `set_centered`: Set if the text is centered  
+    `display`: Display the instance.  
     '''
+
     def __init__(self, dim, pos, color=C.WHITE, text='', *,
                     text_color=C.BLACK, centered=True, 
                     font=Font.f(50), marge=False, 
@@ -226,33 +247,43 @@ class TextBox(Form):
 
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=marge)
         
-        self._text = text
         self._centered = centered
         self.font = font
-        self._lines = text.split('\n')
         self._text_color = text_color
         self._as_marge = marge
         self._is_dynamic = dynamic_dim
         self._continuous_text = continuous_text
-            
+        self.set_text(text)
+
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
-    def get_text(self):
-        ''' Return the text '''
-        return self._text
+    def get_text(self, lines: bool = False) -> Union[str, list]:
+        '''
+        Return the text of the TextBox,  
+        If `lines=True`, return a list of the lines of the text,
+        else return a string.
+        '''
+        if lines:
+            return self._lines.copy()
+        else:
+            return self._text[:]
 
-    def set_text(self, text):
-        ''' Set the text of the TextBox'''
-        self._text = text
-        self._lines = text.split('\n')
+    def set_text(self, text: Union[str, list]):
+        '''Set the text of the TextBox'''
+        if type(text) == list:
+            self._text = functools.reduce(lambda x,y: x + '\n' + y, text)
+            self._lines = list(text)
+        else:
+            self._text = text
+            self._lines = text.split('\n')
 
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
     def set_centered(self, value: bool):
         '''
-        Set if the text is centered
+        Set if the text is centered,  
         (same as `centered` argument in `__init__` method).
         '''
         self._centered = value
@@ -323,18 +354,41 @@ class InputText(Button):
 
     Inherited from Button.
 
-    Arguments:
-    - text_color : color of the text
-    - centered : if the text is centered
-    - limit : the limit of character that can be entered
-    - cache : if the input is hidden (with $ )
-    - text : the text that is present at the beginning
-    - pretext : text that disapear when the surface is clicked
+    Parameters
+    ---
+    `text_color`: tuple  
+    The color of the text.
     
-    Methods:
-    - pushed : Return if the surface has been clicked
-    - run : Get input ( execute once by frame )
-    - display
+    `centered`: bool  
+    If the text is centered.
+
+    `text`: str
+    The text that is present at the beginning.
+
+    `font`: dict[int, pygame.font]  
+    The font used to display the text, strongly recommended to use `Font.f()`
+    (as in default value).
+
+    `limit`: int  
+    The limit of character that can be entered.
+
+    `cache`: bool  
+    If True, the displayed text will be hidden (with `$`).
+
+    `pretext`: str  
+    Text that is present initialy and disapears when the surface is clicked.
+
+    `has_marge`: bool  
+    If it has marge or not.
+
+    Methods
+    ---
+    `set_text`: Set the text, can set back the pretext.  
+    `reset_text`: Clear the text, can set a new pretext.  
+    `pushed`: Return if the instance has been clicked.  
+    `run`: Manage instance, get inputs, must be executed each frame
+    (done automatically when instance in `Page`).  
+    `display`: Display the instance.
     '''
     COLOR_PRETEXT = C.GREY
     is_cursor_displayed = True

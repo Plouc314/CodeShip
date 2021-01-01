@@ -9,20 +9,49 @@ class Form:
     Form's dimension and position are auto rescaled when window is rescaled  
     Form can take either a color, in that case the Form's surface will be uni-color, or a custom surface (can have a colored font)  
 
-    Methods:
-        - display : display the instance on the Interface's screen
-        - delete : for when the instance is no longer used, increase performance
-        - set_pos : set a new position for the instance
-        - set_dim: set a new dimension for the instance
-        - set_dim_pos : set new position and dimension, keep the same surface
-        - set_surf : set a new surface, can be a pygame surface or a numpy.ndarray
-        - set_marge_width : set a new marge width
-        - set_color : set a new color to uni-color surface or font
-        - on_it : return if the mouse is on the Form's surface
-        - rotate : rotate the surface of a given angle
-        - compile : return a pygame.Surface object of the instance
-        - get_mask : return a pygame.mask.Mask object of the instance
-        - copy : return a copy of the instance
+    Parameters
+    ---
+    `dim`: [int, int]  
+    The dimension of the instance
+
+    `pos`: [int, int]  
+    The position of the instance, relative to the upper left corner of the screen.
+
+    `color`: tuple  
+    The color of the instance, if no custom surface if specified (see `surface` argument).
+
+    `rescale`: bool  
+    If True, the instance will be rescaled when the window is rescaled.
+
+    `center`: bool  
+    If True, the given `pos` will be considered as the center of the instance.
+
+    `surface`: pygame.Surface / numpy.ndarray  
+    If given, this will be set as surface of the instance.
+
+    `with_font`: bool  
+    If True and a custom surface is specified, potential empty pixels in the surface
+    will be filled with the given `color`.
+
+    `marge`: bool  
+    If True, a marge will be displayed around the instance of width: 
+    `Specifications.MARGE_WIDTH`, which can be change using `set_marge_width`.
+
+    Methods
+    ---
+    `display`: Display the instance on the Interface's screen.  
+    `delete`: For when the instance is no longer used, increase performance.  
+    `set_pos`: Set a new position for the instance.  
+    `set_dim`: Set a new dimension for the instance.  
+    `set_dim_pos`: Set new position and dimension, keep the same surface.  
+    `set_surf`: Set a new surface, can be a pygame surface or a numpy.ndarray.  
+    `set_marge_width`: Set a new marge width.  
+    `set_color`: Set a new color to uni-color surface or font.  
+    `on_it`: Return if the mouse is on the Form's surface.  
+    `rotate`: Rotate the surface of a given angle.  
+    `compile`: Return a pygame.Surface object of the instance.  
+    `get_mask`: Return a pygame.mask.Mask object of the instance.  
+    `copy`: Return a copy of the instance.  
     '''
     screen = None
     _interface = None
@@ -68,7 +97,7 @@ class Form:
         '''
         self._interface._gui_objects.remove(self)
 
-    def get_pos(self, scaled=False):
+    def get_pos(self, scaled=False) -> [int, int]:
         '''
         Return the unscaled position of the instance.  
         If scaled=True, return the scaled position.
@@ -78,7 +107,7 @@ class Form:
         else:
             return self._unsc_pos.copy()
 
-    def get_dim(self, scaled=False):
+    def get_dim(self, scaled=False) -> [int, int]:
         '''
         Return the unscaled dimension of the instance.  
         If scaled=True, return the scaled dimension.
@@ -131,13 +160,14 @@ class Form:
             except:
                 self._surf['font'] = None # reset font
 
-    def get_surface(self, surf_type):
+    def get_surface(self, surf_type) -> pygame.Surface:
         '''
         Return the specified surface,  
-        can be:
-        - original: the unscaled & unrotated surface
-        - main: the scaled & rotated main displayed surface
-        - font: if set, the font surface
+        `surf_type` can take one of these values:  
+
+        `"original"`: The unscaled & unrotated surface  
+        `"main"`: The scaled & rotated displayed surface  
+        `"font"`: If set, the font surface  
         '''
         return self._surf[surf_type]
 
@@ -263,7 +293,7 @@ class Form:
             self.MARGE_WIDTH = Dimension.inv_scale(width)
             self._rs_marge_width = round(width)
 
-    def get_color(self):
+    def get_color(self) -> tuple:
         '''Return the color of the surface'''
         return self._color
 
