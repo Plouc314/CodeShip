@@ -1,5 +1,6 @@
 from .page import Page
 from .interface import Interface
+from typing import List, Dict, Tuple, Union
 
 class Application:
     '''
@@ -122,23 +123,30 @@ class Application:
 
         return self._pages[name]
 
-    def add_frame_function(self, func, active_pages=None, is_active=False):
+    def add_frame_function(self, func, active_pages: List[str] = None, is_active=False):
         '''
         Add a function that will be executed every frame.  
 
-        Arguments:
-        - is_active: if the function will be executed at each frame, to change the function state (if it's executed) call the set_frame_function_state method.
-        - active_pages: if specified, the page(s) where the frame function will be executed.
+        Parameters
+        ---
+        `active_pages`: list[str]  
+        If specified, the page(s) where the frame function will be executed,
+        else it'll be executed on every pages.
+        
+        `is_active`: bool  
+        If the function will be executed at each frame, to change the function state 
+        (if it's executed) call `set_frame_function_state` method.
         '''
         self._frame_funcs.append(func)
         
-        if not active_pages is None:
+        if active_pages is None:
+            active_pages = list(self._pages.keys())
 
-            if type(active_pages) != list:
-                active_pages = [active_pages]
+        if type(active_pages) != list:
+            active_pages = [active_pages]
 
-            for page in active_pages:
-                self._pages_frame_funcs[page].append(func)
+        for page in active_pages:
+            self._pages_frame_funcs[page].append(func)
 
         if is_active:
             self._active_frame_funcs.append(func)

@@ -654,18 +654,24 @@ class ScrollList(Form):
     In the case of a list, the position of each element will be considered as relative position
     to the line of the element (and not to the whole window).
 
-    Arguments:
-    - bar_color: the color used for the scroll bar
+    Parameters
+    ---
+    `lines`: list[list]  
+    The lines of the instance.
 
-    Methods:
-    - get_line: Return the specified line
-    - add_line: Add a line to the instance
-    - remove_line: Remove a line from the instance
-    - clear: Clear the lines of the instance
-    - set_cursor_place: Set where the cursor is placed (up/down/...)
-    - set_active_state: Set if an element is active or not
-    - run: React to user inputs on the scroll bar, call the objects in lines run methods
-    - display: display the scroll list
+    `bar_color`: tuple  
+    The color used for the scroll bar.
+
+    Methods
+    ---
+    `get_line`: Return the specified line  
+    `add_line`: Add a line to the instance  
+    `remove_line`: Remove a line from the instance  
+    `clear`: Clear the lines of the instance  
+    `set_cursor_place`: Set where the cursor is placed (up/down/...)  
+    `set_active_state`: Set if an element is active or not  
+    `run`: React to user inputs on the scroll bar, call the objects in lines run methods  
+    `display`: display the scroll list  
     '''
 
     def __init__(self, dim, pos, lines, *, color=C.WHITE,
@@ -682,6 +688,9 @@ class ScrollList(Form):
         self._bar_color = bar_color
 
         self._selected = False
+
+        # lines to be removed
+        self._to_removes = []
 
         # all unscaled x positions
         self._rel_positions = []
@@ -751,6 +760,18 @@ class ScrollList(Form):
             index = len(self._lines) - 1
         
         line = self._lines[index]
+
+        # add line to the to_removes ones
+        self._to_removes.append(line)
+
+    def _remove_line(self, line):
+        '''
+        Remove one of the line.
+        '''
+        if not line in self._lines:
+            return
+        
+        index = self._lines.index(line)
 
         self._lines.pop(index)
 
@@ -840,6 +861,11 @@ class ScrollList(Form):
             self._update_scroll_cursor_pos()
         
         self._run_elements(events, pressed)
+
+        for line in self._to_removes:
+            self._remove_line(line)
+        
+        self._to_removes = []
 
     def _run_elements(self, events, pressed):
         '''

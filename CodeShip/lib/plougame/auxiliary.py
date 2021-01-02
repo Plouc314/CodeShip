@@ -119,13 +119,14 @@ class C:
     WHITE = (255,255,255)
     BLACK = (0,0,0)
     
+    XLIGHT_BLUE = (204,230,255)
     LIGHT_BLUE = (135,206,250)
     BLUE = (65,105,225)
     DARK_BLUE = (7, 19, 134)
     
     GREY = (150,150,150)
     LIGHT_GREY = (200,200,200)
-    XLIGHT_GREY = (230,230,230)
+    XLIGHT_GREY = (245,245,245)
     
     LIGHT_RED = (255, 80, 80)
     RED = (225, 50, 50)
