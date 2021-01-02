@@ -105,12 +105,12 @@ Y_LB5 = 1140
 DIM_BUTTON_BLOCK = np.array([160, 160])
 DIM_GR_BUTT = np.array([180, 60])
 DIM_GR_TEXT = np.array([280, 60])
-DIM_TEXT_BLOCK = np.array([400, 160])
+DIM_TEXT_BLOCK = np.array([500, 160])
 
 POS_GRID = np.array([300, 400])
 POS_INFO = np.array([300, 1320])
 
-POS_SCRIPT = np.array([1820, 400])
+POS_SCRIPT = np.array([1920, 400])
 
 ### base ###
 
@@ -118,22 +118,22 @@ title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE,
                 text="Editor", font=Font.f(80))
 
 button_back = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
-                text="Back", font=Font.f(30))
+                text="Back", font=Font.f(35))
 
 button_edit = Button(DIM_GR_BUTT, (X_GR1, Y_GR), color=C.LIGHT_BLUE,
-                text="Edit", font=Font.f(30))
+                text="Edit", font=Font.f(35))
 
 button_save = Button(DIM_GR_BUTT, (X_GR1, Y_GR), color=C.LIGHT_BLUE,
-                text="Save", font=Font.f(30))
+                text="Save", font=Font.f(35))
 
 text_info = TextBox(None, POS_INFO, color=C.DARK_GREEN,
-                font=Font.f(25), text_color=C.WHITE, dynamic_dim=True)
+                font=Font.f(30), text_color=C.WHITE, dynamic_dim=True)
 
 text_credits = TextBox(DIM_GR_TEXT, (X_GR2, Y_GR),
-                    text="", font=Font.f(30), marge=True)
+                    text="", font=Font.f(35), marge=True)
 
 text_block = TextBox(DIM_TEXT_BLOCK, (0,0), color=C.XLIGHT_GREY,
-                    text="", font=Font.f(30), marge=True)
+                    text="", font=Font.f(35), marge=True)
 
 button_block = Block((X_LB, Y_LB1), DIM_BUTTON_BLOCK, 1, color=C.LIGHT_GREEN)
 button_generator = Block((X_LB, Y_LB2), DIM_BUTTON_BLOCK, 2, color=C.LIGHT_GREEN)

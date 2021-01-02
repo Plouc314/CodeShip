@@ -29,33 +29,33 @@ title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE,
                             text="Connection", font=Font.f(80))
 
 button_back = Button(Spec.DIM_MEDIUM_BUTTON, POS_BACK, color=C.LIGHT_BLUE,
-                    text="Back", font=Font.f(30))
+                    text="Back", font=Font.f(35))
 
 ### base ###
 
 button_login = Button(Spec.DIM_BIG_BUTTON, POS_LOG, color=C.LIGHT_BLUE,
-                    text="Login", font=Font.f(40))
+                    text="Login", font=Font.f(45))
 
 button_sign_up = Button((Spec.DIM_BIG_BUTTON), POS_SIGN, color=C.LIGHT_BLUE,
-                    text="Sign up", font=Font.f(40))
+                    text="Sign up", font=Font.f(45))
 
 ### login / signup ###
 
 text_username = TextBox(Spec.DIM_MEDIUM_TEXT, POS_USER, 
-                    text="Username:",font=Font.f(40))
+                    text="Username:",font=Font.f(45))
 
 text_password = TextBox(Spec.DIM_MEDIUM_TEXT, POS_PASS, 
-                    text="Password:",font=Font.f(40))
+                    text="Password:",font=Font.f(45))
 
-input_username = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_USER, font=Font.f(40))
+input_username = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_USER, font=Font.f(45))
 
-input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(40), cache=True)
+input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(45), cache=True)
 
 button_done = Button(Spec.DIM_MEDIUM_BUTTON, POS_DONE, color=C.LIGHT_BLUE,
-                    text="Done", font=Font.f(30))
+                    text="Done", font=Font.f(35))
 
 text_error = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.DARK_RED,
-                font=Font.f(20), text_color=C.WHITE)
+                font=Font.f(30), text_color=C.WHITE)
 
 states = ['base', 'login', 'signup']
 

@@ -1,4 +1,4 @@
-from lib.plougame import Application
+from lib.plougame import Application, TextBox, Font, C
 from ui.connection import Connection
 from ui.menu import Menu
 from ui.friends import Friends
@@ -18,6 +18,9 @@ class App(Application):
         self.username = None
         self.opponent = None
 
+        self.version = TextBox((100, 60), (50, 1700), font=Font.f(30),
+                        text_color=C.GREY, text=str(Spec.JSON_DATA['version']))
+
         pages = [
             (Spec.PAGE_MENU, Menu(client)),
             (Spec.PAGE_CONN, Connection(client)),
@@ -30,12 +33,14 @@ class App(Application):
 
         self.add_frame_function(self.look_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.look_demand_friends, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
+        self.add_frame_function(self.look_game_demands, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.manage_notif, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS])
         self.add_frame_function(self.look_comm_login, active_pages=Spec.PAGE_CONN)
         self.add_frame_function(self.look_general_chat_msg, active_pages=Spec.PAGE_MENU)
         self.add_frame_function(self.look_private_chat_msg, active_pages=[Spec.PAGE_MENU, Spec.PAGE_FRIENDS, Spec.PAGE_PROFIL])
         self.add_frame_function(self.look_rdfr, active_pages=[Spec.PAGE_FRIENDS, Spec.PAGE_PROFIL])
-        self.add_frame_function(self.look_game_notif, active_pages=Spec.PAGE_MENU)
+        self.add_frame_function(self.look_rdg, active_pages=[Spec.PAGE_FRIENDS])
+        self.add_frame_function(self.look_game_notif, active_pages=None)
         self.add_frame_function(self.look_profil_infos, active_pages=Spec.PAGE_FRIENDS)
         self.add_frame_function(self.manage_updater, active_pages=Spec.PAGE_MENU)
 
@@ -76,7 +81,7 @@ class App(Application):
 
         notif = page_menu.get_component('notif')
 
-        n_notif = page_fr.get_n_dfr()
+        n_notif = page_fr.get_n_requests()
         n_notif += page_profil.get_n_unreads()
 
         if n_notif == 0:
@@ -98,7 +103,7 @@ class App(Application):
         self.client.send_logout()
 
         # stop game client
-        self.game.game_client.disconnect()
+        self.game.game_client.stop()
         
         page_conn.change_state('base')
         page_menu.change_state('unlogged')
@@ -116,7 +121,7 @@ class App(Application):
             if rlg == 1 or rsg == 1:
                 
                 # activate game client
-                self.game.game_client.start()
+                self.game.start_udp()
                 
                 # get username
                 self.username = self.get_page(Spec.PAGE_CONN).username
@@ -170,6 +175,20 @@ class App(Application):
             if hasattr(page, 'set_rdfr'):
                 page.set_rdfr(content)
 
+    def look_rdg(self):
+        '''
+        Check if the server send a response on a friend demand.
+        '''
+        with self.client.get_data('rdg') as content:
+
+            if content == None:
+                return
+
+            page = self.get_active_page()
+            # check that page has set_rdg method
+            if hasattr(page, 'set_rdg'):
+                page.set_rdg(content)
+
     def look_friends(self):
         '''
         Check if the server sent info about friends
@@ -195,6 +214,17 @@ class App(Application):
             for username in contents:
                 page_fr.set_demand_friend(username)
     
+    def look_game_demands(self):
+        '''
+        Check if the server sent a game demand.
+        '''
+        with self.client.get_data('dg') as contents:
+
+            page_fr = self.get_page(Spec.PAGE_FRIENDS)
+
+            for username in contents:
+                page_fr.set_game_demand(username)
+
     def look_game_notif(self):
         '''
         Check if the user is entering in a game
@@ -228,6 +258,9 @@ class App(Application):
         # set game
         self.game.setup(int(pos_id), own_grid, opp_grid, self.username, self.opponent)
     
+        # go to the menu
+        self.change_page(Spec.PAGE_MENU)
+
         # set menu's play button to normal state
         page_menu = self.get_page(Spec.PAGE_MENU)
         page_menu.reset_play()
@@ -247,3 +280,7 @@ class App(Application):
             page_profil.setup_page(**content)
 
             self.change_page(Spec.PAGE_PROFIL)
+
+    def display(self):
+        self.version.display()
+        super().display()

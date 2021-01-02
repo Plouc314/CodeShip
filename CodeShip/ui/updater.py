@@ -6,8 +6,8 @@ import numpy as np
 
 DIM_CADRE = np.array([600, 200])
 POS_TEXT = np.array([100, 20])
-DIM_INFO = np.array([540, 80])
-POS_INFO = np.array([30, 100])
+DIM_INFO = np.array([560, 80])
+POS_INFO = np.array([20, 100])
 
 # components
 
@@ -182,7 +182,7 @@ class Updater(SubPage):
         '''
         self.is_thread_active = True
         self.updating = True
-        self.update_json_data()
+        #self.update_json_data()
         self.thread_update = threading.Thread(target=self._udpate)
         self.thread_update.start()
 
@@ -219,14 +219,14 @@ class Updater(SubPage):
 
         # replace
         for filename, scr in zip(self.server_data['files'], files_scr):
-            
-            if '.png' in filename:
-                with open(filename, 'wb') as file:
-                    file.write(scr.content)
-            
-            else:
-                with open(filename, 'w') as file:
-                    file.write(scr.text)
+            pass
+            #if '.png' in filename:
+            #    with open(filename, 'wb') as file:
+            #        file.write(scr.content)
+            #
+            #else:
+            #    with open(filename, 'w') as file:
+            #        file.write(scr.text)
 
         time.sleep(.5) # for the wow effect        
         self.is_update_done = True

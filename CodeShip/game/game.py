@@ -30,8 +30,23 @@ class Game:
         self._is_game_active = False
 
         if connected:
-            self.game_client = GameClient((ui_client.ip, Spec.PORT))
-            BulletSystem.game_client = self.game_client
+            self._set_game_client()
+
+    def _set_game_client(self):
+        '''
+        Set the game client, connect to the server.
+        '''
+        self.game_client = GameClient((self.ui_client.ip, Spec.PORT))
+        BulletSystem.game_client = self.game_client
+
+    def start_udp(self):
+        '''
+        Connect udp to server, 
+        start infinite loop.
+        '''
+        # connect
+        self.ui_client.connect_udp(self.game_client.get_local_port())
+        self.game_client.start()
 
     @property
     def running(self):

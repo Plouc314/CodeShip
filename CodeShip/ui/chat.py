@@ -30,10 +30,10 @@ class Chat(SubPage):
         scroll = ScrollList(DIM_SCROLL, (0,0), [])
 
         input_msg = InputText(DIM_INPUT, (0, DIM_SCROLL[1]), 
-                        pretext="Write message...", font=Font.f(25))
+                        pretext="Write message...", font=Font.f(30))
 
         button_send = Button(DIM_SEND, (DIM_INPUT[0], DIM_SCROLL[1]), 
-                        color=C.LIGHT_BLUE, text='Send', font=Font.f(25))
+                        color=C.LIGHT_BLUE, text='Send', font=Font.f(30))
 
         components = (
             ('scroll', scroll),
@@ -94,10 +94,10 @@ class Chat(SubPage):
         Create the TextBoxs that composed a message (ui),
         return two elements to be use with `ScrollList.add_line`.
         '''
-        text_username = TextBox(DIM_USER, (10,0), font=Font.f(35),
+        text_username = TextBox(DIM_USER, (10,0), font=Font.f(40),
                             text=username, text_color=user_color, centered=False)
         
-        text_msg = TextBox(DIM_MSG, (DIM_USER[0], MSG_Y), font=Font.f(25),
+        text_msg = TextBox(DIM_MSG, (DIM_USER[0], MSG_Y), font=Font.f(30),
                             text=msg, centered=False)
 
         return [text_username, text_msg]

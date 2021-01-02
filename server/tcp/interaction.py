@@ -66,6 +66,13 @@ class Interaction:
             cls.end_game(tag)
 
     @classmethod
+    def connect_udp(cls, address):
+        '''
+        Add a client on the udp socket
+        '''
+        cls.queue.put(['conn', address])
+
+    @classmethod
     def end_game(cls, tag):
         '''
         End a game, stop udp clients.  
@@ -87,7 +94,7 @@ class Interaction:
         ip1 = cls.clients[user1].ip
         ip2 = cls.clients[user2].ip
 
-        cls.queue.put(['disconn', ip1, ip2])
+        cls.queue.put(['unlink', ip1, ip2])
 
         cls.games.pop(tag)
 
@@ -137,6 +144,13 @@ class Interaction:
         cls.clients[target].send(f'dfr{sep_m}{sender}')
 
     @classmethod
+    def send_demand_game(cls, target, sender):
+        '''
+        Send the game demand to the requested user.
+        '''
+        cls.clients[target].send(f'dg{sep_m}{sender}')
+
+    @classmethod
     def set_user_waiting_game(cls, username, state):
         '''
         Set if the user is waiting to enter a game
@@ -167,6 +181,14 @@ class Interaction:
 
         cls.waiting_game = cls.waiting_game[:-2]
 
+        cls.create_game(user1, user2)
+
+    @classmethod
+    def create_game(cls, user1, user2):
+        '''
+        Start a game, setup the udp socket, 
+        send start of game to client.
+        '''
         # store game
         tag = id(user1)
         cls.games[tag] = {
@@ -177,11 +199,11 @@ class Interaction:
         cls.clients[user1].game_tag = tag
         cls.clients[user2].game_tag = tag
 
-        # connect client on udp server
+        # link client on udp server
         ip1 = cls.clients[user1].ip
         ip2 = cls.clients[user2].ip
 
-        cls.queue.put(['conn', ip1, ip2])
+        cls.queue.put(['link', ip1, ip2])
 
         # notify clients on local
 
@@ -191,4 +213,3 @@ class Interaction:
 
         cls.clients[user1].send_enter_game(cls.clients[user2], id1)
         cls.clients[user2].send_enter_game(cls.clients[user1], id2)
-

@@ -3,7 +3,7 @@ from lib.plougame import SubPage, Form, TextBox, ScrollList, InputText, Button, 
 from game.game import Game
 from data.spec import Spec
 import numpy as np
-import importlib, traceback, time
+import importlib, traceback, time, functools
 
 DIM_CADRE = np.array([1100, 900])
 POS_TITLE = np.array([350, 30])
@@ -28,25 +28,25 @@ title = TextBox(Spec.DIM_MEDIUM_TEXT, POS_TITLE, marge=True,
                 text="Script", font=Font.f(50))
 
 button_analyse = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR1, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Analyse", font=Font.f(30))
+                color=C.LIGHT_BLUE, text="Analyse", font=Font.f(35))
 
 button_load = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR2, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Load", font=Font.f(30))
+                color=C.LIGHT_BLUE, text="Load", font=Font.f(35))
 
 button_save = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR3, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Save", font=Font.f(30))
+                color=C.LIGHT_BLUE, text="Save", font=Font.f(35))
 
 text_status = TextBox(DIM_STATUS, (X_BAR4, Y_BAR),
-                font=Font.f(30), text_color=C.WHITE)
+                font=Font.f(35), text_color=C.WHITE)
 
 text_info = TextBox((0,0), POS_ERROR, dynamic_dim=True,
-                font=Font.f(25), text_color=C.WHITE)
+                font=Font.f(30), text_color=C.WHITE)
 
 title_traceback = TextBox(Spec.DIM_MEDIUM_TEXT, POS_T_TB, 
-                text="Traceback", font=Font.f(30), centered=False)
+                text="Traceback", font=Font.f(35), centered=False)
 
 text_traceback = TextBox(DIM_TB, POS_TB, 
-                font=Font.f(25), marge=True)
+                font=Font.f(30), marge=True, continuous_text=True)
 
 components = [
     ('cadre', cadre),
@@ -257,6 +257,7 @@ class ScriptAnalyser(SubPage):
         self.change_display_state('t tb', True)
 
         # first filter traceback lines
+        # get first line that is about script.py
         for i, line in enumerate(tb_lines):
             if 'script.py' in line:
                 idx = i
@@ -264,17 +265,15 @@ class ScriptAnalyser(SubPage):
         
         tb_lines = tb_lines[idx:]
 
-        # add blank lines to tb_lines until reaching the fixed number of lines
-        # -> get a fix-like TextBox
-        while len(tb_lines) < self.n_tb_lines:
-            tb_lines.append('')
+        # keep only relative path
+        root_path = "/home/alexandre/Documents/python/game/CodeShip/"
+
+        for i in range(len(tb_lines)):
+            tb_lines[i] = tb_lines[i].replace(root_path, '')
         
-        string = ''
+        text = functools.reduce(lambda x,y:x+y, tb_lines)
 
-        for line in tb_lines:
-            string += line + '\n'
-
-        self.set_text('t tb', string)
+        self.set_text('t tb', text)
     
     def set_status_text(self):
         '''

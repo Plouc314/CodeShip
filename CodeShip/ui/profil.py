@@ -50,42 +50,42 @@ chat = Chat(POS_CHAT, general_chat=False)
 title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, font=Font.f(80))
 
 button_back = Button(Spec.DIM_MEDIUM_BUTTON, POS_BACK, color=C.LIGHT_BLUE,
-                text="Back", font=Font.f(30))
+                text="Back", font=Font.f(35))
 
 cadre = Cadre(DIM_CADRE, POS_CADRE)
 
 form_ship = Cadre(DIM_SHIP, POS_SHIP)
 
 title_games = TextBox(DIM_CASE, POS_TABLE, text='Games', 
-                marge=True, font=Font.f(40))
+                marge=True, font=Font.f(45))
 
 title_wins = TextBox(DIM_CASE, POS_TABLE + DX, text='Wins', 
-                marge=True, font=Font.f(40))
+                marge=True, font=Font.f(45))
 
 title_loss = TextBox(DIM_CASE, POS_TABLE + 2*DX, text='Loss', 
-                marge=True, font=Font.f(40))
+                marge=True, font=Font.f(45))
 
 title_ratio = TextBox(DIM_CASE, POS_TABLE + 3*DX, text='Ratio W/L', 
-                marge=True, font=Font.f(40))
+                marge=True, font=Font.f(45))
 
 text_games = TextBox(DIM_CASE, POS_TABLE + DY,
-                marge=True, font=Font.f(50))
+                marge=True, font=Font.f(55))
 
 text_wins = TextBox(DIM_CASE, POS_TABLE + DY + DX, text_color=C.DARK_GREEN,
-                marge=True, font=Font.f(50))
+                marge=True, font=Font.f(55))
 
 text_loss = TextBox(DIM_CASE, POS_TABLE + DY + 2*DX, text_color=C.DARK_RED,
-                marge=True, font=Font.f(50))
+                marge=True, font=Font.f(55))
 
 text_ratio = TextBox(DIM_CASE, POS_TABLE + DY + 3*DX,
-                marge=True, font=Font.f(50))
+                marge=True, font=Font.f(55))
 
 title_scroll = TextBox(Spec.DIM_BIG_TEXT, POS_TITLE_SCR, text='Friends', font=Font.f(50))
 
 scroll_friends = ScrollList(DIM_SCR_FRS, POS_SCR_FRS, [])
 
 text_rdfr = TextBox(None, POS_TEXT_RDFR, color=C.DARK_GREEN,
-                font=Font.f(20), text_color=C.WHITE, dynamic_dim=True)
+                font=Font.f(30), text_color=C.WHITE, dynamic_dim=True)
 
 states = ['base']
 
@@ -263,10 +263,10 @@ class Profil(Page):
         cadre = Cadre(DIM_FRL_CADRE, (0,0))
         
         text_username = TextBox(DIM_L_USERNAME, DX_L + DY_L, text=username, 
-                        font=Font.f(40))
+                        font=Font.f(45))
         
         button_requests = Button(DIM_L_BUTTON, POS_L_BUTTON, color=C.LIGHT_BLUE,
-                            text='Add', font=Font.f(25))
+                            text='Add', font=Font.f(30))
 
         scroll = self.get_component('s frs')
 

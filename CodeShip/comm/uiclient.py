@@ -19,7 +19,9 @@ class UIClient(ClientTCP):
             'rsg' : None, # response sign up
             'frs' : None, # friends connected
             'rdfr': None, # response on friend demand
+            'rdg' : None, # response on game demand
             'dfr' :   [], # friend demands (from other users) 
+            'dg'  :   [], # game demands (from other users) 
             'gc'  :   [], # message on general chat
             'pc'  :   [], # message on private chat
             'rpd' : None, # response to profil demand
@@ -39,7 +41,9 @@ class UIClient(ClientTCP):
             'rsg' : lambda x: int(x),
             'frs' : self.on_friends,
             'rdfr': lambda x: int(x),
+            'rdg' : lambda x: int(x),
             'dfr' : lambda x: x,
+            'dg'  : lambda x: x,
             'gc'  : self.on_chat_msg,
             'pc'  : self.on_chat_msg,
             'rpd' : self.on_profil_infos,
@@ -93,6 +97,12 @@ class UIClient(ClientTCP):
         will free the container(s) after exit of context.
         '''
         return ContextManager(self, identifier)
+
+    def connect_udp(self, port):
+        '''
+        Send the udp port to enable the server to send udp msg to local
+        '''
+        self.send(f'udp{sep_m}{port}')
 
     def on_chat_msg(self, content):
         '''
@@ -199,6 +209,20 @@ class UIClient(ClientTCP):
         '''
         self.send(f'rdfr{sep_m}{username}{sep_c}{int(response)}')
 
+    def send_demand_game(self, username):
+        '''
+        Send a game demand.
+        ID: dg
+        '''
+        self.send(f'dg{sep_m}{username}')
+
+    def send_response_game_demand(self, username, response):
+        '''
+        Send if accepted or not a game demand.
+        ID: rdg
+        '''
+        self.send(f'rdg{sep_m}{username}{sep_c}{int(response)}')
+
     def send_ship_config(self, arr):
         '''
         Send the new ship of client.
@@ -269,7 +293,9 @@ class ContextManager:
             'rsg' : None,
             'frs' : None,
             'rdfr': None,
+            'rdg' : None,
             'dfr' :   [],
+            'dg'  :   [],
             'gc'  :   [],
             'pc'  :   [],
             'rpd' : None,

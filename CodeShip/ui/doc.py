@@ -34,11 +34,14 @@ title_desc = TextBox(DIM_TITLE_DESC, POS_TITLE, text='General', font=Font.f(65))
 text_desc = TextBox(DIM_DESC, POS_DESC, text=Spec.JSON_DATA['doc']['general'],
             font=Font.f(35), centered=False, continuous_text=True)
 
-button_general = Button(DIM_BUTT, X1, color=C.LIGHT_BLUE, font=Font.f(35),
+button_general = Button(DIM_BUTT, X1, color=C.XLIGHT_GREY, font=Font.f(35),
             text='General')
 
-button_ship = Button(DIM_BUTT, X2, color=C.LIGHT_BLUE, font=Font.f(35),
+button_ship = Button(DIM_BUTT, X2, color=C.XLIGHT_GREY, font=Font.f(35),
             text='Ship')
+
+button_script = Button(DIM_BUTT, X3, color=C.XLIGHT_GREY, font=Font.f(35),
+            text='Script')
 
 components = [
     ('cadre', cadre),
@@ -46,6 +49,7 @@ components = [
     ('t desc', text_desc),
     ('b general', button_general),
     ('b ship', button_ship),
+    ('b script', button_script),
 ]
 
 states = ['base']
@@ -58,6 +62,7 @@ class Doc(SubPage):
 
         self.add_button_logic('b general', self._get_logic('b general'))
         self.add_button_logic('b ship', self._get_logic('b ship'))
+        self.add_button_logic('b script', self._get_logic('b script'))
 
     def _get_logic(self, name: str):
         '''

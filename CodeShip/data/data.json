@@ -19,6 +19,8 @@
         "game/ship.py",
         "imgs/correct.png",
         "imgs/cross.png",
+        "imgs/friend.png",
+        "imgs/game.png",
         "imgs/question_mark.png",
         "lib/plougame/__init__.py",
         "lib/plougame/app.py",
@@ -33,7 +35,6 @@
         "lib/tcp.py",
         "lib/udp.py",
         "main.py",
-        "requirements.txt",
         "ui/app.py",
         "ui/chat.py",
         "ui/doc.py",
@@ -46,7 +47,31 @@
         "ui/updater.py"
     ],
     "doc": {
-        "general": "CodeShip is a two-player 2D game where each player has a ship.\nThe aim of the game is to destroy the opponent's ship.\n\nA ship is made up of different types of blocks, each of them having a specific purpose.\nEach player designs his own ship, with a limited amound of credits, so that\nbuilding the ship is already part of the game's strategy.",
-        "ship": "A ship is made up blocks placed in a 6x6 grid. It is these blocks which will define \nthe characteristics of the ship, which are: the mass, health (hitpoints), power output,\nmaximum velocity and acceleration, fire power.\n\nFor example, the ship's hitpoints are simply defined as the sum of the hitpoints of\nthe blocks that make it up."
+        "general": [
+            "CodeShip is a two-player 2D game where each player has a ship.",
+            "The aim of the game is to destroy the opponent's ship.",
+            "",
+            "A ship is made up of different types of blocks, each of them having a specific purpose.",
+            "Each player designs his own ship, with a limited amound of credits, so that",
+            "building the ship is already part of the game's strategy.",
+            "",
+            "Players do not use their mouse and keyboard to play, but rather create a python script",
+            "that will run their ship (therefore they have to be able to code in python)."
+        ],
+        "ship": [
+            "A ship is made up blocks placed in a 6x6 grid. It is these blocks which will define ",
+            "the characteristics of the ship, which are: the mass, health (hitpoints), power output,",
+            "maximum velocity and acceleration, fire power.",
+            "",
+            "For example, the ship's hitpoints are simply defined as the sum of the hitpoints of",
+            "the blocks that make it up."
+        ],
+        "script": [
+            "The script is an python module whose function \"main\" is executed to run the player's",
+            "ship during the game.",
+            "",
+            "The script is written by the player, it uses the game's API to provide a simple way",
+            "to give order to blocks of the ship."
+        ]
     }
 }

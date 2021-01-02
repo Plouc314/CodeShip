@@ -26,10 +26,13 @@ class Client(ClientTCP):
             'lo': self.on_disconnect, # log out
             'lg': self.login,
             'sg': self.sign_up,
+            'udp': self.connect_udp,
             'gc': self.general_chat,
             'pc': self.private_chat,
             'dfr': self.demand_friend,
             'rdfr': self.response_demand_friend,
+            'dg': self.demand_game,
+            'rdg': self.response_demand_game,
             'shcf': self.ship_config,
             'sc': self.save_script,
             'scst': self.set_script_status,
@@ -54,6 +57,13 @@ class Client(ClientTCP):
             self.username = None
 
         self.print("Disconnected.")
+
+    def connect_udp(self, content):
+        '''
+        Set udp client in udp socket
+        '''
+        address = (self.ip, int(content))
+        Interaction.connect_udp(address)
 
     def _log_client(self, username):
         '''
@@ -186,10 +196,10 @@ class Client(ClientTCP):
         except:
             self.print("Error occured in splitting opperation.", warning=True)
 
-        try:
-            self.identifiers[identifier](content)
-        except:
-            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
+        #try:
+        self.identifiers[identifier](content)
+        #except:
+        #    self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
 
         if identifier in ["sc","sca"]:
             return
@@ -335,7 +345,44 @@ class Client(ClientTCP):
 
             # send to client if new friend is connected
             self.send(f'frs{sep_m}{username}{sep_c2}{int(is_connected)}')
-            
+    
+    def demand_game(self, content):
+        '''
+        Manage the game demand
+        Content: target username
+        '''
+        is_error = False
+
+        # check target is not user
+        if content == self.username:
+            is_error = True
+
+        # check if requested user is connected
+        if not Interaction.is_user(content):
+            is_error = True
+
+        if is_error:
+            # send error in friend demand
+            self.send(f'rdg{sep_m}0')
+            return
+
+        Interaction.send_demand_game(content, self.username)
+
+        # send friend demand is ok
+        self.send(f'rdg{sep_m}1')
+
+    def response_demand_game(self, content):
+        '''
+        Manage the response of a game demand.
+        Content: username, response
+        '''
+        username, response = content.split(sep_c)
+        response = int(response)
+
+        if response:
+            # start a new game
+            Interaction.create_game(self.username, username)
+
     def ship_config(self, content):
         '''
         Store the new ship config of the client,  
