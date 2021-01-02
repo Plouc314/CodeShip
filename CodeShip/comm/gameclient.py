@@ -19,10 +19,7 @@ class GameClient(ClientUDP):
         '''
         Start a infinite loop in another thread to listen to the server.
         '''
-
-        if not self.connected:
-            self.connect()
-
+        self.running = True
         self._thread = threading.Thread(target=self.run)
         self._thread.start()
         print("[UDP] Started client's thread.")

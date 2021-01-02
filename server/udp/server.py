@@ -10,22 +10,24 @@ class Server(ServerUDP):
 
         super().__init__(Spec.PORT)
 
-    def on_connection(self, addr):
-
+    def create_client(self, addr):
+        '''
+        Create a client given it's address
+        '''
         print(f"[UDP] |{addr[0]}| Connected.")
         client = Client(addr)
         self.add_client(client)
 
-    def connect_clients(self, ip1, ip2):
+    def link_clients(self, ip1, ip2):
         '''
-        Connect two clients together.
+        Link two clients together.
         '''
         self.get_client(ip1).opp_client = self.get_client(ip2)
         self.get_client(ip2).opp_client = self.get_client(ip1)
 
-    def break_conn_clients(self, ip1, ip2):
+    def unlink_clients(self, ip1, ip2):
         '''
-        Break the connection between two clients
+        Unlink two clients
         '''
         self.get_client(ip1).opp_client = None
         self.get_client(ip2).opp_client = None
@@ -48,17 +50,21 @@ class Server(ServerUDP):
                 self.running = False
                 break
 
-            # connect two users to each other -> in game comm
+            # connect new client
             if msg[0] == 'conn':
+                self.create_client(msg[1])
+
+            # link two users to each other -> in game comm
+            if msg[0] == 'link':
                 ip1, ip2 = msg[1:]
 
-                self.connect_clients(ip1, ip2)
+                self.link_clients(ip1, ip2)
             
             # break connection beteween two users
-            elif msg[0] == 'disconn':
+            elif msg[0] == 'unlink':
                 ip1, ip2 = msg[1:]
 
-                self.break_conn_clients(ip1, ip2)
+                self.unlink_clients(ip1, ip2)
 
             # remove a client -> disconnection
             elif msg[0] == 'rm':

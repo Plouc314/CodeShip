@@ -34,30 +34,16 @@ class ClientUDP:
         self.addr = tuple(addr)
         self.ip = addr[0]
         self.port = addr[1]
-        self.connected = False
+        self.running = False
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.connect()
+        self._socket.bind(('',0))
 
-    def connect(self):
+    def get_local_port(self):
         '''
-        Try to connect to the server.  
-        Return True if the connection succeeds.
+        Get the port on which the socket listen for messages
         '''
-        try:
-            # send 4 times -> make sure the server receive it
-            self.send(Spec.CONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.CONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.CONNECT_MSG)
-            time.sleep(0.05)
-            self.send(Spec.CONNECT_MSG)
-
-            self.connected = True
-            return True
-        except:
-            return False
+        return self._socket.getsockname()[1]
 
     def send(self, msg, addr=None):
         '''
@@ -81,14 +67,14 @@ class ClientUDP:
         To end execution, call disconnect method.  
         '''
 
-        while self.connected:
+        while self.running:
 
             time.sleep(0.01)
 
             # receive msg
             msg, address = self._socket.recvfrom(Spec.BUFSIZE)
             msg = msg.decode(Spec.FORMAT).strip()
-
+            
             if msg != Spec.DISCONNECT_MSG:
                 self.on_message(msg)
 
@@ -101,12 +87,12 @@ class ClientUDP:
         '''
         raise NotImplementedError("on_message method must be implemented.")
 
-    def disconnect(self):
+    def stop(self):
         '''
         Stop run loop if active.  
         Not to be implemented!    
         '''
-        self.connected = False
+        self.running = False
 
         # send msg to own socket to stop inf loop
         self.send(Spec.DISCONNECT_MSG, addr=self._socket.getsockname())

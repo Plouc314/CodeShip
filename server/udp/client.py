@@ -9,10 +9,6 @@ class Client(ClientUDP):
         super().__init__(addr)
 
         self.opp_client = None
-    
-    def on_disconnect(self):
-        # avoid not implemented error
-        pass
 
     def on_message(self, msg):
         '''

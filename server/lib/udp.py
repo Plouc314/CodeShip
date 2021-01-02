@@ -36,8 +36,6 @@ class ServerUDP:
         self._unknown_ips = []
 
         # dict of the clients, key : ip address
-        # send incoming msg to them
-        # clients themselves add them to the dict
         self._clients = {}
 
     def bind(self, port, ip=None):
@@ -98,47 +96,16 @@ class ServerUDP:
             msg, address = self.socket.recvfrom(Spec.BUFSIZE)
             msg = msg.decode(Spec.FORMAT).strip()
 
-            if msg == Spec.CONNECT_MSG:
-
-                # check that client is not already connected 
-                # -> connection message send two times
-                if not address[0] in self._clients.keys():
-                    self.on_connection(address)
+            ip = address[0]
+            
+            if ip in self._clients.keys():
+                client = self._clients[ip]
+                client.on_message(msg)
 
             else:
-                # call transfert msg to client
-                ip = address[0]
-                
-                if ip in self._clients.keys():
-                    client = self._clients[ip]
-
-                    if msg == Spec.DISCONNECT_MSG:
-                        
-                        # check that client is not already disconnected 
-                        # -> disconnection message send two times
-                        if address[0] in self._clients.keys():
-                            client.on_disconnect()
-                            
-                            # remove client
-                            self._clients.pop(ip)
-                    
-                    else:
-                        client.on_message(msg)
-
-                else:
-
-                    if not ip in self._unknown_ips:
-                        self._unknown_ips.append(ip)
-                        ErrorServer.call("Unknown IP address: " + ip, warning=True)
-
-    @staticmethod
-    def on_connection(addr):
-        '''
-        Function executed on new connection.  
-        Has as argument, address of the connection.  
-        To be implemented.  
-        '''
-        raise NotImplementedError("on_connection method must be implemented.")
+                if not ip in self._unknown_ips:
+                    self._unknown_ips.append(ip)
+                    ErrorServer.call("Unknown IP address: " + ip, warning=True)
 
 
 class ClientUDP:
@@ -159,14 +126,6 @@ class ClientUDP:
         To be implemented.  
         '''
         raise NotImplementedError("on_message method must be implemented.")
-
-    @staticmethod
-    def on_disconnect():
-        '''
-        Disconnect, called when the client has sent a disconnect message.  
-        To be implemented.    
-        '''
-        raise NotImplementedError("on_disconnect method must be implemented.")
 
     def send(self, msg):
         '''
