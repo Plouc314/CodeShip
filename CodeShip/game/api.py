@@ -28,8 +28,36 @@ class API:
         Ship._update_blocks()
         Opponent._update_blocks()
 
-class Block:
+class Constants:
+    '''
+    Contain various constants used in the game.
+    '''
+    size_block = Spec.SIZE_BLOCK
+    turret_fire_delay = Spec.TURRET_FIRE_DELAY
+    turret_rotation_speed = Spec.TURRET_MAX_SPEED
+    bullet_damage = Spec.DAMAGE_BULLET
+    bullet_speed = Spec.SPEED_BULLET
 
+
+class Block:
+    '''
+    Block `Block`
+
+    Most basic block, parent object of every other blocks.
+
+    Note
+    ---
+    Do not create a block in the script as each API object is linked
+    to an internal object in the game, so creating a new block would have
+    no effect on the behaviour of the ship.
+
+    Methods
+    ---
+    `activate`: Activate the block (Useless for `Block`)  
+    `deactivate`: Deactivate the block (Useless for `Block`)  
+    `get_hp`: Return the amound of hitpoints of the block  
+    `get_power_output`: Return the power output of the block (power consumption or generation)  
+    '''
     name = 'Block'
 
     def __init__(self, key, team):
@@ -66,6 +94,15 @@ class Block:
         return f'{self.name} API Object key:{self.key}'
 
 class Generator(Block):
+    '''
+    Block `Generator`
+
+    Supply power to the ship.
+    
+    Methods
+    ---
+    All `Block` methods.
+    '''
 
     name = 'Generator'
 
@@ -73,14 +110,33 @@ class Generator(Block):
         super().__init__(key, team)
 
 class Shield(Block):
+    '''
+    Block `Shield`
 
+    Not implemented.
+    '''
     name = 'Shield'
 
     def __init__(self, key, team):
         super().__init__(key, team)
 
 class Turret(Block):
+    '''
+    Block `Turret`
 
+    Block used to cause damage ot the opponent ship, 
+    can rotate and fire bullets.  
+    Specifications on the bullets can be found in `Constants`.
+
+    Methods
+    ---
+    All `Block` methods.
+
+    `is_rotating`: Return if the turret is currently rotating.  
+    `rotate`: Rotate the turret to a certain angle.  
+    `get_orientation`: Return the current orientation of the turret.  
+    `fire`: Make the turret fire.  
+    '''
     name = 'Turret'
 
     def __init__(self, key, team):
@@ -99,8 +155,8 @@ class Turret(Block):
         Can know if the turret is rotating calling `is_rotating` method.
 
         Parameters
-        ------
-        `target_angle: int (degree)`  
+        ---
+        `target_angle`: int (degree)  
         The angle up to which the turret will rotate.
         '''
         if self.team == 'opp': 
@@ -115,8 +171,11 @@ class Turret(Block):
     def fire(self):
         '''
         Make the turret fire.  
-        To be able to fire, the turret needs to be activated,
-        and the fire delay needs to be écoulé (turret can't fire at each frame)
+
+        The turret fire with a delay, meaning that it can't fire at each frame,
+        the delay is stored in `Constants.turret_fire_delay` (unit: fps).  
+
+        Note: To be able to fire, the turret needs to be activated.  
         '''
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
@@ -124,7 +183,19 @@ class Turret(Block):
         API._ships[self.team].blocks[self.key].fire()
 
 class Engine(Block):
+    '''
+    Block `Engine`
 
+    Block `Engine` provides motor force to the ship,
+    making it go forward. It has an intensity of activation
+    which affect the power output and the efficiency of the engine.
+
+    Methods
+    ---
+    All `Block` methods.
+
+    `set_power_engines`: Set the intensity at which the engines is running
+    '''
     name = 'Engine'
 
     def __init__(self, key, team):
@@ -132,11 +203,12 @@ class Engine(Block):
     
     def set_power_level(self, value: float):
         '''
-        Set the power level of the engine.
+        Set the power level of the engine,
+        the intensity at which the engine is running.
 
         Parameters
-        ------
-        `value: float`  
+        ---
+        `value`: float  
         The intensity of the engine, between 0 and 1.
         '''
         if self.team == 'opp': 
@@ -152,7 +224,25 @@ map_block = {
     'Engine': Engine
 }
 
+
 class Ship:
+    '''
+    `Ship` object.
+
+    The `Ship` object stored all the blocks reference,
+    it has methods to give orders to the whole ship and
+    various getters that can gives informations about the 
+    current ship situation.
+
+    Methods
+    ---
+    `get_blocks`: Return the blocks of the ships.  
+    `set_power_engines`: Set the intensity at which the engines are running
+    (same as `Engine.set_power_level` but for the whole ship)
+
+    Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
+    `get_position`, `get_power_level`
+    '''
 
     @classmethod
     def _set_blocks(cls):
@@ -188,24 +278,20 @@ class Ship:
                 cls.typed_blocks[block.name].remove(block)
 
     @classmethod
-    def get_blocks(cls, _type : str = None):
+    def get_blocks(cls, _type : str = None) -> List[Union[Block, Generator, Shield, Turret, Engine]]:
         ''' 
         Return the blocks of the ship.
 
         Parameters
-        ------
-        _type: `str`  
+        ---
+        `_type`: str  
         Can specify a type, can be one of those: `Block`, `Generator`, `Engine`, `Shield`, `Turret`.  
         In that case, return all the blocks of the specified type.
         '''
         if _type == None:
-            # assign type to blocks -> get doc in script
-            values: List[Union[map_block]] = cls.blocks
-            return values
+            return cls.blocks
         else:
-            # assign type to blocks -> get doc in script
-            values: List[Union[map_block]] = cls.typed_blocks[_type]
-            return values
+            return cls.typed_blocks[_type]
     
     @classmethod
     def get_speed(cls, scalar=False):
@@ -214,8 +300,8 @@ class Ship:
         
         Parameters
         ------
-        `scalar: bool`  
-        if scalar=False : return the vector speed, else return the norm of the vector.
+        `scalar`: bool  
+        If False return the vector speed, else return the norm of the vector.
         '''
         return API._ships['own'].get_speed(scalar=scalar)
     
@@ -226,8 +312,8 @@ class Ship:
         
         Parameters
         ------
-        `scalar: bool`  
-        if scalar=False : return the vector acceleration, else return the norm of the vector.
+        `scalar`: bool  
+        If False return the vector acceleration, else return the norm of the vector.
         '''
         return API._ships['own'].get_acc(scalar=scalar)
 
@@ -242,7 +328,8 @@ class Ship:
     def get_position(cls):
         '''
         Return the position of the center of the ship.  
-        The position coordinates will fall between `[0,0]` and `[3200,1600]`.
+        The position coordinates will fall between `[0,0]` (upper left)
+        and `[3200,1800]` (bottom right).
         '''
         return API._ships['own'].form.get_center()
 
@@ -257,9 +344,10 @@ class Ship:
         return API._ships['own'].get_power_level()
 
     @classmethod
-    def set_power_engines(cls, value):
+    def set_power_engines(cls, value: Union[float, list]):
         '''
-        Set the power level of the engines,  
+        Set the power level of the engines,
+        the intensity at which the engines are running.
         
         Parameters
         ------
@@ -279,6 +367,19 @@ class Ship:
                     engine.set_power_level(val)
 
 class Opponent:
+    '''
+    `Opponent` object.
+
+    The `Opponent` object is the same as the `Ship` object except
+    it doesn't has the methods that give orders.  
+
+    Methods
+    ---
+    `get_blocks`: Return the blocks of the ships.  
+    
+    Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
+    `get_position`, `get_power_level`
+    '''
 
     @classmethod
     def _set_blocks(cls):
@@ -309,8 +410,8 @@ class Opponent:
         Return the blocks of the ship.
 
         Parameters
-        ------
-        `_type: str`    
+        ---
+        `_type`: str  
         Can specify a type, can be one of those: `Block`, `Generator`, `Engine`, `Shield`, `Turret`.  
         In that case, return all the blocks of the specified type.
         '''
@@ -330,8 +431,8 @@ class Opponent:
         
         Parameters
         ------
-        `scalar: bool`  
-        if scalar=False : return the vector speed, else return the norm of the vector.
+        `scalar`: bool  
+        If False return the vector speed, else return the norm of the vector.
         '''
         return API._ships['own'].get_speed(scalar=scalar)
     
@@ -342,8 +443,8 @@ class Opponent:
         
         Parameters
         ------
-        `scalar: bool`  
-        if scalar=False : return the vector acceleration, else return the norm of the vector.
+        `scalar`: bool  
+        If False return the vector acceleration, else return the norm of the vector.
         '''
         return API._ships['own'].get_acc(scalar=scalar)
 
@@ -358,6 +459,7 @@ class Opponent:
     def get_position(cls):
         '''
         Return the position of the center of the ship.  
-        The position coordinates will fall between `[0,0]` and `[3200,1600]`.
+        The position coordinates will fall between `[0,0]` (upper left)
+        and `[3200,1800]` (bottom right).
         '''
         return API._ships['opp'].form.get_center()

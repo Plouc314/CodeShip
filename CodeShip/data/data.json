@@ -64,14 +64,20 @@
             "maximum velocity and acceleration, fire power.",
             "",
             "For example, the ship's hitpoints are simply defined as the sum of the hitpoints of",
-            "the blocks that make it up."
+            "the blocks that make it up.",
+            "",
+            "Each player creates his own ship (which will be public, see a friend's profile page).",
+            "A player will lose when his ship isn't able to damage the opponent's ship anymore."
         ],
         "script": [
             "The script is an python module whose function \"main\" is executed to run the player's",
             "ship during the game.",
             "",
             "The script is written by the player, it uses the game's API to provide a simple way",
-            "to give order to blocks of the ship."
+            "to give order to blocks of the ship.",
+            "",
+            "See documentation on github.com/Plouc314/CodeShip or directly look at the code",
+            "documentation (see the inline documentation, for example with visual studio code)."
         ]
     }
 }

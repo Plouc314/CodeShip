@@ -182,7 +182,7 @@ class Updater(SubPage):
         '''
         self.is_thread_active = True
         self.updating = True
-        #self.update_json_data()
+        self.update_json_data()
         self.thread_update = threading.Thread(target=self._udpate)
         self.thread_update.start()
 
@@ -219,14 +219,14 @@ class Updater(SubPage):
 
         # replace
         for filename, scr in zip(self.server_data['files'], files_scr):
-            pass
-            #if '.png' in filename:
-            #    with open(filename, 'wb') as file:
-            #        file.write(scr.content)
-            #
-            #else:
-            #    with open(filename, 'w') as file:
-            #        file.write(scr.text)
+
+            if '.png' in filename:
+                with open(filename, 'wb') as file:
+                    file.write(scr.content)
+            
+            else:
+                with open(filename, 'w') as file:
+                    file.write(scr.text)
 
         time.sleep(.5) # for the wow effect        
         self.is_update_done = True
@@ -235,9 +235,8 @@ class Updater(SubPage):
         '''
         Update local data.json file with data from github
         '''
-        Spec.JSON_DATA['version'] = self.server_data['version']
-        Spec.JSON_DATA['files'] = self.server_data['files']
-        Spec.JSON_DATA['doc'] = self.server_data['doc']
+        for key in self.server_data.keys():
+            Spec.JSON_DATA[key] = self.server_data[key]
 
         with open('data/data.json', 'w') as file:
             json.dump(Spec.JSON_DATA, file, indent=4)
