@@ -183,7 +183,7 @@ class Game:
             ended = True
             has_win = False
             
-        if len(self.opp_ship.typed_blocks['Turret']) == 0 or len(self.opp_ship.typed_blocks['Generator']) == 0::
+        if len(self.opp_ship.typed_blocks['Turret']) == 0 or len(self.opp_ship.typed_blocks['Generator']) == 0:
             ended = True
             has_win = True
         
