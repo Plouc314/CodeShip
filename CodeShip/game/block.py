@@ -203,7 +203,7 @@ class Engine(Block):
 
         self.ship.update_signal(self)
 
-    def get_power_output():
+    def get_power_output(self):
         return self.power_output * self.activation_per
 
     def get_engine_force(self):

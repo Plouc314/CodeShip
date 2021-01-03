@@ -9,10 +9,10 @@ from lib.counter import Counter
 ### TOP BAR
 
 Y_TB = np.array([0,100])
-Y_TB2 = np.array([0,170])
+Y_TB2 = np.array([0,150])
 
 X_TB = np.array([10,0])
-X_TB2 = np.array([240,0])
+X_TB2 = np.array([350,0])
 
 POS_TIME = np.array([Spec.CENTER_X-Spec.DIM_MEDIUM_TEXT[0]//2, Y_TB[1]])
 POS_CADRE1 = np.array([50,50])
@@ -20,8 +20,9 @@ POS_CADRE2 = np.array([2550,50])
 DIM_CADRE = np.array([600, 400])
 DIM_USER = np.array([400, 80])
 POS_USER = np.array([100, 20])
-DIM_TEXT = np.array([200, 60])
-DIM_HP = np.array([330, 40])
+DIM_TEXT_INFO = np.array([400, 290])
+DIM_TEXT_VALUE = np.array([200, 230])
+DIM_HP = np.array([230, 30])
 POS_HP = X_TB2 + Y_TB + np.array([0, 10])
 DIM_TWIN = np.array([600, 200])
 POS_TWIN = np.array([Spec.CENTER_X-300, 200])
@@ -45,27 +46,23 @@ text_username2 = TextBox(DIM_USER, POS_CADRE2 + POS_USER,
 button_quit = Button(Spec.DIM_MEDIUM_BUTTON, POS_EXIT, color=C.LIGHT_BLUE,
                 text="Quit", font=Font.f(30))
 
-text_hp1 = TextBox(DIM_TEXT, POS_CADRE1 + X_TB + Y_TB, 
-            text='HP', font=Font.f(40))
-
 form_red_hp1 = Form(DIM_HP, POS_CADRE1 + POS_HP, color=C.RED)
 form_green_hp1 = Form(DIM_HP, POS_CADRE1 + POS_HP, color=C.GREEN)
-
-text_hp2 = TextBox(DIM_TEXT, POS_CADRE2 + X_TB + Y_TB, 
-            text='HP', font=Font.f(40))
 
 form_red_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.RED)
 form_green_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.GREEN)
 
-text_engine_info1 = TextBox(DIM_TEXT, POS_CADRE1 + X_TB + Y_TB2, 
-            text='Engine', font=Font.f(40))
-text_engine_value1 = TextBox(DIM_TEXT, POS_CADRE1 + X_TB2 + Y_TB2, 
-            text_color=C.DARK_YELLOW, font=Font.f(40))
+text_info1 = TextBox(DIM_TEXT_INFO, POS_CADRE1 + X_TB + Y_TB, font=Font.f(40), centered=False,
+            text=['HP', 'Engine', 'Speed', 'Acceleration'], continuous_text=True)
 
-text_engine_info2 = TextBox(DIM_TEXT, POS_CADRE2 + X_TB + Y_TB2, 
-            text='Engine', font=Font.f(40))
-text_engine_value2 = TextBox(DIM_TEXT, POS_CADRE2 + X_TB2 + Y_TB2, 
-            text_color=C.DARK_YELLOW, font=Font.f(40))
+text_info2 = TextBox(DIM_TEXT_INFO, POS_CADRE2 + X_TB + Y_TB, font=Font.f(40), centered=False,
+            text=['HP', 'Engine', 'Speed', 'Acceleration'], continuous_text=True)
+
+text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(40),
+            text=['','',''], continuous_text=True, centered=False)
+
+text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(40),
+            text=['','',''], continuous_text=True, centered=False)
 
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
@@ -78,16 +75,14 @@ components = [
     ('cadre 2', cadre_2),
     ('t username2', text_username2),
     ('b quit', button_quit),
-    ('t hp1', text_hp1),
+    ('t info1', text_info1),
+    ('t info2', text_info2),
+    ('t value1', text_value1),
+    ('t value2', text_value2),
     ('f red hp1', form_red_hp1),
     ('f green hp1', form_green_hp1),
-    ('t hp2', text_hp2),
     ('f red hp2', form_red_hp2),
     ('f green hp2', form_green_hp2),
-    ('t engine1', text_engine_info1),
-    ('t engine value1', text_engine_value1),
-    ('t engine2', text_engine_info2),
-    ('t engine value2', text_engine_value2),
     ('t win', text_win),
 ]
 
@@ -144,6 +139,17 @@ class GameInterface(Page):
         form = self.get_component(f'f green hp{team}')
         form.set_dim((dim_x, DIM_HP[1]), scale=True)
 
+    def _set_value(self, idx, value, team):
+        '''
+        Set the value of the line at the given index of the specified team.
+        '''
+        # change the line of text corresponding to the info
+        text = self.get_component(f't value{team}')
+        lines = text.get_text(lines=True)
+
+        lines[idx] = value
+        text.set_text(lines)
+
     def set_engine_level(self, team, ship):
         '''
         Set the engine level info of the specified player
@@ -153,9 +159,7 @@ class GameInterface(Page):
         for block in ship.typed_blocks['Engine']:
             total_force += block.activation_per
 
-        text = self.get_component(f't engine value{team}')
-        text.set_text(f'{100*total_force}%')
-        #text.set_text(f'{ship.acc:.2f} {ship.speed:.2f}')
+        self._set_value(0, f'{100*total_force}%', team)
 
     @Counter.add_func
     def update(self, ship1, ship2):
@@ -175,6 +179,12 @@ class GameInterface(Page):
         self.set_engine_level(1, ship1)
         self.set_engine_level(2, ship2)
 
+        self._set_value(1, f'{ship1.get_speed(scalar=True):.0f}', 1)
+        self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)
+
+        self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
+        self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
+
     def set_users(self, user1, user2):
         '''
         Set the two users,  
@@ -183,5 +193,3 @@ class GameInterface(Page):
         '''
         self.set_text('t username1', user1)
         self.set_text('t username2', user2)
-
-GameInterface.display = Counter.add_func(GameInterface.display)
