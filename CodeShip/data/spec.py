@@ -17,8 +17,8 @@ class Spec:
     PORT = 5050
     IP_PUBLIC = '188.62.158.181'
     IP_HOST1 = '127.0.0.1'
-    IP_HOST2 = '192.168.1.113'
-    IP_HOST3 = '192.168.1.149'
+    IP_HOST2 = '192.168.1.149'
+    IP_HOST3 = '127.0.0.2'
     
     SEP_MAIN = '|'
     SEP_CONTENT = ','

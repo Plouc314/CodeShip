@@ -205,11 +205,11 @@ class Game:
         '''
         Return a formated traceback of the given error.
         '''
-        tb = e.__traceback__
+        tb = error.__traceback__
         tb = traceback.extract_tb(tb).format()
 
-        error_type = e.__class__.__name__
-        error_msg = str(e)
+        error_type = error.__class__.__name__
+        error_msg = str(error)
 
         tb.append(f'{error_type}: {error_msg}')
         return tb

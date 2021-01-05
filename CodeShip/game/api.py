@@ -3,7 +3,10 @@ from game.block import (Block as BaseBlock,
                 Generator as BaseGenerator, 
                 Shield as BaseShield, 
                 Turret as BaseTurret)
+from game.geometry import get_deg, get_rad
 from data.spec import Spec
+import numpy as np
+from lib.counter import Counter
 from typing import List, Set, Dict, Tuple, Union
 
 class API:
@@ -21,11 +24,13 @@ class API:
         Opponent._set_blocks()
 
     @classmethod
+    @Counter.add_func
     def run(cls):
         '''
         Update API's ships to keep them synchronize to the real ships.
         '''
         Ship._update_blocks()
+        Ship._update_rotation()
         Opponent._update_blocks()
 
 class Constants:
@@ -243,6 +248,12 @@ class Ship:
     Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
     `get_position`, `get_power_level`
     '''
+    
+    # rotation
+    _target_angle = None
+    _path_length = None
+    _path_f = None
+    _inversed = False
 
     @classmethod
     def _set_blocks(cls):
@@ -320,9 +331,9 @@ class Ship:
     @classmethod
     def get_orientation(cls):
         '''
-        Return the orientation of the ship (in radian)
+        Return the orientation of the ship (degree)
         '''
-        return API._ship['own'].orien
+        return get_deg(API._ship['own'].orien)
 
     @classmethod
     def get_position(cls):
@@ -365,6 +376,73 @@ class Ship:
             if len(value) == len(engines):
                 for val, engine in zip(value, engines):
                     engine.set_power_level(val)
+
+    @classmethod
+    def rotate(cls, angle: int):
+        '''
+        Rotate the ship to a target angle (degree)
+        '''
+
+        if cls._target_angle == angle:
+            # given angle is already target angle
+            print("'Rotation killed")
+            return
+        
+        cls._target_angle = angle
+        cls._inversed = False
+
+        # select the smallest path to the angle
+        orien = get_deg(API._ships['own'].orien)
+
+        print("Rotate", angle, orien)
+
+        path1 = (abs(orien - 360) + cls._target_angle) % 360
+        path2 = 360 - abs(orien - cls._target_angle)
+
+        cls._path_length = max(path1, path2)
+
+        if path1 <= path2:
+            acc_circular = Spec.MAX_CIRCULAR_ACC
+            cls._path_f = lambda x: (abs(x - 360) + cls._target_angle) % 360
+        else:
+            acc_circular = -Spec.MAX_CIRCULAR_ACC
+            cls._path_f = lambda x: 360 - abs(x - cls._target_angle)
+
+        API._ships['own'].circular_acc = acc_circular
+
+        print(API._ships['own'].circular_acc)
+
+    @classmethod
+    def _update_rotation(cls):
+        '''
+        Internal method.  
+        Update rotation, inverse acc in the middle,
+        stop rotation on target angle.
+        '''
+        if cls._target_angle == None:
+            return
+        
+        ship = API._ships['own']
+        orien = get_deg(ship.orien)
+
+        # check halfway through -> inv acc
+        path_length = cls._path_f(orien)
+
+        if not cls._inversed == False and path_length <= cls._path_length/2:
+            # inverse acc
+            ship.circular_acc = -ship.circular_acc
+            cls._inversed = True
+
+        print(f'{orien:.0f}   {cls._target_angle:.0f}')
+
+        # check target angle
+        if abs(orien - cls._target_angle) <= 5:
+            ship.orien = get_rad(cls._target_angle)
+            print('Rotation: DONE')
+            # finish rotation
+            ship.circular_acc = 0
+            ship.circular_speed = 0
+            cls._target_angle = None
 
 class Opponent:
     '''
@@ -451,9 +529,9 @@ class Opponent:
     @classmethod
     def get_orientation(cls):
         '''
-        Return the orientation of the ship (in radian)
+        Return the orientation of the ship (degree)
         '''
-        return API._ship['opp'].orien
+        return get_deg(API._ship['opp'].orien)
 
     @classmethod
     def get_position(cls):

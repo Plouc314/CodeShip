@@ -53,16 +53,16 @@ form_red_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.RED)
 form_green_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.GREEN)
 
 text_info1 = TextBox(DIM_TEXT_INFO, POS_CADRE1 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration'], continuous_text=True)
+            text=['HP', 'Engine', 'Speed', 'Acceleration', 'speec ang', 'acc ang'], continuous_text=True)
 
 text_info2 = TextBox(DIM_TEXT_INFO, POS_CADRE2 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration'], continuous_text=True)
+            text=['HP', 'Engine', 'Speed', 'Acceleration', 'speec ang', 'acc ang'], continuous_text=True)
 
 text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(40),
-            text=['','',''], continuous_text=True, centered=False)
+            text=['','','', '', ''], continuous_text=True, centered=False)
 
 text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(40),
-            text=['','',''], continuous_text=True, centered=False)
+            text=['','','', '', ''], continuous_text=True, centered=False)
 
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
@@ -161,7 +161,6 @@ class GameInterface(Page):
 
         self._set_value(0, f'{100*total_force}%', team)
 
-    @Counter.add_func
     def update(self, ship1, ship2):
         '''
         Update the interface's infos given the ships,  
@@ -182,8 +181,17 @@ class GameInterface(Page):
         self._set_value(1, f'{ship1.get_speed(scalar=True):.0f}', 1)
         self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)
 
-        self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
-        self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
+        self._set_value(2, f'{ship1.orien:.2f}', 1)
+        self._set_value(2, f'{ship2.orien:.2f}', 2)            
+
+        #self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
+        #self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
+
+        self._set_value(3, f'{ship1.circular_speed:.4f}', 1)
+        self._set_value(3, f'{ship2.circular_speed:.4f}', 2)
+
+        self._set_value(4, f'{ship1.circular_acc:.4f}', 1)
+        self._set_value(4, f'{ship2.circular_acc:.4f}', 2)
 
     def set_users(self, user1, user2):
         '''

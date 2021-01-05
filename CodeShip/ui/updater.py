@@ -127,6 +127,7 @@ class Updater(SubPage):
 
         except requests.exceptions.ConnectionError:
             self.is_connection_error = True
+            return
 
         self.server_data = json.loads(data)
         self.has_server_data = True

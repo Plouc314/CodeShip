@@ -1,5 +1,6 @@
 import pygame, numpy as np
 from lib.plougame.helper import Delayer
+from lib.plougame.auxiliary import Dimension
 from game.geometry import get_deg, get_norm, to_vect, cal_direction
 from data.spec import Spec
 from lib.counter import Counter
@@ -64,19 +65,24 @@ class CollisionSystem:
             cls.bounce()
 
     @classmethod
-    @Counter.add_func
     @collision_deco
     def is_collision(cls):
         '''
         Return if a collision occured between the ships AND the intersection point.
         '''
-        mask_own = cls.own_ship.get_mask()
-        mask_opp = cls.opp_ship.get_mask()
-
         pos_own = cls.own_ship.get_pos(scaled=True)
         pos_opp = cls.opp_ship.get_pos(scaled=True)
 
         offset = np.array(pos_own - pos_opp, dtype='int32')
+
+        threshold = 1.5 * Dimension.scale(Spec.DIM_SHIP[0])
+
+        if get_norm(offset) > threshold:
+            return
+        
+        # check collision
+        mask_own = cls.own_ship.get_mask()
+        mask_opp = cls.opp_ship.get_mask()
 
         intersect = mask_opp.overlap(mask_own, offset)
 
@@ -113,4 +119,4 @@ class CollisionSystem:
         else:
             sign = 1
         
-        cls.own_ship.circular_speed = sign * Spec.BOUNCE_CIRCULAR_SPEED
+        cls.own_ship.circular_speed += sign * Spec.BOUNCE_CIRCULAR_SPEED

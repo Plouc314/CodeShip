@@ -120,7 +120,7 @@ class ScriptAnalyser(SubPage):
         '''
         Load the server script into the script.py file
         '''
-        script = self.client.in_data['scr']
+        script = self.client.in_data['sc']
 
         with open('script.py', 'w') as file:
             file.write(script)

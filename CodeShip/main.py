@@ -42,7 +42,7 @@ while Interface.running:
     else:
         game.run(pressed, events)
 
-#Counter.print_result()
+Counter.print_result()
 
 client.disconnect()
 game.game_client.stop()

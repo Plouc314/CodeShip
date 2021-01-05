@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 from lib.plougame import Interface, Form, Dimension, C
-from game.geometry import get_deg, get_rad
+from game.geometry import get_deg, get_rad, get_norm
 from data.spec import Spec
 from lib.counter import Counter
 
@@ -224,7 +224,6 @@ class BulletSystem:
         cls.handeln_collision()
     
     @classmethod
-    @Counter.add_func
     def display(cls):
         '''
         Display every bullet & explosion,  
@@ -264,27 +263,20 @@ class BulletSystem:
         Check if one of the ships is hit by a bullet,  
         handeln collision effects.
         '''
-        is_collision, bullet = cls.is_collision(cls.own_ship)
-        if is_collision:
-            pos_bullet = bullet.get_pos(scaled=True)
-            cls.own_ship.handeln_collision(bullet, pos_bullet)
-            cls.handeln_collision_effect(bullet, pos_bullet)
-
-        is_collision, bullet = cls.is_collision(cls.opp_ship)
-        if is_collision:
-            # remove damage from bullet -> other client handeln it
-            bullet.damage = 0
+        cls.check_collision_ship(cls.own_ship)
+        cls.check_collision_ship(cls.opp_ship, is_bullet_damage=False)
             
-            pos_bullet = bullet.get_pos(scaled=True)
-            cls.opp_ship.handeln_collision(bullet, pos_bullet)
-            cls.handeln_collision_effect(bullet, pos_bullet)
-
     @classmethod
-    def is_collision(cls, ship):
+    def check_collision_ship(cls, ship, is_bullet_damage=True):
         '''
-        Check if own ship has been hit by one of the bullet.
+        Check if own ship has been hit by one of the bullet.  
+        If yes, handeln collision.
         '''
-        mask_ship = ship.get_mask()
+
+        threshold = Dimension.scale(get_norm(Spec.DIM_SHIP))
+
+        pos_ship = ship.get_pos(scaled=True)
+        center_ship = ship.get_pos(center=True, scaled=True)
 
         for bullet in cls.bullets:
             
@@ -293,16 +285,25 @@ class BulletSystem:
 
             pos_bullet = bullet.get_pos(scaled=True)
 
-            pos_ship = ship.get_pos(scaled=True)
+            offset_to_center = np.array(pos_bullet - center_ship, dtype='int32')
+
+            if get_norm(offset_to_center) > threshold:
+                continue
+
+            # check for collision
+            mask_ship = ship.get_mask()
 
             offset = np.array(pos_bullet - pos_ship, dtype='int32')
 
             intersect = mask_ship.overlap(bullet.mask, offset)
 
             if not intersect is None:
-                return True, bullet
-        
-        return False, None
+
+                if not is_bullet_damage:
+                    bullet.damage = 0
+
+                ship.handeln_collision(bullet, pos_bullet)
+                cls.handeln_collision_effect(bullet, pos_bullet)
 
     @classmethod
     def handeln_collision_effect(cls, bullet, intersect):

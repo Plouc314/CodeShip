@@ -9,6 +9,7 @@ from data.spec import Spec
 
 map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
 
+indicator = Form((50,50), (3100, 1700), color=C.YELLOW)
 
 class Ship:
 
@@ -113,6 +114,10 @@ class Ship:
         '''
         Return the pygame.mask.Mask object of the ship.
         '''
+        if self._mask is None:
+            self._process_mask()
+            indicator.display()
+
         return self._mask
 
     def get_speed(self, scalar=False):
@@ -310,7 +315,7 @@ class Ship:
         '''
         Rotate the ship's surface to a given angle (rad).  
         '''
-        # converts the angle into radian
+        # converts the angle into deg
         angle = -get_deg(angle)
 
         self.form.rotate(angle)
@@ -334,15 +339,27 @@ class Ship:
         self.run_blocks()
 
         if not remote_control:
-            self.control_power_level()
-            self.update_turrets()
-            self.update_state()
+            self._update_local()    
         
         # update main surface
-        self.form.set_surface(surface=self.form.get_surface('original'))
-        self.rotate_surf(self.orien)
+        self._update_surf()
         
         # udapte mask
+        self._mask = None
+
+    @Counter.add_func
+    def _update_local(self):
+        self.control_power_level()
+        self.update_turrets()
+        self.update_state()
+
+    @Counter.add_func
+    def _update_surf(self):
+        self.form.set_surface(surface=self.form.get_surface('original'))
+        self.rotate_surf(self.orien)
+
+    @Counter.add_func
+    def _process_mask(self):
         self._mask = pygame.mask.from_surface(self.form.get_surface('main'))
 
     def update_turrets(self):
@@ -363,8 +380,10 @@ class Ship:
         self.compute_circular_speed()
         
         self.orien += self.circular_speed
+        #self.orien %= 2 * np.pi
         self.pos += self.speed.astype(int)
 
+    @Counter.add_func
     def run_blocks(self):
         '''
         Call the run method of each block,  
