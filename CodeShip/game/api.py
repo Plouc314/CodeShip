@@ -243,7 +243,9 @@ class Ship:
     ---
     `get_blocks`: Return the blocks of the ships.  
     `set_power_engines`: Set the intensity at which the engines are running
-    (same as `Engine.set_power_level` but for the whole ship)
+    (same as `Engine.set_power_level` but for the whole ship)  
+    `rotate_target`: Rotate the ship until reaching an angle.  
+    `rotate_angle`: Rotate the ship of a given angle.  
 
     Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
     `get_position`, `get_power_level`
@@ -331,7 +333,12 @@ class Ship:
     @classmethod
     def get_orientation(cls):
         '''
-        Return the orientation of the ship (degree)
+        Return the orientation of the ship (degree).  
+        The orientation is an angle, with:
+        0° : East  
+        90° : South  
+        180° : West  
+        270° : North
         '''
         return get_deg(API._ship['own'].orien)
 
@@ -362,7 +369,7 @@ class Ship:
         
         Parameters
         ------
-        `value: float / list`  
+        `value`: float / list  
         The intensity of the engine, between 0 and 1,
         can be either one value for all engines or one value per engine
         '''
@@ -378,14 +385,53 @@ class Ship:
                     engine.set_power_level(val)
 
     @classmethod
-    def rotate(cls, angle: int):
+    def _choose_rotation_path(cls, current_angle):
         '''
-        Rotate the ship to a target angle (degree)
+        Given the current orientation (deg),
+        Choose the shortest path,
+        set the lambda to compute it,
+        return the circular acceleration.
+        '''
+        # a is previous angle, b is target angle
+        a = current_angle
+        b = cls._target_angle
+
+        if a > b:
+            b = b + 360 - a
+            a = 0
+
+        # counter clockwise
+        path1 = b - a
+        # clockwise
+        path2 = a + (360 - b)
+
+        cls._path_length = max(path1, path2)
+
+        if path1 < path2:
+            acc_circular = Spec.MAX_CIRCULAR_ACC
+            cls._path_f = lambda x: b - x + (360 - a)
+        else:
+            acc_circular = -Spec.MAX_CIRCULAR_ACC
+            cls._path_f = lambda x: x + (360 - a) + (360 - b)
+
+        return acc_circular
+
+    @classmethod
+    def rotate_target(cls, angle: int):
+        '''
+        Rotate the ship to a target angle.
+        The ship will rotate all the way until reaching the target angle.  
+        For example, if the orientation of the ship is 277° and the target
+        angle 233°, the ship will rotate of 44° counter-clockwise.
+
+        Parameters
+        ---
+        `angle`: int  
+        The target angle in degrees.
         '''
 
         if cls._target_angle == angle:
             # given angle is already target angle
-            print("'Rotation killed")
             return
         
         cls._target_angle = angle
@@ -393,24 +439,34 @@ class Ship:
 
         # select the smallest path to the angle
         orien = get_deg(API._ships['own'].orien)
-
-        print("Rotate", angle, orien)
-
-        path1 = (abs(orien - 360) + cls._target_angle) % 360
-        path2 = 360 - abs(orien - cls._target_angle)
-
-        cls._path_length = max(path1, path2)
-
-        if path1 <= path2:
-            acc_circular = Spec.MAX_CIRCULAR_ACC
-            cls._path_f = lambda x: (abs(x - 360) + cls._target_angle) % 360
-        else:
-            acc_circular = -Spec.MAX_CIRCULAR_ACC
-            cls._path_f = lambda x: 360 - abs(x - cls._target_angle)
-
+        
+        acc_circular = cls._choose_rotation_path(orien)
+        
         API._ships['own'].circular_acc = acc_circular
 
-        print(API._ships['own'].circular_acc)
+    @classmethod
+    def rotate_angle(cls, angle: int):
+        '''
+        Rotate the ship of a given angle.  
+        The ship will rotate of the given angle, so if the orientation
+        of the ship is 130° and the given angle -21°, the ship will rotate
+        of 21° counter-clockwise to reach 119°.
+
+        Parameters
+        ---
+        `angle`: int  
+        The angle of rotation in degrees, positive is clockwise,
+        negative is counter-clockwise.
+        '''
+        orien = get_deg(API._ships['own'].orien)
+
+        target_angle = (orien + angle) % 360
+
+        if cls._target_angle == target_angle:
+            # given angle is already target angle
+            return
+        
+        cls.rotate_target(target_angle)
 
     @classmethod
     def _update_rotation(cls):
@@ -433,12 +489,10 @@ class Ship:
             ship.circular_acc = -ship.circular_acc
             cls._inversed = True
 
-        print(f'{orien:.0f}   {cls._target_angle:.0f}')
-
         # check target angle
-        if abs(orien - cls._target_angle) <= 5:
+        if abs(orien - cls._target_angle) <= 1:
             ship.orien = get_rad(cls._target_angle)
-            print('Rotation: DONE')
+
             # finish rotation
             ship.circular_acc = 0
             ship.circular_speed = 0
@@ -529,7 +583,12 @@ class Opponent:
     @classmethod
     def get_orientation(cls):
         '''
-        Return the orientation of the ship (degree)
+        Return the orientation of the ship (degree).  
+        The orientation is an angle, with:
+        0° : East  
+        90° : South  
+        180° : West  
+        270° : North
         '''
         return get_deg(API._ship['opp'].orien)
 

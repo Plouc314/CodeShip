@@ -3,6 +3,7 @@ import time
 import numpy as np
 from lib.plougame import Page, Form, Cadre, TextBox, Button, InputText, Font, C
 from game.api import API
+from game.geometry import get_deg
 from data.spec import Spec
 from lib.counter import Counter
 
@@ -53,10 +54,10 @@ form_red_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.RED)
 form_green_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.GREEN)
 
 text_info1 = TextBox(DIM_TEXT_INFO, POS_CADRE1 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration', 'speec ang', 'acc ang'], continuous_text=True)
+            text=['HP', 'Engine', 'Speed', 'Acceleration', 'Orientation', 'Speed(°)'], continuous_text=True)
 
 text_info2 = TextBox(DIM_TEXT_INFO, POS_CADRE2 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration', 'speec ang', 'acc ang'], continuous_text=True)
+            text=['HP', 'Engine', 'Speed', 'Acceleration', 'Orientation', 'Speed(°)'], continuous_text=True)
 
 text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(40),
             text=['','','', '', ''], continuous_text=True, centered=False)
@@ -179,19 +180,16 @@ class GameInterface(Page):
         self.set_engine_level(2, ship2)
 
         self._set_value(1, f'{ship1.get_speed(scalar=True):.0f}', 1)
-        self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)
+        self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)            
 
-        self._set_value(2, f'{ship1.orien:.2f}', 1)
-        self._set_value(2, f'{ship2.orien:.2f}', 2)            
+        self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
+        self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
 
-        #self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
-        #self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
+        self._set_value(3, f'{get_deg(ship1.orien):.0f}', 1)
+        self._set_value(3, f'{get_deg(ship2.orien):.0f}', 2)
 
-        self._set_value(3, f'{ship1.circular_speed:.4f}', 1)
-        self._set_value(3, f'{ship2.circular_speed:.4f}', 2)
-
-        self._set_value(4, f'{ship1.circular_acc:.4f}', 1)
-        self._set_value(4, f'{ship2.circular_acc:.4f}', 2)
+        self._set_value(4, f'{get_deg(ship1.circular_speed):.0f}', 1)
+        self._set_value(4, f'{get_deg(ship2.circular_speed):.0f}', 2)
 
     def set_users(self, user1, user2):
         '''
