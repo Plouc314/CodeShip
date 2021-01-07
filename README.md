@@ -24,6 +24,7 @@ The API is composed of two main parts, the ships and the blocks. With them, you 
 > 1. **Ship**  
     There are two "ship" object, `Ship`, for your ship, and `Opponent`, for the opponent ship.
     These objects can gives information about their ship, for example: `get_speed`, `get_position`, `get_acceleration`...  
+    `Ship` has also a few methods to directly control it, like: `rotate_target`, `rotate_angle` or `set_power_engines`
 > 2. **Block**  
     There is one block object for every type of block (`Block`, `Generator`, `Engine`, `Shield`, `Turret`). You can obtain the references of theses blocks by calling the `get_blocks` of one of the ship object. You can give orders to the blocks by calling one of their methods, for example: `activate`, `deactivate`, `rotate` (Turret), `set_power_level` (Engine)...  
 
@@ -31,21 +32,41 @@ The API is composed of two main parts, the ships and the blocks. With them, you 
 '''
 Example of script
 '''
-# import API
-from game.api import Ship, Opponent, Block, Engine, Generator, Shield, Turret
+# Import API
+# Note: importing the block objects (Block, Engine, ...) is useless
+# for the script but can be very handy to have a look at the documentation
+from game.api import Ship, Opponent, Block, Engine, Generator, Shield, Turret, Constants
 
-# define main function
+# Define a container object, it will store
+# all global variables (must be declared inside an object)
+class Globals:
+    has_rotated = False
+
+# Define main function
 def main():
+
+    # Perform a test using a global variable
+    if not Globals.has_rotated:
+
+        # Set has_rotated to True, 
+        # in order to only rotate once
+        Globals.has_rotated = True
+
+        # Rotate the ship of 45° clockwise
+        # Note: the action is not performed instantaneously,
+        # rotate_angle just starts the movement that will last
+        # a few seconds.
+        Ship.rotate_angle(45)
 
     if Ship.get_speed() < 20:
 
-        # switches the engines to full throttle.
+        # Switches the engines to full throttle.
         Ship.set_power_engines(1)
 
-    # get the references of the Turret blocks of the ship
+    # Get the references of the Turret blocks of the ship
     turrets = Ship.get_blocks("Turret")
 
-    # order every turrets to fire
+    # Order all turrets to fire
     for turret in turrets:
         turret.fire()
 
