@@ -14,10 +14,9 @@ class CollisionSystem:
 
     HISTORY_SIZE = 10
     intersect = None
-    speed_history = {
-        'own': [],
-        'opp': []
-    }
+
+    # store opp speeds
+    speed_history = []
 
     @classmethod
     def reset(cls):
@@ -25,10 +24,7 @@ class CollisionSystem:
         Clear history of speeds
         '''
         cls.intersect = None
-        cls.speed_history = {
-            'own': [],
-            'opp': []
-        }
+        cls.speed_history = []
 
     @classmethod
     def set_ships(cls, own_ship, opp_ship):
@@ -44,14 +40,10 @@ class CollisionSystem:
         '''
         Update history of the speeds.
         '''
-        cls.speed_history['own'].append(cls.own_ship.get_speed(scalar=True))
-        cls.speed_history['opp'].append(cls.opp_ship.get_speed(scalar=True))
-
-        if len(cls.speed_history['own']) > cls.HISTORY_SIZE:
-            cls.speed_history['own'].pop(0)
-        
-        if len(cls.speed_history['opp']) > cls.HISTORY_SIZE:
-            cls.speed_history['opp'].pop(0)
+        cls.speed_history.append(cls.opp_ship.get_speed(scalar=True))
+       
+        if len(cls.speed_history) > cls.HISTORY_SIZE:
+            cls.speed_history.pop(0)
 
     @classmethod
     def run(cls):
@@ -84,10 +76,10 @@ class CollisionSystem:
         mask_own = cls.own_ship.get_mask()
         mask_opp = cls.opp_ship.get_mask()
 
-        intersect = mask_opp.overlap(mask_own, offset)
+        mask_inter = mask_opp.overlap_mask(mask_own, offset)
 
-        if intersect is not None:
-            cls.intersect = pos_opp + np.array(intersect, dtype=int)
+        if mask_inter.count() > 0:
+            cls.intersect = pos_opp + np.array(mask_inter.centroid())
             return True
         else:
             return False
@@ -102,16 +94,16 @@ class CollisionSystem:
         cls.own_ship.set_auxiliary_acc(-cls.own_ship.get_acc())
 
         # get mean speed
-        own_speed = cls.speed_history['own'][0]
-        opp_speed = cls.speed_history['opp'][0]
-        speed = (own_speed + opp_speed) / 2
+        opp_speed = cls.speed_history[0]
+        
+        new_speed = opp_speed * cls.opp_ship.mass / cls.own_ship.mass
         
         # compute angle of collision
         center = cls.own_ship.get_pos(scaled=True, center=True)
 
         angle = cal_direction(center, cls.intersect)
 
-        cls.own_ship.speed = -to_vect(speed, angle)
+        cls.own_ship.speed = -to_vect(new_speed, angle)
 
         # add random rotation
         if np.random.random() < .5:

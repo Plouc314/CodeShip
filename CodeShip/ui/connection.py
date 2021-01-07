@@ -54,8 +54,8 @@ input_password = InputText(Spec.DIM_MEDIUM_TEXT, POS_INP_PASS, font=Font.f(45), 
 button_done = Button(Spec.DIM_MEDIUM_BUTTON, POS_DONE, color=C.LIGHT_BLUE,
                     text="Done", font=Font.f(35))
 
-text_error = TextBox(Spec.DIM_SMALL_TEXT, POS_ERROR, color=C.DARK_RED,
-                font=Font.f(30), text_color=C.WHITE)
+text_error = TextBox(None, POS_ERROR, color=C.DARK_RED,
+                font=Font.f(30), text_color=C.WHITE, dynamic_dim=True)
 
 states = ['base', 'login', 'signup']
 

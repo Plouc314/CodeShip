@@ -100,7 +100,7 @@ class Block:
 
 class Generator(Block):
     '''
-    Block `Generator`
+    Block `Generator`, inherit from `Block`
 
     Supply power to the ship.
     
@@ -116,7 +116,7 @@ class Generator(Block):
 
 class Shield(Block):
     '''
-    Block `Shield`
+    Block `Shield`, inherit from `Block`
 
     Not implemented.
     '''
@@ -127,7 +127,7 @@ class Shield(Block):
 
 class Turret(Block):
     '''
-    Block `Turret`
+    Block `Turret`, inherit from `Block`
 
     Block used to cause damage ot the opponent ship, 
     can rotate and fire bullets.  
@@ -157,7 +157,7 @@ class Turret(Block):
         '''
         Rotate the turret until reaching the target angle.
         The rotation is done at a certain speed.
-        Can know if the turret is rotating calling `is_rotating` method.
+        Can know if the turret is rotating by calling `is_rotating` method.
 
         Parameters
         ---
@@ -189,7 +189,7 @@ class Turret(Block):
 
 class Engine(Block):
     '''
-    Block `Engine`
+    Block `Engine`, inherit from `Block`
 
     Block `Engine` provides motor force to the ship,
     making it go forward. It has an intensity of activation

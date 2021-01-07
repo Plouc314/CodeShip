@@ -418,16 +418,6 @@ class Ship:
         if abs(self.circular_speed) > Spec.MAX_CIRCULAR_SPEED:
             self.circular_speed = np.sign(self.circular_speed) * Spec.MAX_CIRCULAR_SPEED
 
-    def set_circular_acc(self, value: int):
-        '''
-        Set the circular acceleration (deg) of the ship.  
-        The acceleration depends of the mass of the ship.
-        '''
-        if value / self.mass > Spec.MAX_CIRCULAR_ACC:
-            value = Spec.MAX_CIRCULAR_ACC
-        
-        self.circular_acc = value / self.mass
-
     def compute_acc(self):
         '''
         Compute the acceleration of the ship.
