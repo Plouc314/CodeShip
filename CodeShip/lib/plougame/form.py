@@ -2,6 +2,7 @@ import pygame
 from .helper import mean, rl, get_dark_color, get_light_color
 from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
+import weakref
 
 class Form:
     '''
@@ -89,13 +90,8 @@ class Form:
 
         if rescale:
             # add every gui obj to interface to be able to rezise gui objs auto
-            self._interface._gui_objects.append(self)
-
-    def delete(self):
-        '''
-        Remove the instance from Interface's references, it won't be resized anymore.
-        '''
-        self._interface._gui_objects.remove(self)
+            # add a weak reference -> don't keep instance alive for nothing
+            self._interface._gui_objects.append(weakref.proxy(self))
 
     def get_pos(self, scaled=False) -> [int, int]:
         '''
