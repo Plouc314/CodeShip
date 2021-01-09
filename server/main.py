@@ -19,5 +19,5 @@ try:
     server_tcp.run()
 
 except KeyboardInterrupt:
-    
+    print('\nStore database...\n')
     DataBase.store()
