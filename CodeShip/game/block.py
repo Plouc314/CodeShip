@@ -29,7 +29,11 @@ class Block(Form):
     ship = None
 
     # activate/deactivate signal
-    signal = Form(Spec.DIM_SIGNAL, (0,0))
+    signal_red = Form(Spec.DIM_SIGNAL, (0,0), color=C.LIGHT_RED)
+    
+    signal_green = Form(Spec.DIM_SIGNAL, (0,0), color=C.LIGHT_GREEN)
+    
+    signal_shield = Form(Spec.DIM_SIGNAL, (0,0), color=Spec.COLOR_SIGNAL_SHIELD)
 
     def __init__(self, coord, color=None, image=None, hp=None):
 
@@ -40,6 +44,8 @@ class Block(Form):
 
         self.active = True
         self.power_output = 0
+        self.hp_shield = 0
+        self.has_signal_shield = False
         
         # for the ship to know if it needs to update the block on the surface
         self.has_color_changed = False
@@ -72,12 +78,22 @@ class Block(Form):
         Hit the block, with a damage amound,  
         start the hit effect.
         '''
-        self.hp -= damage
+        # start by hiting the shield
+        self.hp_shield -= damage
+        
+        if self.hp_shield <= 0:
+            # if shield got over hit, report damage on hp
+            self.hp -= -round(self.hp_shield)
+            self.hp_shield = 0
 
-        self.set_color(C.RED)
+            self.set_color(C.RED)
+
+        else:
+            self.set_color(C.NEO_BLUE)
+        
         self.is_hit = True
         self.hit_effect_time = 0
-
+        
     def set_color(self, color, update_original=False):
         '''
         Set the color of the block, set a call to update color.  
@@ -89,10 +105,21 @@ class Block(Form):
         if update_original:
             self.color = color
 
+    def set_signal_shield(self):
+        '''
+        Update the shield signal
+        '''
+        self.ship.update_signal(self, shield=True)
+
     def run(self):
         '''
         '''
         self.run_hit_effect()
+
+        # check shield signal
+        if self.hp_shield > 0 and not self.has_signal_shield:
+            self.has_signal_shield = True
+            self.set_signal_shield()
 
     def run_hit_effect(self):
         '''
@@ -109,17 +136,21 @@ class Block(Form):
 
     def get_power_output(self):
 
-        if self.is_active:
+        if self.active:
             return self.power_output
         else:
             return 0
 
-    @property
-    def is_active(self):
+    def get_activate(self):
+        '''
+        Return if the block is activate.
+        '''
         return self.active
     
-    @is_active.setter
-    def is_active(self, value):
+    def set_activate(self, value: bool):
+        '''
+        Set if the block is activate.
+        '''
         # don't update signal if new value is equal to old one
         if self.active == value:
             return
@@ -134,11 +165,19 @@ class Block(Form):
         Return the signal Form object with the correct color.  
         '''
         if self.active:
-            self.signal.set_color(C.LIGHT_GREEN)
+            return self.signal_green
         else:
-            self.signal.set_color(C.LIGHT_RED)
-        
-        return self.signal
+            return self.signal_red
+
+    def get_signal_shield(self):
+        '''
+        Return the signal Form object, if doesn't have an active shield
+        return a see-through surface.
+        '''
+        if self.hp_shield > 0:
+            return self.signal_shield
+        else:
+            return None
 
     def __str__(self):
         return f'{self.name} object at {self.coord}'
@@ -186,13 +225,11 @@ class Engine(Block):
         # blit the engine image on the surface -> can resize the image
         self.get_surface('original').blit(img_engine, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
         self.set_surface(self.get_surface('original'))
-    
-    @property
-    def is_active(self):
-        return self.active
 
-    @is_active.setter
-    def is_active(self, value):
+    def set_activate(self, value: bool):
+        '''
+        Set if the block is activate.
+        '''
         if value == False:
             self.activation_per = 0
             self.active = False
@@ -201,7 +238,7 @@ class Engine(Block):
             self.activation_per = 1
             self.active = True
 
-        self.ship.update_signal(self)
+        super().set_activate(value)
 
     def get_power_output(self):
         return self.power_output * self.activation_per
@@ -229,9 +266,110 @@ class Shield(Block):
 
         self.power_output = -Spec.POWER_CONS        
 
+        self.n_prtc_block = 0
+        self.blocks = []
+        self.intensity = Spec.SHIELD_MAX_INTENSITY
+
         # blit the shield image on the surface -> can resize the image
         self.get_surface('original').blit(img_shield, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
         self.set_surface(self.get_surface('original'))
+
+    def update_state(self):
+        '''
+        Regenerate shield of protected blocks.
+        '''
+        n_damaged = 0
+
+        for info in self.blocks:
+            if info['block'].hp_shield < info['max hp']:
+                n_damaged += 1
+        
+        if n_damaged == 0:
+            return
+
+        regen_hp = Spec.SHIELD_REGEN_RATE / n_damaged
+
+        for info in self.blocks:
+            info['block'].hp_shield += regen_hp
+            if info['block'].hp_shield > info['max hp']:
+               info['block'].hp_shield = info['max hp']
+
+    def set_intensity(self, value: int):
+        '''
+        Set the intensity of the shield,
+        which defines the power consumption
+        and amound of shield hp available.
+        '''
+        value = round(value)
+        if value > Spec.SHIELD_MAX_INTENSITY:
+            value = Spec.SHIELD_MAX_INTENSITY
+        
+        self.intensity = value
+
+    def setup(self):
+        '''
+        Dispatch shield hp to all added blocks.
+        '''
+        # set number of shield hp per block
+        hp = Spec.SHIELD_HP * self.intensity / self.n_prtc_block
+
+        for i in range(len(self.blocks)):
+            
+            # set shield hp on block
+            self.blocks[i].hp_shield = hp
+
+            self.blocks[i] = {
+                'block': self.blocks[i],
+                'max hp': hp,
+                'frozen hp': hp, # hp stored when shield goes inactivate
+            }
+
+    def add_prtc_block(self, block: Block):
+        '''
+        In setup stage.  
+        Add a block to be protected by the shield
+        '''
+        if self.n_prtc_block >= Spec.SHIELD_MAX_PRTC:
+            return
+        
+        if block in self.blocks:
+            return
+
+        self.n_prtc_block += 1
+        self.blocks.append(block)
+
+    def remove_prtc_block(self, block: Block):
+        '''
+        In setup stage.  
+        Remove one of the protected block.
+        '''
+        if block in self.blocks:
+            self.n_prtc_block -= 1
+            self.blocks.remove(block)
+
+    def get_power_output(self):
+        if self.active:
+            return self.intensity * self.power_output
+        else:
+            return 0
+    
+    def set_activate(self, value):
+        '''
+        Set if the block is activate.
+        '''
+        if self.active == value:
+            return
+
+        if value == False:
+            for info in self.blocks:
+                info['frozen hp'] = info['block'].hp_shield
+                info['block'].hp_shield = 0
+            
+        else:
+            for info in self.blocks:
+                info['block'].hp_shield = info['frozen hp']
+
+        super().set_activate(value)
 
     def set_color(self, color, update_original=False):
         '''
@@ -306,9 +444,8 @@ class Turret(Block):
         pos = (Spec.DIM_BLOCK - dim_img) // 2
 
         # update surface - use a new one -> original already has an img blited on
-        form = Form(Spec.DIM_BLOCK, (0,0), self.current_color)
-        surface = form.get_surface('original')
-        form.delete()
+        surface = pygame.Surface(Spec.DIM_BLOCK)
+        surface.fill(self.current_color)
 
         surface.blit(img, pos)
         self.set_surface(surface)
@@ -316,6 +453,7 @@ class Turret(Block):
         # update ship's surface
         self.ship.update_block(self)
         self.ship.update_signal(self)
+        self.ship.update_signal(self, shield=True)
 
     def rotate(self, angle: float):
         '''

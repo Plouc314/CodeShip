@@ -24,11 +24,17 @@ class Bullet(Form):
         - orien : the orientation of the bullet (rad)
     '''
 
-    def __init__(self, team, pos, orien, speed=None, damage=None):
+    def __init__(self, team, pos, orien, speed=None, damage=None, _id=None):
 
         super().__init__(Spec.DIM_BULLET, pos, surface=img_bullet, center=True)
 
         self.team = team
+
+        # each bullet has a (~)unique id
+        if _id == None:
+            self.id = np.random.randint(0, 1000)
+        else:
+            self.id = _id
 
         # rotate the bullet according to its orientation
         self.rotate(get_deg(orien))
@@ -117,6 +123,7 @@ class BulletSystem:
     '''
     game_client = None
     bullets = []
+    recent_ids = {'id':[], 'lifetime':[]}
     explosions = []
     own_ship = None
     opp_ship = None
@@ -210,11 +217,16 @@ class BulletSystem:
         Update the positions, handeln the collisions
         '''
 
+        for i, life in enumerate(cls.recent_ids['lifetime']):
+            life -= 1
+            if life == 0:
+                cls.recent_ids['id'].pop(i)
+                cls.recent_ids['lifetime'].pop(i)
+
         for expl in cls.explosions:
             expl.update_state()
             
             if expl.to_delete:
-                expl.delete()
                 cls.explosions.remove(expl)
 
         for bullet in cls.bullets:
@@ -254,7 +266,6 @@ class BulletSystem:
             
             if not (-margin < y < window_y + margin) or not (-margin < x < window_x + margin):
                 # remove bullet
-                bullet.delete()
                 cls.bullets.remove(bullet)
 
     @classmethod
@@ -280,7 +291,7 @@ class BulletSystem:
 
         for bullet in cls.bullets:
             
-            if bullet.team == ship.team:
+            if bullet.team == ship.team or bullet.id in cls.recent_ids['id']:
                 continue
 
             pos_bullet = bullet.get_pos(scaled=True)
@@ -311,8 +322,9 @@ class BulletSystem:
         Remove bullet.  
         Create an explosion object.
         '''
-        bullet.delete()
         cls.bullets.remove(bullet)
+        cls.recent_ids['id'].append(bullet.id)
+        cls.recent_ids['lifetime'].append(Spec.TIME_EXPL)
 
         expl = Explosion(intersect)
         cls.explosions.append(expl)

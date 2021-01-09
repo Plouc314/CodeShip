@@ -38,11 +38,16 @@ class Constants:
     Contain various constants used in the game.
     '''
     size_block = Spec.SIZE_BLOCK
+    power_consumption = Spec.POWER_CONS
+    power_generation = Spec.POWER_ENERGIE
     turret_fire_delay = Spec.TURRET_FIRE_DELAY
     turret_rotation_speed = Spec.TURRET_MAX_SPEED
     bullet_damage = Spec.DAMAGE_BULLET
     bullet_speed = Spec.SPEED_BULLET
-
+    shield_blocks_limit = Spec.SHIELD_MAX_PRTC
+    shield_max_intensity = Spec.SHIELD_MAX_INTENSITY
+    shield_hp_unit = Spec.SHIELD_HP
+    shield_regeneration_rate = Spec.SHIELD_REGEN_RATE
 
 class Block:
     '''
@@ -78,14 +83,14 @@ class Block:
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        API._ships[self.team].blocks[self.key].is_active = True
+        API._ships[self.team].blocks[self.key].set_activate(True)
     
     def deactivate(self):
         '''Deactivate the block.'''
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        API._ships[self.team].blocks[self.key].is_active = False
+        API._ships[self.team].blocks[self.key].set_activate(False)
 
     def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
@@ -102,7 +107,7 @@ class Generator(Block):
     '''
     Block `Generator`, inherit from `Block`
 
-    Supply power to the ship.
+    Supply power to the ship, value stored in `Constants.power_generation`.
     
     Methods
     ---
@@ -124,6 +129,46 @@ class Shield(Block):
 
     def __init__(self, key, team):
         super().__init__(key, team)
+
+    def set_intensity(self, value: int):
+        '''
+        Set the intensity of the shield.  
+        It will define the power consumption of the shield
+        (computed as `intensity` * `Constants.power_consumption`) and
+        the amound of hitpoints that the shield can provide (computed as
+        `intensity` * `Constants.shield_hp_unit`).
+        '''
+        API._ships[self.team].blocks[self.key].set_intensity(value)
+
+    def add_block(self, block):
+        '''
+        Add a block to be protected by the shield.  
+        The block will only be added if the limit of the maximum
+        number of blocks of the shield is not reached (stored in
+        `Constants.shield_blocks_limit`)
+
+        Parameters
+        ---
+        `block`: Block / child object...  
+        One of the API block (of your team...)
+        '''
+        if block.team != self.team:
+            raise ValueError("Trying to add an opponent block to a Shield block.")
+
+        other_block = API._ships[self.team].blocks[block.key]
+        API._ships[self.team].blocks[self.key].add_prtc_block(other_block)
+
+    def remove_block(self, block):
+        '''
+        Remove one of the protected block.
+
+        Parameters
+        ---
+        `block`: Block / child object...  
+        One of the API block (of your team...)
+        '''
+        other_block = API._ships[block.team].blocks[block.key]
+        API._ships[self.team].blocks[self.key].remove_prtc_block(other_block)
 
 class Turret(Block):
     '''
@@ -306,6 +351,25 @@ class Ship:
         else:
             return cls.typed_blocks[_type]
     
+    @classmethod
+    def get_block_by_coord(cls, coord: tuple) -> Union[Block, Generator, Shield, Turret, Engine]:
+        '''
+        Return the block at the given coordinate.
+
+        The system of coordinates is organised as follows:
+        (0, 0) corresponds to the top left corner,
+        (5, 5) corresponds to the bottom right corner.
+
+        Return `None` if no block is found at the given coordinates.
+
+        Parameters
+        ---
+
+        `coord`: tuple[int, int]  
+        The coordinate at which the block is placed.
+        '''
+        return API._ships['own'].get_block_by_coord(coord)
+
     @classmethod
     def get_speed(cls, scalar=False):
         '''
@@ -556,6 +620,25 @@ class Opponent:
             values: List[Union[map_block]] = cls.typed_blocks[_type]
             return values
     
+    @classmethod
+    def get_block_by_coord(cls, coord: tuple) -> Union[Block, Generator, Shield, Turret, Engine]:
+        '''
+        Return the block at the given coordinate.
+
+        The system of coordinates is organised as follows:
+        (0, 0) corresponds to the top left corner,
+        (5, 5) corresponds to the bottom right corner.
+
+        Return `None` if no block is found at the given coordinates.
+
+        Parameters
+        ---
+
+        `coord`: tuple[int, int]  
+        The coordinate at which the block is placed.
+        '''
+        return API._ships['opp'].get_block_by_coord(coord)
+
     @classmethod
     def get_speed(cls, scalar=False):
         '''

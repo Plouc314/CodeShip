@@ -119,6 +119,7 @@ class C:
     WHITE = (255,255,255)
     BLACK = (0,0,0)
     
+    NEO_BLUE = (95, 245, 255)
     XLIGHT_BLUE = (204,230,255)
     LIGHT_BLUE = (135,206,250)
     BLUE = (65,105,225)

@@ -38,6 +38,8 @@ class Spec:
     # signal
     DIM_SIGNAL = np.array([20,20])
     POS_SIGNAL = np.array([10,10])
+    POS_SIGNAL_SHIELD = np.array([10,35])
+    COLOR_SIGNAL_SHIELD = (0,255,255)
 
     # script
     SCRIPT_EXEC_TIME = 0.005
@@ -71,6 +73,12 @@ class Spec:
     MOTOR_FORCE = 10
     TURRET_FIRE_DELAY = 20
     TURRET_MAX_SPEED = 2 # deg
+
+    # shield 
+    SHIELD_MAX_INTENSITY = 3
+    SHIELD_HP = 100
+    SHIELD_MAX_PRTC = 3
+    SHIELD_REGEN_RATE = 0.2
 
     # bullet
     DAMAGE_BULLET = 20

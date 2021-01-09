@@ -134,6 +134,8 @@ class GameInterface(Page):
         for block in ship.blocks.values():
             current_hp += block.hp
         
+        self._set_value(4, f'{current_hp}/{total_hp}', team)
+
         # set green form length
         dim_x = (current_hp / total_hp) * DIM_HP[0]
 
@@ -188,8 +190,8 @@ class GameInterface(Page):
         self._set_value(3, f'{get_deg(ship1.orien):.0f}', 1)
         self._set_value(3, f'{get_deg(ship2.orien):.0f}', 2)
 
-        self._set_value(4, f'{get_deg(ship1.circular_speed):.0f}', 1)
-        self._set_value(4, f'{get_deg(ship2.circular_speed):.0f}', 2)
+        #self._set_value(4, f'{get_deg(ship1.circular_speed):.0f}', 1)
+        #self._set_value(4, f'{get_deg(ship2.circular_speed):.0f}', 2)
 
     def set_users(self, user1, user2):
         '''

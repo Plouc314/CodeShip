@@ -34,6 +34,7 @@ class GameClient(ClientUDP):
             'speed':None,
             'acc':None,
             'hps': None,
+            'shield hps': None,
             'actives': None,
             'turrets': []
         }
@@ -52,10 +53,10 @@ class GameClient(ClientUDP):
             ErrorUDP.call("Extraction of ship's information failed.", warning=True)
 
         # get blocks' info
-        try:
-            self.extract_blocks_info(msg)
-        except:
-            ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
+        #try:
+        self.extract_blocks_info(msg)
+        #except:
+        #    ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
 
         # get bullets
         try:
@@ -89,22 +90,27 @@ class GameClient(ClientUDP):
     def extract_blocks_info(self, string):
         '''
         Extract the info of the blocks.  
-        Hps and activation
+        Hps, shield hps and activation
         '''
         # get part of string that corresponds to the extracted info
         string = string.split(sep_m)[1]
 
         infos = string.split(sep_c)
-        hps, actives = [], []
+        hps, shield_hps, actives = [], [], []
 
         for info in infos:
-            hp, active = info.split(sep_c2)
+            hp, shield_hp, active = info.split(sep_c2)
             hps.append(hp)
+            shield_hps.append(shield_hp)
             actives.append(active)
 
         hps = np.array(hps, dtype=int)
         hps = hps.reshape(Spec.SHAPE_GRID_SHIP)
         self.opponent_state['hps'] = hps
+
+        shield_hps = np.array(shield_hps, dtype=int)
+        shield_hps = shield_hps.reshape(Spec.SHAPE_GRID_SHIP)
+        self.opponent_state['shield hps'] = shield_hps
 
         actives = np.array(actives, dtype=int)
         actives = actives.reshape(Spec.SHAPE_GRID_SHIP)
@@ -124,9 +130,10 @@ class GameClient(ClientUDP):
     
         for str_bullet in str_bullets:
 
-            x, y, orien, damage = str_bullet.split(sep_c2)
+            _id, x, y, orien, damage = str_bullet.split(sep_c2)
 
-            bullet = Bullet(Spec.OPP_TEAM, [int(x), int(y)], float(orien), damage=int(damage))
+            bullet = Bullet(Spec.OPP_TEAM, [int(x), int(y)], float(orien),
+                        damage=int(damage), _id=int(_id))
 
             self.bullets.append(bullet)
 
@@ -173,13 +180,15 @@ class GameClient(ClientUDP):
                 # add hp and if block is activated
                 if block == None:
                     hp = 0
+                    shield_hp = 0
                     activate = 0
                 else:
                     blocks.remove(block)
                     hp = block.hp
-                    activate = int(block.is_active)
+                    shield_hp = round(block.hp_shield)
+                    activate = int(block.get_activate())
                 
-                msg += f'{hp}{sep_c2}{activate}{sep_c}'
+                msg += f'{hp}{sep_c2}{shield_hp}{sep_c2}{activate}{sep_c}'
         
         # remove last separator
         msg = msg[:-1]
@@ -191,10 +200,10 @@ class GameClient(ClientUDP):
 
         for bullet in bullets:
 
-            # add pos, orien, damage
+            # send: id, pos x, pos y, orien, damage
             x, y = bullet.get_pos()
-            msg += f'{int(x)}{sep_c2}{int(y)}{sep_c2}{bullet.orien:.4f}'
-            msg += f'{sep_c2}{bullet.damage}'
+            msg += f'{bullet.id}{sep_c2}{int(x)}{sep_c2}{int(y)}'
+            msg += f'{sep_c2}{bullet.orien:.4f}{sep_c2}{bullet.damage}'
 
             msg += sep_c
 
@@ -216,3 +225,41 @@ class GameClient(ClientUDP):
             msg = msg[:-1]
 
         self.send(msg)
+
+    @Counter.add_func
+    def set_opp_state(self, ship):
+        '''
+        Set opponent state according to comm from server
+        '''
+        if self.opponent_state['pos'] is None:
+            return
+        
+        pos = self.opponent_state['pos']
+        ship.set_pos(pos)
+        
+        ship.orien = self.opponent_state['orien']
+        ship.speed = self.opponent_state['speed']
+        ship.acc = self.opponent_state['acc']
+
+        # blocks info
+        hps = self.opponent_state['hps']
+        shield_hps = self.opponent_state['shield hps']
+        actives = self.opponent_state['actives']
+
+        for block in ship.blocks.values():
+            x, y = block.coord
+
+            if hps[x,y] <= 0:
+                ship.remove_block(block=block)
+                continue
+
+            block.hp = hps[x,y]
+            block.hp_shield = shield_hps[x,y]
+            block.set_activate(bool(actives[x,y]))
+
+        # set turrets' orien
+        oriens = self.opponent_state['turrets']
+
+        for turret, orien in zip(ship.typed_blocks['Turret'], oriens):
+            turret.orien = orien
+            turret.rotate_surf(orien)

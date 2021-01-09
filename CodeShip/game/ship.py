@@ -10,6 +10,7 @@ from data.spec import Spec
 map_block = {1:Block, 2:Generator, 3:Shield, 4: Turret, 5: Engine}
 
 indicator = Form((50,50), (3100, 1700), color=C.YELLOW)
+indicator2 = Form((10, 10), (0,0), color=C.YELLOW)
 
 class Ship:
 
@@ -38,6 +39,7 @@ class Ship:
 
         # blocks
         self.typed_blocks = {'Block':[], 'Generator':[], 'Engine':[], 'Shield':[], 'Turret':[]}
+        self.abs_centers = {}
         self._mask = None
 
         if color:
@@ -241,7 +243,6 @@ class Ship:
         self.mass -= 4
 
         self.typed_blocks[block.name].remove(block)
-        block.delete()
 
         self.compile()
 
@@ -258,16 +259,24 @@ class Ship:
 
         self.form.get_surface('original').blit(surf, pos)
 
-    def update_signal(self, block=None, index=None):
+    def update_signal(self, block=None, shield=False, index=None):
         '''
         Update one signal of the ship form surface,  
-        given the block object or its index, blit its signal on the ship surface
+        given the block object or its index, blit its signal on the ship surface.  
+        If shield is True, update the shield signal
         '''
         if index:
             block = self.blocks[index]
 
-        pos = Spec.SIZE_BLOCK * block.coord + Spec.POS_SIGNAL
-        signal = block.get_signal_form()
+        if shield:
+            pos = Spec.SIZE_BLOCK * block.coord + Spec.POS_SIGNAL_SHIELD
+            signal = block.get_signal_shield()
+            if signal is None:
+                return
+        
+        else:
+            pos = Spec.SIZE_BLOCK * block.coord + Spec.POS_SIGNAL
+            signal = block.get_signal_form()
         
         # blit signal surf on form's surface
         signal.display(surface=self.form.get_surface('original'), pos=pos)
@@ -304,7 +313,7 @@ class Ship:
         Update the ship form surface.  
         '''
         for block in self.blocks.values():
-            
+
             # don't display basic block signal -> it's useless
             if block.name == 'Block':
                 continue
@@ -323,13 +332,14 @@ class Ship:
     @Counter.add_func
     def display(self):
         '''
-        Display the ship
+        Display the ship  
+        Compute absolute centers
         '''
         self.form.set_pos(self.pos, scale=True)
-        
-        pos = self.get_pos(scaled=True)
 
-        self.form.display(pos=pos)
+        self._compute_blockscenterss_pos()
+
+        self.form.display()
     
     @Counter.add_func
     def run(self, remote_control=False):
@@ -351,6 +361,7 @@ class Ship:
     def _update_local(self):
         self.control_power_level()
         self.update_turrets()
+        self.update_shields()
         self.update_state()
 
     @Counter.add_func
@@ -362,12 +373,20 @@ class Ship:
     def _process_mask(self):
         self._mask = pygame.mask.from_surface(self.form.get_surface('main'))
 
+    @Counter.add_func
     def update_turrets(self):
         '''
         Update all the turrets of the ships.
         '''
         for turret in self.typed_blocks['Turret']:
             turret.update_state()
+
+    def update_shields(self):
+        '''
+        Update all the shields of the ships.
+        '''
+        for shield in self.typed_blocks['Shield']:
+            shield.update_state()
 
     def update_state(self):
         '''
@@ -471,11 +490,40 @@ class Ship:
                 np.random.shuffle(blocks)
 
                 for block in blocks:
-                    block.is_active = False
+                    block.set_activate(False)
 
                     if self.get_power_level() >= 0:
                         return
     
+    def _compute_blocks_abs_centers(self):
+        '''
+        Compute the absolute (scaled) center of all the blocks
+        '''
+        self.abs_centers = {}
+
+        for key, block in self.blocks.items():
+            
+            x,y = block.coord
+            x *= Spec.SIZE_BLOCK
+            y *= Spec.SIZE_BLOCK
+            x += Spec.SIZE_BLOCK // 2
+            y += Spec.SIZE_BLOCK // 2            
+
+            abs_center = np.array(self.form.get_center(scale=False))
+            rel_center = abs_center - self.pos
+
+            x -= rel_center[0]
+            y -= rel_center[1]
+
+            length, alpha = get_polar((x,y))
+            alpha += self.orien
+            x, y = get_cartesian(length, alpha)
+
+            x += rel_center[0] + self.pos[0]
+            y += rel_center[1] + self.pos[1]
+
+            self.abs_centers[key] = (x, y)
+
     def get_coord(self, pos):
         '''
         Given a position,  
