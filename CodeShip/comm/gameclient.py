@@ -53,10 +53,10 @@ class GameClient(ClientUDP):
             ErrorUDP.call("Extraction of ship's information failed.", warning=True)
 
         # get blocks' info
-        #try:
-        self.extract_blocks_info(msg)
-        #except:
-        #    ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
+        try:
+            self.extract_blocks_info(msg)
+        except:
+            ErrorUDP.call("Extraction of blocks' information failed.", warning=True)
 
         # get bullets
         try:
@@ -246,11 +246,14 @@ class GameClient(ClientUDP):
         shield_hps = self.opponent_state['shield hps']
         actives = self.opponent_state['actives']
 
-        for block in ship.blocks.values():
+        # get it as a list -> remove value during iteration
+        items = list(ship.blocks.items())
+
+        for key, block in items:
             x, y = block.coord
 
             if hps[x,y] <= 0:
-                ship.remove_block(block=block)
+                ship.remove_block(key)
                 continue
 
             block.hp = hps[x,y]

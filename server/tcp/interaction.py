@@ -199,6 +199,9 @@ class Interaction:
         cls.clients[user1].game_tag = tag
         cls.clients[user2].game_tag = tag
 
+        cls.clients[user1].opponent = user2
+        cls.clients[user2].opponent = user1
+
         # link client on udp server
         ip1 = cls.clients[user1].ip
         ip2 = cls.clients[user2].ip

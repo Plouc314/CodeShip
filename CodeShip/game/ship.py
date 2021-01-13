@@ -42,6 +42,9 @@ class Ship:
         self.abs_centers = {}
         self._mask = None
 
+        # for interface
+        self.total_shield_hp = 0
+
         if color:
             self.color = color
 
@@ -225,24 +228,20 @@ class Ship:
         for block in self.blocks.values():
             self.typed_blocks[block.name].append(block)
 
-    def remove_block(self, block=None, index=None):
+    def remove_block(self, key):
         '''
         Remove one of the blocks of the ship,  
-        given the block object or its index,  
+        given the the key of the block,  
         compile the entire ship.
         '''
-        if index:
-            block = self.blocks[index]
-
-            self.blocks.pop(index)
-        
-        else:
-            self.blocks = {key:item for key, item in self.blocks.items() if not item is block}
+        block = self.blocks[key]
+        self.blocks.pop(key)
 
         # update mass of ship
         self.mass -= 4
 
-        self.typed_blocks[block.name].remove(block)
+        self.typed_blocks[block.name].remove(block)    
+        self.abs_centers.pop(key)
 
         self.compile()
 
@@ -333,14 +332,9 @@ class Ship:
     def display(self):
         '''
         Display the ship  
-        Compute absolute centers
         '''
-        self.form.set_pos(self.pos, scale=True)
-
-        self._compute_blockscenterss_pos()
-
         self.form.display()
-    
+
     @Counter.add_func
     def run(self, remote_control=False):
         '''
@@ -351,6 +345,10 @@ class Ship:
         if not remote_control:
             self._update_local()    
         
+        self.form.set_pos(self.pos, scale=True)
+
+        self._compute_blocks_abs_centers()
+
         # update main surface
         self._update_surf()
         
@@ -392,7 +390,6 @@ class Ship:
         '''
         Update the accelerations, speeds.  
         Update the position and orientation of the ship.  
-        Rotate the ship to the current orientation.  
         '''
         self.compute_acc()
         self.compute_speed()
@@ -495,11 +492,13 @@ class Ship:
                     if self.get_power_level() >= 0:
                         return
     
+    @Counter.add_func
     def _compute_blocks_abs_centers(self):
         '''
         Compute the absolute (scaled) center of all the blocks
         '''
-        self.abs_centers = {}
+        abs_center = np.array(self.form.get_center(scale=False))
+        rel_center = abs_center - self.pos
 
         for key, block in self.blocks.items():
             
@@ -508,9 +507,6 @@ class Ship:
             y *= Spec.SIZE_BLOCK
             x += Spec.SIZE_BLOCK // 2
             y += Spec.SIZE_BLOCK // 2            
-
-            abs_center = np.array(self.form.get_center(scale=False))
-            rel_center = abs_center - self.pos
 
             x -= rel_center[0]
             y -= rel_center[1]
@@ -522,56 +518,35 @@ class Ship:
             x += rel_center[0] + self.pos[0]
             y += rel_center[1] + self.pos[1]
 
-            self.abs_centers[key] = (x, y)
+            self.abs_centers[key] = np.array((x, y), dtype=int)
 
-    def get_coord(self, pos):
+    def get_key_by_pos(self, pos):
         '''
-        Given a position,  
-        return the coordinates of the corresponding block.
+        Given a (unscaled) position,
+        return the key of the nearest block.
         '''
-        # get distance to center of ship
-        center = np.array(self.form.get_center(scale=True))
-        dif_center, alpha = get_polar(pos - center)
-        alpha -= self.orien
+        distances = {}
+        pos = np.array(pos)
 
-        # inv scale the dif center -> compare to none rotated/scaled dimensions
-        dif_center = Dimension.inv_scale(dif_center)
+        # compute every distances
+        for key, center in self.abs_centers.items():
+            distances[key] = get_norm(center - pos)
 
-        # get not scaled/rotated pos from center
-        pos = get_cartesian(dif_center, alpha)
+        # get key of min distance
+        key = min(distances.keys(), key=distances.get)
 
-        # add center to position 
-        relative_center = np.array([
-            self.form.get_dim()[0]//2,
-            self.form.get_dim()[1]//2,
-        ])
-        pos += relative_center
-
-        # get coord from position
-        coord = np.floor(pos / Spec.SIZE_BLOCK)
-
-        # when coord is out of bounds -> replace to the limits
-        coord = np.where(coord < 0, 0, coord)
-        
-        max_coord = Spec.SIZE_GRID_SHIP
-        coord = np.where(coord >= max_coord, max_coord-1, coord)
-
-        return coord
+        return key
 
     def handeln_collision(self, bullet, intersect):
         '''
         Handeln collision with a bullet.
         '''
         # get coord of touched block
-        coord = self.get_coord(intersect)
+        key = self.get_key_by_pos(Dimension.inv_scale(intersect))
 
-        block = self.get_block_by_coord(coord)
-
-        if block:
-
-            block.hit(bullet.damage)
-            
-            if block.hp <= 0:
-                self.remove_block(block=block)
+        self.blocks[key].hit(bullet.damage)
+        
+        if self.blocks[key].hp <= 0:
+            self.remove_block(key)
                 
 

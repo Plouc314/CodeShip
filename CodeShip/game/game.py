@@ -29,6 +29,8 @@ class Game:
         # if the game is active -> if the ship are moving...
         self._is_game_active = False
 
+        self.has_init_info = False
+
         if connected:
             self._set_game_client()
 
@@ -74,6 +76,8 @@ class Game:
         self.create_ships(own_grid, opp_grid)
         self.setup_interface(own_username, opp_username)
         self.setup_api()
+
+        self.init_script()
 
     def create_ships(self, own_grid, opp_grid):
         '''
@@ -223,7 +227,39 @@ class Game:
             self.script.main()
         except Exception as e:
             print("[WARNING] Error occured in script.")
+
+    def _get_init_info(self):
+        '''
+        Look if the opponent has send the after initialisation info
+        '''
+        shield_hp = self.ui_client.in_data['gis']
+        if not shield_hp is None:
+            self.has_init_info = True
+            self.opp_ship.total_shield_hp = shield_hp
+
+    def init_script(self):
+        '''
+        Run "init" function of user's script.  
+        Set up blocks that need to be set up (Shield).  
+        Send after init state to opponent
+        '''
+        # run init function
+        try:
+            self.script.init()
+        except:
+            print("[WARNING] Error occured in script initiation.")
         
+        shields = self.own_ship.typed_blocks['Shield']
+
+        for shield in shields:
+            shield.setup()
+
+        # get total shield hp
+        total_shield_hp = Spec.SHIELD_HP * sum((shield.intensity for shield in shields))
+
+        self.own_ship.total_shield_hp = total_shield_hp
+        self.ui_client.send_game_init_info(total_shield_hp)
+
     def test_script(self, grid, script_module):
         '''
         Test the user sript at runtime.  
@@ -239,6 +275,7 @@ class Game:
         self.setup_api(script=script_module)
 
         try:
+            self.script.init()
             st = time.time()
             self.script.main()
             duration = time.time() - st
@@ -256,61 +293,20 @@ class Game:
         return None, None
 
     @Counter.add_func
-    def set_opp_state(self):
-        '''
-        Set opponent state according to comm from server
-        '''
-        pos = self.game_client.opponent_state['pos']
-        if pos is not None:
-            self.opp_ship.set_pos(pos)
-        
-        orien = self.game_client.opponent_state['orien']
-        if orien:
-            self.opp_ship.orien = orien
-
-        speed = self.game_client.opponent_state['speed']
-        if speed is not None:
-            self.opp_ship.speed = speed
-
-        acc = self.game_client.opponent_state['acc']
-        if acc is not None:
-            self.opp_ship.acc = acc
-
-        # blocks info
-        hps = self.game_client.opponent_state['hps']
-        actives = self.game_client.opponent_state['actives']
-
-        if not hps is None and not actives is None:
-
-            for block in self.opp_ship.blocks.values():
-                x, y = block.coord
-
-                block.hp = hps[x,y]
-                block.is_active = bool(actives[x,y])
-
-                if block.hp <= 0:
-                    self.opp_ship.remove_block(block=block)
-
-        # set turrets' orien
-        oriens = self.game_client.opponent_state['turrets']
-
-        if len(oriens) != 0:
-            for turret, orien in zip(self.opp_ship.typed_blocks['Turret'], oriens):
-                turret.orien = orien
-                turret.rotate_surf(orien)
-
-    @Counter.add_func
     def run(self, pressed, events):
         '''
         Run the game.
         '''
+        if not self.has_init_info:
+            self._get_init_info()
+
         if self._is_game_active:
             CollisionSystem.run()
             BulletSystem.run()
             BulletSystem.update_opp_bullets()
             API.run()
 
-            self.set_opp_state()
+            self.game_client.set_opp_state(self.opp_ship)
 
             self.run_script()
 

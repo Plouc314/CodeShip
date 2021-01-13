@@ -36,9 +36,9 @@ class Spec:
     DIM_BLOCK_MARGE = 10
     
     # signal
-    DIM_SIGNAL = np.array([20,20])
+    DIM_SIGNAL = np.array([15,15])
     POS_SIGNAL = np.array([10,10])
-    POS_SIGNAL_SHIELD = np.array([10,35])
+    POS_SIGNAL_SHIELD = np.array([10,30])
     COLOR_SIGNAL_SHIELD = (0,255,255)
 
     # script

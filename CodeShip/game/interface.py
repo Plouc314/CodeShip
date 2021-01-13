@@ -10,7 +10,7 @@ from lib.counter import Counter
 ### TOP BAR
 
 Y_TB = np.array([0,100])
-Y_TB2 = np.array([0,150])
+Y_TB2 = np.array([0,190])
 
 X_TB = np.array([10,0])
 X_TB2 = np.array([350,0])
@@ -22,12 +22,15 @@ DIM_CADRE = np.array([600, 400])
 DIM_USER = np.array([400, 80])
 POS_USER = np.array([100, 20])
 DIM_TEXT_INFO = np.array([400, 290])
-DIM_TEXT_VALUE = np.array([200, 230])
+DIM_TEXT_VALUE = np.array([200, 190])
 DIM_HP = np.array([230, 30])
 POS_HP = X_TB2 + Y_TB + np.array([0, 10])
+POS_SHIELD_HP = POS_HP + np.array([0, 38])
 DIM_TWIN = np.array([600, 200])
 POS_TWIN = np.array([Spec.CENTER_X-300, 200])
 POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 220])
+
+titles = ['HP', 'Shield', 'Engine', 'Speed', 'Acceleration', 'Orientation']
 
 ### components ###
 
@@ -53,17 +56,23 @@ form_green_hp1 = Form(DIM_HP, POS_CADRE1 + POS_HP, color=C.GREEN)
 form_red_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.RED)
 form_green_hp2 = Form(DIM_HP, POS_CADRE2 + POS_HP, color=C.GREEN)
 
-text_info1 = TextBox(DIM_TEXT_INFO, POS_CADRE1 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration', 'Orientation', 'Speed(°)'], continuous_text=True)
+form_red_shield_hp1 = Form(DIM_HP, POS_CADRE1 + POS_SHIELD_HP, color=C.RED)
+form_blue_shield_hp1 = Form(DIM_HP, POS_CADRE1 + POS_SHIELD_HP, color=C.NEO_BLUE)
 
-text_info2 = TextBox(DIM_TEXT_INFO, POS_CADRE2 + X_TB + Y_TB, font=Font.f(40), centered=False,
-            text=['HP', 'Engine', 'Speed', 'Acceleration', 'Orientation', 'Speed(°)'], continuous_text=True)
+form_red_shield_hp2 = Form(DIM_HP, POS_CADRE2 + POS_SHIELD_HP, color=C.RED)
+form_blue_shield_hp2 = Form(DIM_HP, POS_CADRE2 + POS_SHIELD_HP, color=C.NEO_BLUE)
 
-text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(40),
-            text=['','','', '', ''], continuous_text=True, centered=False)
+text_info1 = TextBox(DIM_TEXT_INFO, POS_CADRE1 + X_TB + Y_TB, font=Font.f(35), centered=False,
+            text=titles, continuous_text=True)
 
-text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(40),
-            text=['','','', '', ''], continuous_text=True, centered=False)
+text_info2 = TextBox(DIM_TEXT_INFO, POS_CADRE2 + X_TB + Y_TB, font=Font.f(35), centered=False,
+            text=titles, continuous_text=True)
+
+text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(35),
+            text=['' for _ in range(4)], continuous_text=True, centered=False)
+
+text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(35),
+            text=['' for _ in range(4)], continuous_text=True, centered=False)
 
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
@@ -84,6 +93,10 @@ components = [
     ('f green hp1', form_green_hp1),
     ('f red hp2', form_red_hp2),
     ('f green hp2', form_green_hp2),
+    ('f red shield hp1', form_red_shield_hp1),
+    ('f blue shield hp1', form_blue_shield_hp1),
+    ('f red shield hp2', form_red_shield_hp2),
+    ('f blue shield hp2', form_blue_shield_hp2),
     ('t win', text_win),
 ]
 
@@ -94,6 +107,7 @@ class GameInterface(Page):
         self.start_time = None
         self.clock_active = False
         self.client = client
+        self.has_opp_max_shield = False
 
         super().__init__(states, components, active_states='all')
 
@@ -130,16 +144,32 @@ class GameInterface(Page):
         '''
         # get total hp of ship
         total_hp = Spec.HP_BLOCK * ship.initial_n_block
-        current_hp = 0
-        for block in ship.blocks.values():
-            current_hp += block.hp
-        
-        self._set_value(4, f'{current_hp}/{total_hp}', team)
+        current_hp = sum((block.hp for block in ship.blocks.values()))
 
         # set green form length
         dim_x = (current_hp / total_hp) * DIM_HP[0]
 
         form = self.get_component(f'f green hp{team}')
+        form.set_dim((dim_x, DIM_HP[1]), scale=True)
+
+    def set_shield_hp(self, team, ship):
+        '''
+        Set the shield info
+        '''
+        if not self.has_opp_max_shield:
+            return
+
+        shields = ship.typed_blocks['Shield']
+        total_hp = ship.total_shield_hp
+        current_hp = sum((block.hp_shield for block in ship.blocks.values()))
+
+        # set blue form length
+        if total_hp == 0:
+            dim_x = 0
+        else:
+            dim_x = (current_hp / total_hp) * DIM_HP[0]
+
+        form = self.get_component(f'f blue shield hp{team}')
         form.set_dim((dim_x, DIM_HP[1]), scale=True)
 
     def _set_value(self, idx, value, team):
@@ -169,6 +199,13 @@ class GameInterface(Page):
         Update the interface's infos given the ships,  
         ship1 should correspond to user1 and same for ship2.
         '''
+        # get opp shield info
+        if not self.has_opp_max_shield:
+            shield_hp = self.client.in_data['gis']
+            if not shield_hp is None:
+                self.has_opp_max_shield = True
+
+
         # update time
         if self.clock_active:
             current_time = time.time() - self.start_time
@@ -177,6 +214,9 @@ class GameInterface(Page):
 
         self.set_hp(1, ship1)
         self.set_hp(2, ship2)
+
+        self.set_shield_hp(1, ship1)
+        self.set_shield_hp(2, ship2)
 
         self.set_engine_level(1, ship1)
         self.set_engine_level(2, ship2)
@@ -189,9 +229,6 @@ class GameInterface(Page):
 
         self._set_value(3, f'{get_deg(ship1.orien):.0f}', 1)
         self._set_value(3, f'{get_deg(ship2.orien):.0f}', 2)
-
-        #self._set_value(4, f'{get_deg(ship1.circular_speed):.0f}', 1)
-        #self._set_value(4, f'{get_deg(ship2.circular_speed):.0f}', 2)
 
     def set_users(self, user1, user2):
         '''

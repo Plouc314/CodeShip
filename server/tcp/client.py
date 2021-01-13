@@ -16,6 +16,7 @@ class Client(ClientTCP):
 
         self.logged = False
         self.username = None
+        self.opponent = None # current opponent username
 
         # unique tag to identify the game in Interaction
         self.game_tag = None
@@ -39,6 +40,7 @@ class Client(ClientTCP):
             'sca': self.script_analysis,
             'wg': self.set_waiting_game_state,
             'egst': self.end_game,
+            'gis': self.on_game_init_state,
             'pd': self.profil_demand
         }
 
@@ -196,10 +198,10 @@ class Client(ClientTCP):
         except:
             self.print("Error occured in splitting opperation.", warning=True)
 
-        #try:
-        self.identifiers[identifier](content)
-        #except:
-        #    self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
+        try:
+            self.identifiers[identifier](content)
+        except:
+            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
 
         if identifier in ["sc","sca"]:
             return
@@ -442,6 +444,12 @@ class Client(ClientTCP):
             result = 'loss'
 
         Interaction.set_game_result(self.game_tag, self.username, result)
+
+    def on_game_init_state(self, content):
+        '''
+        Send some info to the other user of the game
+        '''
+        Interaction.send(self.opponent, f'gis{sep_m}{content}')
 
     def set_script_status(self, content):
         '''

@@ -32,6 +32,7 @@ class UIClient(ClientTCP):
             'rsca': None, # result of script analyse
             'ign' : None, # notify as in game, contains opp's username, id
             'igsh': None, # opponent's ship grid
+            'gis' : None, # opponent info after initalisation
         }
 
         # store the identifiers of the comm as key
@@ -54,6 +55,7 @@ class UIClient(ClientTCP):
             'rsca': lambda x: int(x),
             'ign' : lambda x: x.split(sep_c),
             'igsh': self.opponent_grid,
+            'gis' : lambda x: int(x),
         }
 
     def connect(self):
@@ -280,6 +282,14 @@ class UIClient(ClientTCP):
         '''
         self.send(f'pd{sep_m}{username}')
 
+    def send_game_init_info(self, max_shield_hp):
+        '''
+        Send some info on the player's state after the
+        initalisation.
+        ID: gis
+        '''
+        self.send(f'gis{sep_m}{max_shield_hp}')
+
 class ContextManager:
     '''
     Context manager used to get `in_data` content and free it after use.
@@ -306,6 +316,7 @@ class ContextManager:
             'rsca': None,
             'ign' : None,
             'igsh': None,
+            'gis' : None,
         }
 
         # pass identifiers to list
