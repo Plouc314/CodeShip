@@ -33,6 +33,7 @@ class UIClient(ClientTCP):
             'ign' : None, # notify as in game, contains opp's username, id
             'igsh': None, # opponent's ship grid
             'gis' : None, # opponent info after initalisation
+            'ige' : None, # opponent's number of errors in script
         }
 
         # store the identifiers of the comm as key
@@ -56,6 +57,7 @@ class UIClient(ClientTCP):
             'ign' : lambda x: x.split(sep_c),
             'igsh': self.opponent_grid,
             'gis' : lambda x: int(x),
+            'ige' : lambda x: int(x),
         }
 
     def connect(self):
@@ -289,6 +291,13 @@ class UIClient(ClientTCP):
         ID: gis
         '''
         self.send(f'gis{sep_m}{max_shield_hp}')
+    
+    def send_in_game_error(self, n_error):
+        '''
+        Send to the other user the number of error that occured in the script.
+        ID: ige
+        '''
+        self.send(f'ige{sep_m}{n_error}')
 
 class ContextManager:
     '''
@@ -317,6 +326,7 @@ class ContextManager:
             'ign' : None,
             'igsh': None,
             'gis' : None,
+            'ige' : None,
         }
 
         # pass identifiers to list

@@ -41,6 +41,7 @@ class Client(ClientTCP):
             'wg': self.set_waiting_game_state,
             'egst': self.end_game,
             'gis': self.on_game_init_state,
+            'ige': self.in_game_error,
             'pd': self.profil_demand
         }
 
@@ -450,6 +451,12 @@ class Client(ClientTCP):
         Send some info to the other user of the game
         '''
         Interaction.send(self.opponent, f'gis{sep_m}{content}')
+
+    def in_game_error(self, content):
+        '''
+        Send to the other user the number of errors that occured in the script.
+        '''
+        Interaction.send(self.opponent, f'ige{sep_m}{content}')
 
     def set_script_status(self, content):
         '''

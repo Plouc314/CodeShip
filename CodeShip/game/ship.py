@@ -44,6 +44,7 @@ class Ship:
 
         # for interface
         self.total_shield_hp = 0
+        self.n_script_error = 0
 
         if color:
             self.color = color

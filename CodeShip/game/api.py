@@ -5,13 +5,22 @@ from game.block import (Block as BaseBlock,
                 Turret as BaseTurret)
 from game.geometry import get_deg, get_rad
 from data.spec import Spec
-import numpy as np
 from lib.counter import Counter
+import numpy as np
 from typing import List, Set, Dict, Tuple, Union
 
 class API:
 
     _ships = {'own':None, 'opp':None}
+
+    # state -> 0:setup  1:runtime
+    _state = 0
+
+    @classmethod
+    def reset(cls):
+        ''' Reset API '''
+        cls._state = 0
+        cls._ships = {'own':None, 'opp':None}
 
     @classmethod
     def set_ship(cls, ship: BaseShip):
@@ -32,6 +41,18 @@ class API:
         Ship._update_blocks()
         Ship._update_rotation()
         Opponent._update_blocks()
+    
+    @classmethod
+    def init(cls):
+        '''
+        Finalize the API's initation.  
+        Set the API's state to be at runtime.  
+        Execute all blocks' actions.
+        '''
+        cls._state = 1
+
+        for block in Ship.blocks:
+            block._exec_actions()
 
 class Constants:
     '''
@@ -73,24 +94,76 @@ class Block:
     def __init__(self, key, team):
         self.key = key
 
+        # list of the actions that will be made
+        # each action is stored as a dict: {func, args, kwargs}
+        self.actions = []
+
+        # timer used to create a delay for runtime actions
+        self.action_delay = 0
+        self.is_delay_active = False
+
         if team in API._ships.keys():
             self.team = team
         else:
             raise KeyError
 
+    def _exec_actions(self):
+        '''
+        Internal method  
+        Execute all pending actions
+        '''
+        for action in self.actions:
+            action['func'](*action['args'], **action['kwargs'])            
+
+        self.actions = []
+
+    def _run(self):
+        '''
+        Internal method
+
+        Execute pending actions,  
+        Update delay
+        '''
+        # check that delay is active AND that the game is at runtime
+        if self.is_delay_active and API._state == 1:
+            self.action_delay += 1
+
+            if self.action_delay == Spec.RUNTIME_DELAY:
+                self.is_delay_active = False
+                self.action_delay = 0
+            
+        else:
+            if len(self.actions) == 0:
+                return
+            
+            action = self.actions.pop(0)
+
+            # execute action
+            action['func'](*action['args'], **action['kwargs'])
+
     def activate(self):
-        '''Activate the block.'''
-        if self.team == 'opp': 
+        '''Activate the block.'''   
+        if self.team == 'opp':
             raise ValueError("Try to give order to opponent ship.")
 
-        API._ships[self.team].blocks[self.key].set_activate(True)
+        action = {
+            'func': API._ships[self.team].blocks[self.key].set_activate,
+            'args': [True],
+            'kwargs': {}
+        }
+        self.actions.append(action)
     
     def deactivate(self):
         '''Deactivate the block.'''
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        API._ships[self.team].blocks[self.key].set_activate(False)
+        action = {
+            'func': API._ships[self.team].blocks[self.key].set_activate,
+            'args': [False],
+            'kwargs': {}
+        }
+        self.actions.append(action)
 
     def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
@@ -137,12 +210,24 @@ class Shield(Block):
         (computed as `intensity` * `Constants.power_consumption`) and
         the amound of hitpoints that the shield can provide (computed as
         `intensity` * `Constants.shield_hp_unit`).
+
+        Parameters
+        ---
+        `value`: int  
+        A value between 1 and `Constants.shield_max_intensity`
         '''
-        API._ships[self.team].blocks[self.key].set_intensity(value)
+        action = {
+            'func': API._ships[self.team].blocks[self.key].set_intensity,
+            'args': [value],
+            'kwargs': {}
+        }
+        self.actions.append(action)
 
     def add_block(self, block):
         '''
         Add a block to be protected by the shield.  
+        The block can only be protected by one shield, trying to add it
+        to a second shield will raise an error.  
         The block will only be added if the limit of the maximum
         number of blocks of the shield is not reached (stored in
         `Constants.shield_blocks_limit`)
@@ -156,7 +241,13 @@ class Shield(Block):
             raise ValueError("Trying to add an opponent block to a Shield block.")
 
         other_block = API._ships[self.team].blocks[block.key]
-        API._ships[self.team].blocks[self.key].add_prtc_block(other_block)
+
+        action = {
+            'func': API._ships[self.team].blocks[self.key].add_prtc_block,
+            'args': [other_block],
+            'kwargs': {}
+        }
+        self.actions.append(action)
 
     def remove_block(self, block):
         '''
@@ -168,7 +259,12 @@ class Shield(Block):
         One of the API block (of your team...)
         '''
         other_block = API._ships[block.team].blocks[block.key]
-        API._ships[self.team].blocks[self.key].remove_prtc_block(other_block)
+        action = {
+            'func': API._ships[self.team].blocks[self.key].remove_prtc_block,
+            'args': [other_block],
+            'kwargs': {}
+        }
+        self.actions.append(action)
 
 class Turret(Block):
     '''
@@ -212,7 +308,12 @@ class Turret(Block):
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        API._ships[self.team].blocks[self.key].rotate(target_angle)
+        action = {
+            'func': API._ships[self.team].blocks[self.key].rotate,
+            'args': [target_angle],
+            'kwargs': {}
+        }
+        self.actions.append(action)
 
     def get_orientation(self):
         '''Return the orientation of the turret (degree)'''
@@ -287,6 +388,7 @@ class Ship:
     Methods
     ---
     `get_blocks`: Return the blocks of the ships.  
+    `get_block_by_coord`: Return the block at the given coordinates.  
     `set_power_engines`: Set the intensity at which the engines are running
     (same as `Engine.set_power_level` but for the whole ship)  
     `rotate_target`: Rotate the ship until reaching an angle.  
@@ -327,6 +429,7 @@ class Ship:
     def _update_blocks(cls):
         '''
         Internal method.  
+        Execute blocks run method.  
         Loop through each block of the ship and remove the dead ones.
         '''
         for block in cls.blocks:
@@ -334,6 +437,8 @@ class Ship:
                 # remove block
                 cls.blocks.remove(block)
                 cls.typed_blocks[block.name].remove(block)
+            else:
+                block._run()
 
     @classmethod
     def get_blocks(cls, _type : str = None) -> List[Union[Block, Generator, Shield, Turret, Engine]]:
@@ -572,6 +677,7 @@ class Opponent:
     Methods
     ---
     `get_blocks`: Return the blocks of the ships.  
+    `get_block_by_coord`: Return the block at the given coordinates.
     
     Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
     `get_position`, `get_power_level`

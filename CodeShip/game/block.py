@@ -44,7 +44,10 @@ class Block(Form):
 
         self.active = True
         self.power_output = 0
+        
+        # shield
         self.hp_shield = 0
+        self.has_shield = False
         self.has_signal_shield = False
         
         # for the ship to know if it needs to update the block on the surface
@@ -310,6 +313,9 @@ class Shield(Block):
         '''
         Dispatch shield hp to all added blocks.
         '''
+        if self.n_prtc_block == 0:
+            return
+
         # set number of shield hp per block
         hp = Spec.SHIELD_HP * self.intensity / self.n_prtc_block
 
@@ -324,10 +330,12 @@ class Shield(Block):
                 'frozen hp': hp, # hp stored when shield goes inactivate
             }
 
-    def add_prtc_block(self, block: Block):
+    def add_prtc_block(self, block: Block, at_runtime=False):
         '''
         In setup stage.  
-        Add a block to be protected by the shield
+        Add a block to be protected by the shield  
+        If at_runtime is True, will update the shields hp of every blocks
+        to balance the distributed hps.
         '''
         if self.n_prtc_block >= Spec.SHIELD_MAX_PRTC:
             return
@@ -335,15 +343,26 @@ class Shield(Block):
         if block in self.blocks:
             return
 
+        # can only have one shield by block
+        if block.has_shield:
+            return
+
+        block.has_shield = True
         self.n_prtc_block += 1
         self.blocks.append(block)
 
-    def remove_prtc_block(self, block: Block):
+        # inform that the block was added
+        return True
+
+    def remove_prtc_block(self, block: Block, at_runtime=False):
         '''
         In setup stage.  
-        Remove one of the protected block.
+        Remove one of the protected block.  
+        If at_runtime is True, will update the shields hp of every blocks
+        to balance the distributed hps.
         '''
         if block in self.blocks:
+            block.has_shield = False
             self.n_prtc_block -= 1
             self.blocks.remove(block)
 

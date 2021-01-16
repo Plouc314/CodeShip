@@ -30,6 +30,7 @@ class Game:
         self._is_game_active = False
 
         self.has_init_info = False
+        self.n_script_error = 0
 
         if connected:
             self._set_game_client()
@@ -183,17 +184,41 @@ class Game:
         '''
         ended = False
 
-        if len(self.own_ship.typed_blocks['Turret']) == 0 or len(self.own_ship.typed_blocks['Generator']) == 0:
+        if self.own_ship.n_script_error > Spec.MAX_SCRIPT_ERROR:
             ended = True
             has_win = False
-            
-        if len(self.opp_ship.typed_blocks['Turret']) == 0 or len(self.opp_ship.typed_blocks['Generator']) == 0:
+            cause = "There was too many script errors."
+        
+        if self.opp_ship.n_script_error > Spec.MAX_SCRIPT_ERROR:
             ended = True
             has_win = True
+            cause = "There was too many script errors."
+
+        if len(self.own_ship.typed_blocks['Turret']) == 0:
+            ended = True
+            has_win = False
+            cause = "You don't have any turrets left."
+
+        if len(self.own_ship.typed_blocks['Generator']) == 0:
+            ended = True
+            has_win = False
+            cause = "You don't have any generators left."
+
+        if len(self.opp_ship.typed_blocks['Turret']) == 0:
+            ended = True
+            has_win = True
+            cause = "Your opponent don't have any turrets left."
         
+        if len(self.opp_ship.typed_blocks['Generator']) == 0:
+            ended = True
+            has_win = True
+            cause = "Your opponent don't have any generators left."
+
         if ended:
+            API.reset()
             self._is_game_active = False
-            self.interface.set_end_game(has_win)
+            self.has_init_info = False
+            self.interface.set_end_game(has_win, cause)
             self.ui_client.send_end_game(int(has_win))
 
     def quit_logic(self):
@@ -223,10 +248,15 @@ class Game:
         '''
         Run the user's script
         '''
+        is_error = False
         try:
             self.script.main()
-        except Exception as e:
-            print("[WARNING] Error occured in script.")
+        except:
+            is_error = True
+        
+        if is_error:
+            self.own_ship.n_script_error += 1
+            self.ui_client.send_in_game_error(self.own_ship.n_script_error)
 
     def _get_init_info(self):
         '''
@@ -241,14 +271,22 @@ class Game:
         '''
         Run "init" function of user's script.  
         Set up blocks that need to be set up (Shield).  
-        Send after init state to opponent
+        Send after init state to opponent.  
+        Initiate the API
         '''
+        self.own_ship.n_script_error = 0
+
         # run init function
         try:
             self.script.init()
         except:
+            self.own_ship.n_script_error += 1
+            self.ui_client.send_in_game_error(self.own_ship.n_script_error)
+            
             print("[WARNING] Error occured in script initiation.")
         
+        API.init()
+
         shields = self.own_ship.typed_blocks['Shield']
 
         for shield in shields:
@@ -292,6 +330,17 @@ class Game:
 
         return None, None
 
+    def _update_opp_script_error(self):
+        '''
+        Check if the opponent's script has made an error,  
+        if so, store it in ship object
+        '''
+        with self.ui_client.get_data('ige') as n:
+            if n == None:
+                return
+            
+            self.opp_ship.n_script_error = n
+
     @Counter.add_func
     def run(self, pressed, events):
         '''
@@ -299,6 +348,8 @@ class Game:
         '''
         if not self.has_init_info:
             self._get_init_info()
+
+        self._update_opp_script_error()
 
         if self._is_game_active:
             CollisionSystem.run()

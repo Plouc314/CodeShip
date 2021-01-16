@@ -28,9 +28,11 @@ POS_HP = X_TB2 + Y_TB + np.array([0, 10])
 POS_SHIELD_HP = POS_HP + np.array([0, 38])
 DIM_TWIN = np.array([600, 200])
 POS_TWIN = np.array([Spec.CENTER_X-300, 200])
-POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 220])
+DIM_TCAUSE = np.array([600, 60])
+POS_TCAUSE = POS_TWIN + np.array([0, 220])
+POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 300])
 
-titles = ['HP', 'Shield', 'Engine', 'Speed', 'Acceleration', 'Orientation']
+titles = ['HP', 'Shield', 'Engine', 'Speed', 'Orientation', 'Script errors']
 
 ### components ###
 
@@ -76,6 +78,8 @@ text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(35
 
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
+text_cause = TextBox(DIM_TCAUSE, POS_TCAUSE, font=Font.f(30), color=C.XLIGHT_GREY, marge=True)
+
 states = ['base', 'end']
 
 components = [
@@ -98,6 +102,7 @@ components = [
     ('f red shield hp2', form_red_shield_hp2),
     ('f blue shield hp2', form_blue_shield_hp2),
     ('t win', text_win),
+    ('t cause', text_cause),
 ]
 
 class GameInterface(Page):
@@ -111,7 +116,7 @@ class GameInterface(Page):
 
         super().__init__(states, components, active_states='all')
 
-        self.set_states_components('end', ['b quit', 't win'])
+        self.set_states_components('end', ['b quit', 't win', 't cause'])
 
     def start_clock(self):
         '''
@@ -120,18 +125,21 @@ class GameInterface(Page):
         self.clock_active = True
         self.start_time = time.time()
 
-    def set_end_game(self, has_win):
+    def set_end_game(self, has_win, cause):
         '''
         Set the interface to the end game state.    
-        `has_win`: if own user has win the game.
+        `has_win`: if own user has win the game.  
+        `cause`: the cause of the game's end
         '''
-        text = self.get_component('t win')
+        text_title = self.get_component('t win')
         if has_win:
-            text.set_text('You won!')
-            text.set_color(C.GREEN, marge=True)
+            text_title.set_text('You won!')
+            text_title.set_color(C.GREEN, marge=True)
         else:
-            text.set_text('You lost...')
-            text.set_color(C.RED, marge=True)
+            text_title.set_text('You lost...')
+            text_title.set_color(C.RED, marge=True)
+
+        self.set_text('t cause', cause)
 
         # stop the clock
         self.clock_active = False
@@ -180,6 +188,10 @@ class GameInterface(Page):
         text = self.get_component(f't value{team}')
         lines = text.get_text(lines=True)
 
+        # check if the value is new
+        if lines[idx] == value:
+            return
+
         lines[idx] = value
         text.set_text(lines)
 
@@ -224,11 +236,11 @@ class GameInterface(Page):
         self._set_value(1, f'{ship1.get_speed(scalar=True):.0f}', 1)
         self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)            
 
-        self._set_value(2, f'{ship1.get_acc(scalar=True):.2f}', 1)
-        self._set_value(2, f'{ship2.get_acc(scalar=True):.2f}', 2)
+        self._set_value(2, f'{get_deg(ship1.orien):.0f}', 1)
+        self._set_value(2, f'{get_deg(ship2.orien):.0f}', 2)
 
-        self._set_value(3, f'{get_deg(ship1.orien):.0f}', 1)
-        self._set_value(3, f'{get_deg(ship2.orien):.0f}', 2)
+        self._set_value(3, str(ship1.n_script_error), 1)
+        self._set_value(3, str(ship2.n_script_error), 2)
 
     def set_users(self, user1, user2):
         '''

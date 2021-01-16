@@ -99,6 +99,8 @@ class Spec:
     DCOLOR_P2 = C.DARK_PURPLE
     POS_P1 = np.array([400, 500])
     POS_P2 = np.array([2200, 500])
+    MAX_SCRIPT_ERROR = 10
+    RUNTIME_DELAY = 10
 
     ### ui ###
 
