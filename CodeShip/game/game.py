@@ -207,12 +207,12 @@ class Game:
         if len(self.opp_ship.typed_blocks['Turret']) == 0:
             ended = True
             has_win = True
-            cause = "Your opponent don't have any turrets left."
+            cause = "Your opponent doesn't have any turrets left."
         
         if len(self.opp_ship.typed_blocks['Generator']) == 0:
             ended = True
             has_win = True
-            cause = "Your opponent don't have any generators left."
+            cause = "Your opponent doesn't have any generators left."
 
         if ended:
             API.reset()

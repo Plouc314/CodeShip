@@ -41,7 +41,7 @@ class Block(Form):
             self.hp = Spec.HP_BLOCK
         else:
             self.hp = hp
-
+        self.nsw = 0
         self.active = True
         self.power_output = 0
         
@@ -120,8 +120,12 @@ class Block(Form):
         self.run_hit_effect()
 
         # check shield signal
-        if self.hp_shield > 0 and not self.has_signal_shield:
+        if not self.has_signal_shield and self.hp_shield > 0:
             self.has_signal_shield = True
+            self.set_signal_shield()
+        
+        elif self.has_signal_shield and self.hp_shield == 0:
+            self.has_signal_shield = False
             self.set_signal_shield()
 
     def run_hit_effect(self):
@@ -181,6 +185,14 @@ class Block(Form):
             return self.signal_shield
         else:
             return None
+
+    def on_death(self):
+        '''
+        Function executed when the block is removed at runtime,  
+        handeln the effect of the removal of the block
+        (by ex: for Shield block remove shield hps)
+        '''
+        pass
 
     def __str__(self):
         return f'{self.name} object at {self.coord}'
@@ -271,7 +283,7 @@ class Shield(Block):
 
         self.n_prtc_block = 0
         self.blocks = []
-        self.intensity = Spec.SHIELD_MAX_INTENSITY
+        self.intensity = None
 
         # blit the shield image on the surface -> can resize the image
         self.get_surface('original').blit(img_shield, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
@@ -297,17 +309,44 @@ class Shield(Block):
             if info['block'].hp_shield > info['max hp']:
                info['block'].hp_shield = info['max hp']
 
-    def set_intensity(self, value: int):
+    def balance(self, hp_shield_bonus=0):
+        '''
+        Balance the shield distribution amongs the protected blocks.  
+        if hp_shield_bonus is set, it will be added in addition to the current hps.
+        '''
+        current_shield = hp_shield_bonus
+        for info in self.blocks:
+            current_shield += info['block'].hp_shield
+        
+        # can happen when decreasing intensity
+        if current_shield < 0:
+            current_shield = 0
+
+        balanced_shield = current_shield / self.n_prtc_block
+        balanced_max_shield = Spec.SHIELD_HP * self.intensity / self.n_prtc_block
+
+        for info in self.blocks:
+            info['block'].hp_shield = balanced_shield
+            info['max hp'] = balanced_max_shield
+            info['frozen hp'] = balanced_shield
+
+    def set_intensity(self, value: int, at_runtime=False):
         '''
         Set the intensity of the shield,
         which defines the power consumption
-        and amound of shield hp available.
+        and amound of shield hp available.  
+        If at_runtime is True, will update the shields hp of every blocks
+        to balance the distributed hps.
         '''
         value = round(value)
         if value > Spec.SHIELD_MAX_INTENSITY:
             value = Spec.SHIELD_MAX_INTENSITY
         
+        old_value = self.intensity
         self.intensity = value
+
+        if at_runtime:
+            self.balance(Spec.SHIELD_HP * (self.intensity - old_value))
 
     def setup(self):
         '''
@@ -315,6 +354,10 @@ class Shield(Block):
         '''
         if self.n_prtc_block == 0:
             return
+
+        if self.intensity == None:
+            # by default the intensity is the same as the number of protected blocks.
+            self.intensity = self.n_prtc_block
 
         # set number of shield hp per block
         hp = Spec.SHIELD_HP * self.intensity / self.n_prtc_block
@@ -349,7 +392,16 @@ class Shield(Block):
 
         block.has_shield = True
         self.n_prtc_block += 1
-        self.blocks.append(block)
+        
+        if at_runtime:
+            self.blocks.append({
+                'block': block,
+                'max hp': 0,
+                'frozen hp': 0,
+            })
+            self.balance()
+        else:
+            self.blocks.append(block)
 
         # inform that the block was added
         return True
@@ -361,10 +413,26 @@ class Shield(Block):
         If at_runtime is True, will update the shields hp of every blocks
         to balance the distributed hps.
         '''
-        if block in self.blocks:
-            block.has_shield = False
-            self.n_prtc_block -= 1
-            self.blocks.remove(block)
+        if not block in self.blocks:
+            return
+        
+        block.has_shield = False
+        self.n_prtc_block -= 1
+        
+        if at_runtime:
+            idx = None
+            
+            for i, info in enumerate(self.blocks):
+                if info['block'] is block:
+                    idx = i
+
+            if idx == None:
+                raise IndexError(f"Given block is not protected: {block}")
+
+            self.blocks.pop(i)
+            self.balance()
+        else:
+            self.blocks.remove(block)            
 
     def get_power_output(self):
         if self.active:
@@ -389,6 +457,13 @@ class Shield(Block):
                 info['block'].hp_shield = info['frozen hp']
 
         super().set_activate(value)
+
+    def on_death(self):
+        '''
+        Remove shield from protected blocks
+        '''
+        for info in self.blocks:
+            info['block'].hp_shield = 0
 
     def set_color(self, color, update_original=False):
         '''

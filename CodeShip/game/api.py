@@ -41,7 +41,7 @@ class API:
         Ship._update_blocks()
         Ship._update_rotation()
         Opponent._update_blocks()
-    
+
     @classmethod
     def init(cls):
         '''
@@ -50,7 +50,7 @@ class API:
         Execute all blocks' actions.
         '''
         cls._state = 1
-
+        
         for block in Ship.blocks:
             block._exec_actions()
 
@@ -94,76 +94,88 @@ class Block:
     def __init__(self, key, team):
         self.key = key
 
-        # list of the actions that will be made
-        # each action is stored as a dict: {func, args, kwargs}
-        self.actions = []
-
-        # timer used to create a delay for runtime actions
-        self.action_delay = 0
-        self.is_delay_active = False
-
         if team in API._ships.keys():
             self.team = team
         else:
             raise KeyError
 
+        # list of the actions that will be made
+        # each action is stored as a dict: {func, args, kwargs}
+        self._actions = []
+        self._cr_act = None
+
+        # timer used to create a delay for runtime actions
+        self._action_delay = 0
+        self._action_timer = 0
+        self._is_delay_active = False
+
+    def _add_action(self, func, *args, delay=0, **kwargs):
+        '''
+        Add an action to the action list,
+        given the function, the args and kwargs
+        '''
+        self._actions.append({
+            'func': func,
+            'delay': delay,
+            'args': args,
+            'kwargs': kwargs
+        })
+
     def _exec_actions(self):
         '''
-        Internal method  
         Execute all pending actions
         '''
-        for action in self.actions:
+        for action in self._actions:
             action['func'](*action['args'], **action['kwargs'])            
 
-        self.actions = []
+        self._actions = []
 
-    def _run(self):
+    def _run_actions(self):
         '''
-        Internal method
-
         Execute pending actions,  
         Update delay
         '''
-        # check that delay is active AND that the game is at runtime
-        if self.is_delay_active and API._state == 1:
-            self.action_delay += 1
+        if self._is_delay_active:
+            self._action_timer += 1
 
-            if self.action_delay == Spec.RUNTIME_DELAY:
-                self.is_delay_active = False
-                self.action_delay = 0
-            
+            if self._action_timer == self._action_delay:
+                self._is_delay_active = False
+
         else:
-            if len(self.actions) == 0:
+            
+            # execute current action
+            if self._cr_act != None:
+                # execute action
+                self._cr_act['func'](*self._cr_act['args'], **self._cr_act['kwargs'])
+                self._cr_act = None
+            
+            if len(self._actions) == 0:
                 return
             
-            action = self.actions.pop(0)
+            self._cr_act = self._actions.pop(0)
 
-            # execute action
-            action['func'](*action['args'], **action['kwargs'])
+            if self._cr_act['delay'] == 0:
+                # execute action
+                self._cr_act['func'](*self._cr_act['args'], **self._cr_act['kwargs'])
+                self._cr_act = None
+            else:
+                self._is_delay_active = True
+                self._action_delay = self._cr_act['delay']
+                self._action_timer = 0
 
     def activate(self):
         '''Activate the block.'''   
         if self.team == 'opp':
             raise ValueError("Try to give order to opponent ship.")
 
-        action = {
-            'func': API._ships[self.team].blocks[self.key].set_activate,
-            'args': [True],
-            'kwargs': {}
-        }
-        self.actions.append(action)
-    
+        self._add_action(API._ships[self.team].blocks[self.key].set_activate, True)
+
     def deactivate(self):
         '''Deactivate the block.'''
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        action = {
-            'func': API._ships[self.team].blocks[self.key].set_activate,
-            'args': [False],
-            'kwargs': {}
-        }
-        self.actions.append(action)
+        self._add_action(API._ships[self.team].blocks[self.key].set_activate, False)
 
     def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
@@ -216,12 +228,8 @@ class Shield(Block):
         `value`: int  
         A value between 1 and `Constants.shield_max_intensity`
         '''
-        action = {
-            'func': API._ships[self.team].blocks[self.key].set_intensity,
-            'args': [value],
-            'kwargs': {}
-        }
-        self.actions.append(action)
+        self._add_action(API._ships[self.team].blocks[self.key].set_intensity, 
+            value, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
 
     def add_block(self, block):
         '''
@@ -232,6 +240,9 @@ class Shield(Block):
         number of blocks of the shield is not reached (stored in
         `Constants.shield_blocks_limit`)
 
+        When adding a block during runtime, the shield hitpoints will be 
+        re-distributed evenly between all protected blocks.
+
         Parameters
         ---
         `block`: Block / child object...  
@@ -240,18 +251,20 @@ class Shield(Block):
         if block.team != self.team:
             raise ValueError("Trying to add an opponent block to a Shield block.")
 
+        if block is self:
+            raise ValueError(f"{self} can't protect itself.")
+
         other_block = API._ships[self.team].blocks[block.key]
 
-        action = {
-            'func': API._ships[self.team].blocks[self.key].add_prtc_block,
-            'args': [other_block],
-            'kwargs': {}
-        }
-        self.actions.append(action)
+        self._add_action(API._ships[self.team].blocks[self.key].add_prtc_block,
+            other_block, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
 
     def remove_block(self, block):
         '''
         Remove one of the protected block.
+
+        When removing a block during runtime, the shield hitpoints will be 
+        re-distributed evenly between all remaining protected blocks.
 
         Parameters
         ---
@@ -259,12 +272,9 @@ class Shield(Block):
         One of the API block (of your team...)
         '''
         other_block = API._ships[block.team].blocks[block.key]
-        action = {
-            'func': API._ships[self.team].blocks[self.key].remove_prtc_block,
-            'args': [other_block],
-            'kwargs': {}
-        }
-        self.actions.append(action)
+
+        self._add_action(API._ships[self.team].blocks[self.key].remove_prtc_block,
+            other_block, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
 
 class Turret(Block):
     '''
@@ -308,12 +318,8 @@ class Turret(Block):
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        action = {
-            'func': API._ships[self.team].blocks[self.key].rotate,
-            'args': [target_angle],
-            'kwargs': {}
-        }
-        self.actions.append(action)
+        self._add_action(API._ships[self.team].blocks[self.key].rotate, target_angle,
+            delay=Spec.TURRET_ROTATE_DELAY)
 
     def get_orientation(self):
         '''Return the orientation of the turret (degree)'''
@@ -429,16 +435,17 @@ class Ship:
     def _update_blocks(cls):
         '''
         Internal method.  
-        Execute blocks run method.  
-        Loop through each block of the ship and remove the dead ones.
+        Loop through each block of the ship and remove the dead ones.  
+        Run blocks actions.
         '''
         for block in cls.blocks:
             if not block.key in API._ships['own'].blocks.keys():
                 # remove block
                 cls.blocks.remove(block)
                 cls.typed_blocks[block.name].remove(block)
+
             else:
-                block._run()
+                block._run_actions()
 
     @classmethod
     def get_blocks(cls, _type : str = None) -> List[Union[Block, Generator, Shield, Turret, Engine]]:

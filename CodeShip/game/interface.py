@@ -29,8 +29,8 @@ POS_SHIELD_HP = POS_HP + np.array([0, 38])
 DIM_TWIN = np.array([600, 200])
 POS_TWIN = np.array([Spec.CENTER_X-300, 200])
 DIM_TCAUSE = np.array([600, 60])
-POS_TCAUSE = POS_TWIN + np.array([0, 220])
-POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 300])
+POS_TCAUSE = POS_TWIN + np.array([0, 210])
+POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 280])
 
 titles = ['HP', 'Shield', 'Engine', 'Speed', 'Orientation', 'Script errors']
 

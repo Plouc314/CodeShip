@@ -158,7 +158,7 @@ class Form:
 
     def get_surface(self, surf_type) -> pygame.Surface:
         '''
-        Return the specified surface,  
+        Return the specified pygame.Surface,  
         `surf_type` can take one of these values:  
 
         `"original"`: The unscaled & unrotated surface  

@@ -73,8 +73,10 @@ class Spec:
     MOTOR_FORCE = 10
     TURRET_FIRE_DELAY = 20
     TURRET_MAX_SPEED = 2 # deg
+    TURRET_ROTATE_DELAY = 5
 
     # shield 
+    SHIELD_DELAY = 10
     SHIELD_MAX_INTENSITY = 3
     SHIELD_HP = 100
     SHIELD_MAX_PRTC = 3

@@ -235,8 +235,9 @@ class Ship:
         given the the key of the block,  
         compile the entire ship.
         '''
-        block = self.blocks[key]
-        self.blocks.pop(key)
+        block = self.blocks.pop(key)
+
+        block.on_death()
 
         # update mass of ship
         self.mass -= 4
@@ -315,10 +316,10 @@ class Ship:
         for block in self.blocks.values():
 
             # don't display basic block signal -> it's useless
-            if block.name == 'Block':
-                continue
-                
-            self.update_signal(block)
+            if block.name != 'Block':
+                self.update_signal(block)
+
+            self.update_signal(block, shield=True)
 
     def rotate_surf(self, angle: float):
         '''
@@ -415,6 +416,7 @@ class Ship:
                 
                 if block.name != 'Block':
                     self.update_signal(block=block)
+                    self.update_signal(block=block, shield=True)
 
     def compute_speed(self):
         '''Update the speed of the ship'''
