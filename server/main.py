@@ -1,3 +1,4 @@
+import sys
 from multiprocessing import Queue, Process
 from tcp.server import Server as TCPServer
 from udp.server import Server as UDPServer
@@ -21,3 +22,4 @@ try:
 except KeyboardInterrupt:
     print('\nStore database...\n')
     DataBase.store()
+    p.terminate()
