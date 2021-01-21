@@ -51,7 +51,7 @@ class Bullet(Form):
             self.damage = Spec.DAMAGE_BULLET
         else:
             self.damage = damage
-    
+
     def update_state(self):
         '''
         Update the position of the bullet.
@@ -125,16 +125,16 @@ class BulletSystem:
     bullets = []
     recent_ids = {'id':[], 'lifetime':[]}
     explosions = []
-    own_ship = None
-    opp_ship = None
+    own_player = None
+    opp_player = None
 
     @classmethod
-    def set_ships(cls, own_ship, opp_ship):
+    def set_players(cls, own_player, opp_player):
         '''
-        Set a reference of both ships, use for the collisions.
+        Set a reference of both players, use for the collisions.
         '''
-        cls.own_ship = own_ship
-        cls.opp_ship = opp_ship
+        cls.own_player = own_player
+        cls.opp_player = opp_player
 
     @classmethod
     def reset(cls):
@@ -143,7 +143,8 @@ class BulletSystem:
         '''
         cls.bullets = []
         cls.explosions = []
-        cls.own_ship = None
+        cls.own_player = None
+        cls.opp_player = None
 
     @classmethod
     def add_bullet(cls, bullet):
@@ -203,7 +204,7 @@ class BulletSystem:
         '''
         Update the opponent bullets.
         '''
-        cls.erase_bullets_by_team(Spec.OPP_TEAM)
+        cls.erase_bullets_by_team(cls.opp_player.team)
 
         cls.bullets.extend(cls.game_client.bullets)
 
@@ -274,15 +275,17 @@ class BulletSystem:
         Check if one of the ships is hit by a bullet,  
         handeln collision effects.
         '''
-        cls.check_collision_ship(cls.own_ship)
-        cls.check_collision_ship(cls.opp_ship, is_bullet_damage=False)
+        cls.check_collision_ship(cls.own_player)
+        cls.check_collision_ship(cls.opp_player, is_bullet_damage=False)
             
     @classmethod
-    def check_collision_ship(cls, ship, is_bullet_damage=True):
+    def check_collision_ship(cls, player, is_bullet_damage=True):
         '''
-        Check if own ship has been hit by one of the bullet.  
+        Check if ship has been hit by one of the bullet.  
         If yes, handeln collision.
         '''
+
+        ship = player.ship
 
         threshold = Dimension.scale(get_norm(Spec.DIM_SHIP))
 
@@ -291,7 +294,7 @@ class BulletSystem:
 
         for bullet in cls.bullets:
             
-            if bullet.team == ship.team or bullet.id in cls.recent_ids['id']:
+            if bullet.team == player.team or bullet.id in cls.recent_ids['id']:
                 continue
 
             pos_bullet = bullet.get_pos(scaled=True)

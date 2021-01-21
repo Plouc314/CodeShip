@@ -16,6 +16,7 @@
         "game/imgs/shield.png",
         "game/imgs/turret.png",
         "game/interface.py",
+        "game/player.py",
         "game/ship.py",
         "imgs/correct.png",
         "imgs/cross.png",

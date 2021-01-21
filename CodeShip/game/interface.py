@@ -3,6 +3,7 @@ import time
 import numpy as np
 from lib.plougame import Page, Form, Cadre, TextBox, Button, InputText, Font, C
 from game.api import API
+from game.player import Player
 from game.geometry import get_deg
 from data.spec import Spec
 from lib.counter import Counter
@@ -13,12 +14,12 @@ Y_TB = np.array([0,100])
 Y_TB2 = np.array([0,190])
 
 X_TB = np.array([10,0])
-X_TB2 = np.array([350,0])
+X_TB2 = np.array([300,0])
 
 POS_TIME = np.array([Spec.CENTER_X-Spec.DIM_MEDIUM_TEXT[0]//2, Y_TB[1]])
 POS_CADRE1 = np.array([50,50])
 POS_CADRE2 = np.array([2550,50])
-DIM_CADRE = np.array([600, 400])
+DIM_CADRE = np.array([550, 400])
 DIM_USER = np.array([400, 80])
 POS_USER = np.array([100, 20])
 DIM_TEXT_INFO = np.array([400, 290])
@@ -32,6 +33,12 @@ DIM_TCAUSE = np.array([600, 60])
 POS_TCAUSE = POS_TWIN + np.array([0, 210])
 POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 280])
 
+DIM_CADRE_ACTIONS = np.array([400, 400])
+POS_CADRE_ACTS1 = np.array([600, 50])
+POS_CADRE_ACTS2 = np.array([2150, 50])
+POS_TEXT_ACTS = np.array([5, 5])
+DIM_TEXT_ACTS = np.array([390, 390])
+
 titles = ['HP', 'Shield', 'Engine', 'Speed', 'Orientation', 'Script errors']
 
 ### components ###
@@ -42,6 +49,9 @@ cadre_1 = Cadre(DIM_CADRE, POS_CADRE1)
 cadre_2 = Cadre(DIM_CADRE, POS_CADRE2)
 cadre_1.MARGE_WIDTH = 8
 cadre_2.MARGE_WIDTH = 8
+
+cadre_acts_1 = Cadre(DIM_CADRE_ACTIONS, POS_CADRE_ACTS1, color=C.XLIGHT_BLUE)
+cadre_acts_2 = Cadre(DIM_CADRE_ACTIONS, POS_CADRE_ACTS2, color=C.XLIGHT_BLUE)
 
 text_username1 = TextBox(DIM_USER, POS_CADRE1 + POS_USER,
             text_color=Spec.DCOLOR_P1, font=Font.f(60))
@@ -76,6 +86,15 @@ text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(35
 text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(35),
             text=['' for _ in range(4)], continuous_text=True, centered=False)
 
+text_actions1 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS1 + POS_TEXT_ACTS, font=Font.f(24),
+            continuous_text=True, centered=False, color=C.XLIGHT_BLUE)
+
+text_actions2 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS2 + POS_TEXT_ACTS, font=Font.f(24),
+            continuous_text=True, centered=False, color=C.XLIGHT_BLUE)
+
+text_actions1.set_marge_text(5)
+text_actions2.set_marge_text(5)
+
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
 text_cause = TextBox(DIM_TCAUSE, POS_TCAUSE, font=Font.f(30), color=C.XLIGHT_GREY, marge=True)
@@ -84,6 +103,8 @@ states = ['base', 'end']
 
 components = [
     ('t time', text_time),
+    ('cadre actions 1', cadre_acts_1),
+    ('cadre actions 2', cadre_acts_2),
     ('cadre 1', cadre_1),
     ('t username1', text_username1),
     ('cadre 2', cadre_2),
@@ -101,6 +122,8 @@ components = [
     ('f blue shield hp1', form_blue_shield_hp1),
     ('f red shield hp2', form_red_shield_hp2),
     ('f blue shield hp2', form_blue_shield_hp2),
+    ('t actions1', text_actions1),
+    ('t actions2', text_actions2),
     ('t win', text_win),
     ('t cause', text_cause),
 ]
@@ -117,6 +140,16 @@ class GameInterface(Page):
         super().__init__(states, components, active_states='all')
 
         self.set_states_components('end', ['b quit', 't win', 't cause'])
+
+    def set_players(self, own_player: Player, opp_player: Player):
+        '''
+        Set the two players
+        '''
+        self.own_player= own_player
+        self.opp_player= opp_player
+
+        self.set_text(f't username{own_player.team}', own_player.username)
+        self.set_text(f't username{opp_player.team}', opp_player.username)
 
     def start_clock(self):
         '''
@@ -160,16 +193,16 @@ class GameInterface(Page):
         form = self.get_component(f'f green hp{team}')
         form.set_dim((dim_x, DIM_HP[1]), scale=True)
 
-    def set_shield_hp(self, team, ship):
+    def set_shield_hp(self, team, player):
         '''
         Set the shield info
         '''
         if not self.has_opp_max_shield:
             return
 
-        shields = ship.typed_blocks['Shield']
-        total_hp = ship.total_shield_hp
-        current_hp = sum((block.hp_shield for block in ship.blocks.values()))
+        shields = player.ship.typed_blocks['Shield']
+        total_hp = player.total_shield_hp
+        current_hp = sum((block.hp_shield for block in player.ship.blocks.values()))
 
         # set blue form length
         if total_hp == 0:
@@ -206,10 +239,28 @@ class GameInterface(Page):
 
         self._set_value(0, f'{100*total_force}%', team)
 
-    def update(self, ship1, ship2):
+    def update_api_actions(self, team):
         '''
-        Update the interface's infos given the ships,  
-        ship1 should correspond to user1 and same for ship2.
+        Update the API pending actions
+        '''
+        text = self.get_component(f't actions{team}')
+
+        lines = []
+
+        for action in self.own_player.get_cache():
+            line = action['block']
+            line += '   ' + action['func'].__name__
+
+            lines.append(line)
+
+        if len(lines) == 0:
+            lines = ''
+
+        text.set_text(lines)
+
+    def update(self):
+        '''
+        Update the interface's infos.
         '''
         # get opp shield info
         if not self.has_opp_max_shield:
@@ -217,36 +268,30 @@ class GameInterface(Page):
             if not shield_hp is None:
                 self.has_opp_max_shield = True
 
-
         # update time
         if self.clock_active:
             current_time = time.time() - self.start_time
             string = time.strftime("%M:%S", time.gmtime(current_time))
             self.set_text('t time', string)
 
-        self.set_hp(1, ship1)
-        self.set_hp(2, ship2)
+        self.update_api_actions(self.own_player.team)
 
-        self.set_shield_hp(1, ship1)
-        self.set_shield_hp(2, ship2)
+        self.set_hp(self.own_player.team, self.own_player.ship)
+        self.set_hp(self.opp_player.team, self.opp_player.ship)
 
-        self.set_engine_level(1, ship1)
-        self.set_engine_level(2, ship2)
+        self.set_shield_hp(self.own_player.team, self.own_player)
+        self.set_shield_hp(self.opp_player.team, self.opp_player)
 
-        self._set_value(1, f'{ship1.get_speed(scalar=True):.0f}', 1)
-        self._set_value(1, f'{ship2.get_speed(scalar=True):.0f}', 2)            
+        self.set_engine_level(self.own_player.team, self.own_player.ship)
+        self.set_engine_level(self.opp_player.team, self.opp_player.ship)
 
-        self._set_value(2, f'{get_deg(ship1.orien):.0f}', 1)
-        self._set_value(2, f'{get_deg(ship2.orien):.0f}', 2)
+        self._set_value(1, f'{self.own_player.ship.get_speed(scalar=True):.0f}',
+            self.own_player.team)
+        self._set_value(1, f'{self.opp_player.ship.get_speed(scalar=True):.0f}',
+            self.opp_player.team)          
 
-        self._set_value(3, str(ship1.n_script_error), 1)
-        self._set_value(3, str(ship2.n_script_error), 2)
+        self._set_value(2, f'{self.own_player.ship.orien:.0f}', self.own_player.team)
+        self._set_value(2, f'{self.opp_player.ship.orien:.0f}', self.opp_player.team)
 
-    def set_users(self, user1, user2):
-        '''
-        Set the two users,  
-        user1 should be the one with the position 1 (`Spec.POS_P1`),  
-        user2 should be the one with the position 2 (`Spec.POS_P2`)
-        '''
-        self.set_text('t username1', user1)
-        self.set_text('t username2', user2)
+        self._set_value(3, f'{self.own_player.n_script_error}', self.own_player.team)
+        self._set_value(3, f'{self.opp_player.n_script_error}', self.opp_player.team)

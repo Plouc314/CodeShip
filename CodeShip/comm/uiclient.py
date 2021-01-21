@@ -30,7 +30,7 @@ class UIClient(ClientTCP):
             'sc'  : None, # script
             'scst': None, # script status (if it's ready or not)
             'rsca': None, # result of script analyse
-            'ign' : None, # notify as in game, contains opp's username, id
+            'ign' : None, # notify as in game, contains opp's username, team
             'igsh': None, # opponent's ship grid
             'gis' : None, # opponent info after initalisation
             'ige' : None, # opponent's number of errors in script

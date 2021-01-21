@@ -1,4 +1,4 @@
-from game.ship import Ship as BaseShip
+from game.player import Player
 from game.block import (Block as BaseBlock, 
                 Generator as BaseGenerator, 
                 Shield as BaseShield, 
@@ -7,7 +7,12 @@ from game.geometry import get_deg, get_rad
 from data.spec import Spec
 from lib.counter import Counter
 import numpy as np
+import weakref
 from typing import List, Set, Dict, Tuple, Union
+
+class WeakDict(dict):
+    # create a weakly referencable dict class
+    pass
 
 class API:
 
@@ -20,17 +25,34 @@ class API:
     def reset(cls):
         ''' Reset API '''
         cls._state = 0
+        cls._players = {'own':None, 'opp':None}
         cls._ships = {'own':None, 'opp':None}
 
     @classmethod
-    def set_ship(cls, ship: BaseShip):
-        cls._ships['own'] = ship
+    def set_players(cls, own_player: Player, opp_player: Player):
+        '''
+        Set the players and thus ships object of the API
+        '''
+        cls._players = {
+            'own': own_player,
+            'opp': opp_player,
+        }
+
+        cls._ships = {
+            'own': own_player.ship,
+            'opp': opp_player.ship,
+        }
+
         Ship._set_blocks()
+        Opponent._set_blocks()
 
     @classmethod
-    def set_opponent_ship(cls, ship: BaseShip):
-        cls._ships['opp'] = ship
-        Opponent._set_blocks()
+    def add_action_to_cache(cls, action):
+        '''
+        Add an action to the cache (weakref.ref)
+        (transfer action to own player)
+        '''
+        cls._players['own'].add_action_to_cache(action)
 
     @classmethod
     @Counter.add_func
@@ -49,10 +71,10 @@ class API:
         Set the API's state to be at runtime.  
         Execute all blocks' actions.
         '''
-        cls._state = 1
-        
         for block in Ship.blocks:
             block._exec_actions()
+        
+        cls._state = 1
 
 class Constants:
     '''
@@ -114,12 +136,18 @@ class Block:
         Add an action to the action list,
         given the function, the args and kwargs
         '''
-        self._actions.append({
-            'func': func,
-            'delay': delay,
-            'args': args,
-            'kwargs': kwargs
-        })
+        action = WeakDict(
+            block = self.__repr__(), # for the interface
+            func = func,
+            delay = delay,
+            args = args,
+            kwargs = kwargs
+        )
+        
+        self._actions.append(action)
+
+        # add weakref of action -> display it on the game interface
+        API.add_action_to_cache( weakref.ref(action) )
 
     def _exec_actions(self):
         '''
@@ -282,7 +310,8 @@ class Turret(Block):
 
     Block used to cause damage ot the opponent ship, 
     can rotate and fire bullets.  
-    Specifications on the bullets can be found in `Constants`.
+    Specifications on the bullets can be found in `Constants`.  
+    The turret will fire if active.
 
     Methods
     ---
@@ -291,7 +320,6 @@ class Turret(Block):
     `is_rotating`: Return if the turret is currently rotating.  
     `rotate`: Rotate the turret to a certain angle.  
     `get_orientation`: Return the current orientation of the turret.  
-    `fire`: Make the turret fire.  
     '''
     name = 'Turret'
 
@@ -324,20 +352,6 @@ class Turret(Block):
     def get_orientation(self):
         '''Return the orientation of the turret (degree)'''
         return API._ships[self.team].blocks[self.key].orien
-
-    def fire(self):
-        '''
-        Make the turret fire.  
-
-        The turret fire with a delay, meaning that it can't fire at each frame,
-        the delay is stored in `Constants.turret_fire_delay` (unit: fps).  
-
-        Note: To be able to fire, the turret needs to be activated.  
-        '''
-        if self.team == 'opp': 
-            raise ValueError("Try to give order to opponent ship.")
-
-        API._ships[self.team].blocks[self.key].fire()
 
 class Engine(Block):
     '''

@@ -22,7 +22,7 @@ class Ship:
     def __init__(self, team, color=None):
         
         self.team = team
-        
+
         # auxiliar acceleration
         self.is_aux_acc = False
         self.aux_acc = 0
@@ -42,15 +42,11 @@ class Ship:
         self.abs_centers = {}
         self._mask = None
 
-        # for interface
-        self.total_shield_hp = 0
-        self.n_script_error = 0
-
         if color:
             self.color = color
 
     @classmethod
-    def from_grid(cls, team, grid, color=None):
+    def from_grid(cls, grid, team, color=None):
         '''
         Create a ship given a grid representing the ship (see block map).
         '''
@@ -63,7 +59,7 @@ class Ship:
         return ship
     
     @classmethod
-    def from_file(cls, team, filename, color=None):
+    def from_file(cls, filename, team, color=None):
         '''
         Create a ship given a .npy filename.
         '''

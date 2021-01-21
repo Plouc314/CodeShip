@@ -39,8 +39,17 @@ class GameClient(ClientUDP):
             'turrets': []
         }
 
+        self.opp_team = None
+
         # contains opponent bullets (temporary)
         self.bullets = []
+
+    def set_opp_team(self, team):
+        '''
+        Set the team of the opponent to
+        set the received opponent's bullets correctly.
+        '''
+        self.opp_team = team
 
     def on_message(self, msg):
         '''
@@ -132,7 +141,7 @@ class GameClient(ClientUDP):
 
             _id, x, y, orien, damage = str_bullet.split(sep_c2)
 
-            bullet = Bullet(Spec.OPP_TEAM, [int(x), int(y)], float(orien),
+            bullet = Bullet(self.opp_team, [int(x), int(y)], float(orien),
                         damage=int(damage), _id=int(_id))
 
             self.bullets.append(bullet)
@@ -152,10 +161,12 @@ class GameClient(ClientUDP):
         self.opponent_state['turrets'] = [float(orien) for orien in oriens]
 
     @Counter.add_func
-    def send_state(self, ship):
+    def send_state(self, player):
         '''
         Create the msg send to the server at each frame.
         '''
+        ship = player.ship
+
         msg = ''
 
         # add position, orientation, speed, acc
@@ -196,7 +207,7 @@ class GameClient(ClientUDP):
         msg += sep_m
 
         # send bullets of own ship
-        bullets = BulletSystem.get_bullets_by_team(ship.team)
+        bullets = BulletSystem.get_bullets_by_team(player.team)
 
         for bullet in bullets:
 
@@ -227,13 +238,15 @@ class GameClient(ClientUDP):
         self.send(msg)
 
     @Counter.add_func
-    def set_opp_state(self, ship):
+    def set_opp_state(self, player):
         '''
         Set opponent state according to comm from server
         '''
         if self.opponent_state['pos'] is None:
             return
         
+        ship = player.ship
+
         pos = self.opponent_state['pos']
         ship.set_pos(pos)
         

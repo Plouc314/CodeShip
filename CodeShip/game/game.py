@@ -4,6 +4,7 @@ from game.bulletsystem import BulletSystem
 from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
+from game.player import Player
 from lib.plougame import Dimension
 from lib.counter import Counter
 from data.spec import Spec
@@ -15,13 +16,10 @@ class Game:
     def __init__(self, ui_client, connected=True):
 
         self.ui_client = ui_client
-        self.own_id = None
+        Player.client = ui_client
 
         self.interface = GameInterface(ui_client)
         self.interface.add_button_logic('b quit', self.quit_logic)
-
-        # patch the position where the ship are displayed to always display them centered
-        self.position_patch = np.array([0,0], dtype=int) # scaled
 
         # if the game is running in main.py (meaning not the ui)
         self._is_running = False
@@ -29,8 +27,8 @@ class Game:
         # if the game is active -> if the ship are moving...
         self._is_game_active = False
 
+        self.game_client = None
         self.has_init_info = False
-        self.n_script_error = 0
 
         if connected:
             self._set_game_client()
@@ -63,120 +61,59 @@ class Game:
         else:
             raise ValueError("Can't set running to False.")
 
-    def setup(self, own_id, own_grid, opp_grid, own_username, opp_username):
+    def setup(self, team, own_grid, opp_grid, own_username, opp_username, 
+            initiate_api=True):
         '''
         Set up `Game` instance for the game,
         given:  
-        `own_id` : Set the id use to set the position, color of the ships.  
+        `team` : Set the team used to set the position, color of the ships.  
         `own/opp grid` : the grids used to create the ships.  
         `own/opp username` : the usernames used to set up the game's interface.  
+        `initate_api`: if True, the `setup_api` method and `init_script` method will be executed
         '''
         self.reset_values()
         self.running = True
-        self.own_id = bool(own_id)
-        self.create_ships(own_grid, opp_grid)
+
+        self.players = {
+            'own': Player(own_username, team, own_grid, with_script=True),
+            'opp': Player(opp_username, (-team + 3), opp_grid),
+        }
+
         self.setup_interface(own_username, opp_username)
-        self.setup_api()
 
-        self.init_script()
+        if not self.game_client is None:
+            self.game_client.set_opp_team(self.players['opp'].team)
 
-    def create_ships(self, own_grid, opp_grid):
-        '''
-        Create the ships, given the grids.  
-        Must have set id before (call `set_own_id`)
-        '''
-        self.own_ship = Ship.from_grid(Spec.OWN_TEAM, own_grid)
-        self.opp_ship = Ship.from_grid(Spec.OPP_TEAM, opp_grid)
+        API.set_players(self.players['own'], self.players['opp'])
+        BulletSystem.set_players(self.players['own'], self.players['opp'])
+        CollisionSystem.set_ships(self.players['own'].ship, self.players['opp'].ship)
 
-        BulletSystem.set_ships(self.own_ship, self.opp_ship)
-        CollisionSystem.set_ships(self.own_ship, self.opp_ship)
-
-        self.own_ship.compile()
-        self.opp_ship.compile()
-
-        self._set_id_ships()
-        self.set_ships_start_pos()
-
-    def setup_api(self, script=None):
-        '''
-        Setup the api ships,  
-        if `script=None`, load the user script.
-        '''
-        API.set_ship(self.own_ship)
-        API.set_opponent_ship(self.opp_ship)
-
-        if script == None:
-            self.script = importlib.import_module('script')
-        else:
-            self.script = script
-
-    def _set_id_ships(self):
-        '''
-        Create `.id_ships` that store the ships according to their id.
-        '''
-        self.id_ships = {}
-        if self.own_id:
-            self.id_ships[1] = self.own_ship
-            self.id_ships[2] = self.opp_ship
-        else:
-            self.id_ships[1] = self.opp_ship
-            self.id_ships[2] = self.own_ship
+        if initiate_api:
+            self.init_script()
 
     def setup_interface(self, own_username, opp_username):
         '''
         set up the game interface, start the clock.
         '''
-        if self.own_id:
-            self.interface.set_users(own_username, opp_username)
-        else:
-            self.interface.set_users(opp_username, own_username)
+        players = [None, None]
 
+        # team can take either 1 or 2
+        players[self.players['own'].team - 1] = self.players['own']
+        players[self.players['opp'].team - 1] = self.players['opp']
+
+        self.interface.set_players(*players)
         self.interface.start_clock()
-
-    def set_ships_start_pos(self):
-        '''
-        Set the position of the ships at the begining of the game.  
-        Set their color according to their position.  
-        '''
-        # return opponent ship to make them face each other
-        self.id_ships[2].orien = np.pi
-
-        self.id_ships[1].set_pos(Spec.POS_P1)
-        self.id_ships[2].set_pos(Spec.POS_P2)
-
-        self.id_ships[1].set_color(Spec.COLOR_P1)
-        self.id_ships[2].set_color(Spec.COLOR_P2)
 
     def reset_values(self):
         '''
         Reset values of third party components.
         '''
-        self.game_client.reset_values()
+        if self.game_client != None:
+            self.game_client.reset_values()
+        
+        API.reset()
         BulletSystem.reset()
         CollisionSystem.reset()
-
-    def handeln_out_ship(self):
-        '''
-        Check if own ship is in the perimeter (window)
-        '''
-        pos = self.own_ship.get_pos()
-        dim_ship = Spec.DIM_BLOCK * Spec.SIZE_GRID_SHIP
-        
-        # right
-        if pos[0] > Spec.DIM_WINDOW[0]:
-            self.own_ship.set_pos( (-dim_ship[0], pos[1]) )
-        
-        # left
-        if pos[0] + dim_ship[0] < 0:
-            self.own_ship.set_pos( (Spec.DIM_WINDOW[0], pos[1]) )
-
-        # down
-        if pos[1] > Spec.DIM_WINDOW[1]:
-            self.own_ship.set_pos( (pos[0], -dim_ship[1]) )
-
-        # up
-        if pos[1] + dim_ship[1] < 0:
-            self.own_ship.set_pos( (pos[0], Spec.DIM_WINDOW[1]) )
 
     def check_end_game(self):
         '''
@@ -184,38 +121,37 @@ class Game:
         '''
         ended = False
 
-        if self.own_ship.n_script_error > Spec.MAX_SCRIPT_ERROR:
+        if self.players['own'].n_script_error > Spec.MAX_SCRIPT_ERROR:
             ended = True
             has_win = False
             cause = "There was too many script errors."
         
-        if self.opp_ship.n_script_error > Spec.MAX_SCRIPT_ERROR:
+        if self.players['opp'].n_script_error > Spec.MAX_SCRIPT_ERROR:
             ended = True
             has_win = True
             cause = "There was too many script errors."
 
-        if len(self.own_ship.typed_blocks['Turret']) == 0:
+        if len(self.players['own'].ship.typed_blocks['Turret']) == 0:
             ended = True
             has_win = False
             cause = "You don't have any turrets left."
 
-        if len(self.own_ship.typed_blocks['Generator']) == 0:
+        if len(self.players['own'].ship.typed_blocks['Generator']) == 0:
             ended = True
             has_win = False
             cause = "You don't have any generators left."
 
-        if len(self.opp_ship.typed_blocks['Turret']) == 0:
+        if len(self.players['opp'].ship.typed_blocks['Turret']) == 0:
             ended = True
             has_win = True
             cause = "Your opponent doesn't have any turrets left."
         
-        if len(self.opp_ship.typed_blocks['Generator']) == 0:
+        if len(self.players['opp'].ship.typed_blocks['Generator']) == 0:
             ended = True
             has_win = True
             cause = "Your opponent doesn't have any generators left."
 
         if ended:
-            API.reset()
             self._is_game_active = False
             self.has_init_info = False
             self.interface.set_end_game(has_win, cause)
@@ -230,34 +166,6 @@ class Game:
         # reset game interface
         self.interface.change_state('base')
 
-    def _get_traceback(self, error):
-        '''
-        Return a formated traceback of the given error.
-        '''
-        tb = error.__traceback__
-        tb = traceback.extract_tb(tb).format()
-
-        error_type = error.__class__.__name__
-        error_msg = str(error)
-
-        tb.append(f'{error_type}: {error_msg}')
-        return tb
-
-    @Counter.add_func
-    def run_script(self):
-        '''
-        Run the user's script
-        '''
-        is_error = False
-        try:
-            self.script.main()
-        except:
-            is_error = True
-        
-        if is_error:
-            self.own_ship.n_script_error += 1
-            self.ui_client.send_in_game_error(self.own_ship.n_script_error)
-
     def _get_init_info(self):
         '''
         Look if the opponent has send the after initialisation info
@@ -265,7 +173,7 @@ class Game:
         shield_hp = self.ui_client.in_data['gis']
         if not shield_hp is None:
             self.has_init_info = True
-            self.opp_ship.total_shield_hp = shield_hp
+            self.players['opp'].total_shield_hp = shield_hp
 
     def init_script(self):
         '''
@@ -274,56 +182,39 @@ class Game:
         Send after init state to opponent.  
         Initiate the API
         '''
-        self.own_ship.n_script_error = 0
-
-        # run init function
-        try:
-            self.script.init()
-        except:
-            self.own_ship.n_script_error += 1
-            self.ui_client.send_in_game_error(self.own_ship.n_script_error)
-            
-            print("[WARNING] Error occured in script initiation.")
-        
+        self.players['own'].call_script_init()
         API.init()
+        self.players['own'].finalize_initiation()
 
-        shields = self.own_ship.typed_blocks['Shield']
-
-        for shield in shields:
-            shield.setup()
-
-        # get total shield hp
-        total_shield_hp = Spec.SHIELD_HP * sum((shield.intensity for shield in shields))
-
-        self.own_ship.total_shield_hp = total_shield_hp
-        self.ui_client.send_game_init_info(total_shield_hp)
-
-    def test_script(self, grid, script_module):
+    def test_script(self, grid):
         '''
         Test the user sript at runtime.  
         Run one frame, with the user ship on both side.  
-        Argument: the script module  
+        Argument: the user's grid ship 
         Return: 
             - bool, If there is an error  
-            - tuple, In case of error (else None): the error type, message & traceback
+            - list, In case of error (else None): the traceback formated as a list
         '''
-        # set ships
-        self.own_id = bool(np.random.choice([0, 1]))
-        self.create_ships(grid, grid)
-        self.setup_api(script=script_module)
+        self.setup(1, grid, grid, '', '', initiate_api=False)
 
-        try:
-            self.script.init()
-            st = time.time()
-            self.script.main()
-            duration = time.time() - st
+        # execute init
+        tb = self.players['own'].call_script_init(send_data=False)
         
-        except Exception as e:
+        if tb != None:
+            return 'init', tb
+        
+        # finalize initiation
+        API.init()
+        self.players['own'].finalize_initiation(send_data=False)
 
-            tb = self._get_traceback(e)
+        # execute main
+        st = time.time()
+        tb = self.players['own'].call_script_main(send_data=False)
+        duration = time.time() - st
 
+        if tb != None:
             return 'runtime', tb
-        
+
         # check execution time
         if duration > Spec.SCRIPT_EXEC_TIME:
             return 'execution time', None
@@ -333,13 +224,13 @@ class Game:
     def _update_opp_script_error(self):
         '''
         Check if the opponent's script has made an error,  
-        if so, store it in ship object
+        if so, store it in player object
         '''
         with self.ui_client.get_data('ige') as n:
             if n == None:
                 return
             
-            self.opp_ship.n_script_error = n
+            self.players['opp'].n_script_error = n
 
     @Counter.add_func
     def run(self, pressed, events):
@@ -357,26 +248,26 @@ class Game:
             BulletSystem.update_opp_bullets()
             API.run()
 
-            self.game_client.set_opp_state(self.opp_ship)
+            self.game_client.set_opp_state(self.players['opp'])
 
-            self.run_script()
+            self.players['own'].call_script_main()
 
-            self.own_ship.run()
-            self.opp_ship.run(remote_control=True)
-            self.handeln_out_ship()
+            self.players['opp'].run(remote_control=True)
+            self.players['own'].run()
+            self.players['own'].handeln_out_ship()
 
             # send state to server
-            self.game_client.send_state(self.own_ship)
+            self.game_client.send_state(self.players['own'])
 
             self.check_end_game()
 
-        self.own_ship.display()
-        self.opp_ship.display()
+        self.players['own'].display()
+        self.players['opp'].display()
 
         BulletSystem.display()
 
         self.interface.react_events(pressed, events)
-        self.interface.update(*self.id_ships.values())
+        self.interface.update()
         self.interface.display()
 
         

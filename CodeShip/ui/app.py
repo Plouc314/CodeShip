@@ -235,7 +235,7 @@ class App(Application):
             if contents == None:
                 return
             
-            username, pos_id = contents
+            username, team = contents
             self.in_game = True
             self.opponent = username
         
@@ -256,7 +256,7 @@ class App(Application):
             file.write(script)
         
         # set game
-        self.game.setup(int(pos_id), own_grid, opp_grid, self.username, self.opponent)
+        self.game.setup(int(team), own_grid, opp_grid, self.username, self.opponent)
     
         # go to the menu
         self.change_page(Spec.PAGE_MENU)

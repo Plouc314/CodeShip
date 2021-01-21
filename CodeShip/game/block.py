@@ -41,7 +41,7 @@ class Block(Form):
             self.hp = Spec.HP_BLOCK
         else:
             self.hp = hp
-        self.nsw = 0
+        
         self.active = True
         self.power_output = 0
         
@@ -525,6 +525,10 @@ class Turret(Block):
                 self.circular_speed = 0
 
             self.rotate_surf(self.orien)
+
+        # if active -> fire
+        if self.active:
+            self.fire()
 
     def rotate_surf(self, angle: float):
         '''

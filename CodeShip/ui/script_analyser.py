@@ -196,7 +196,7 @@ class ScriptAnalyser(SubPage):
             return False
         
         # try runtime script
-        error_type, tb_lines = self.game.test_script(self.grid, self.script_module)
+        error_type, tb_lines = self.game.test_script(self.grid)
 
         if error_type == 'runtime':
             self.set_error('runtime', tb_lines)
@@ -204,6 +204,10 @@ class ScriptAnalyser(SubPage):
 
         elif error_type == 'execution time':
             self.set_error_text('execution time')
+            return False
+
+        elif error_type == 'init':
+            self.set_error('init', tb_lines)
             return False
 
         return True
@@ -240,6 +244,9 @@ class ScriptAnalyser(SubPage):
         elif error_type == "runtime":
             msg = "Error occured while testing main()."
         
+        elif error_type == 'init':
+            msg = 'Error occured while testing init().'
+
         elif error_type == 'cheat':
             msg = 'Potential maliscious piece of code detected.'
 
