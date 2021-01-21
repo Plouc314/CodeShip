@@ -68,6 +68,26 @@ class Client(ClientTCP):
         address = (self.ip, int(content))
         Interaction.connect_udp(address)
 
+    def on_message(self, msg):
+        '''
+        Split the identifier and content of the message.  
+        Call the method linked to the identifier.
+        '''
+        try:
+            identifier, content = msg.split(sep_m)
+        except:
+            self.print("Error occured in splitting opperation.", warning=True)
+
+        #try:
+        self.identifiers[identifier](content)
+        #except:
+        #    self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
+
+        if identifier in ["sc","sca"]:
+            return
+            
+        self.print(msg)
+
     def _log_client(self, username):
         '''
         Internal method.  
@@ -188,26 +208,6 @@ class Client(ClientTCP):
 
         # notify in game | opponent username, the position id of the ship
         self.send(f'ign{sep_m}{opp_client.username}{sep_c}{int(pos_id)}')
-
-    def on_message(self, msg):
-        '''
-        Split the identifier and content of the message.  
-        Call the method linked to the identifier.
-        '''
-        try:
-            identifier, content = msg.split(sep_m)
-        except:
-            self.print("Error occured in splitting opperation.", warning=True)
-
-        try:
-            self.identifiers[identifier](content)
-        except:
-            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
-
-        if identifier in ["sc","sca"]:
-            return
-            
-        self.print(msg)
 
     def login(self, content):
         '''

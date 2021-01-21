@@ -210,9 +210,9 @@ class Interaction:
 
         # notify clients on local
 
-        # get random pos id
-        id1 = bool(np.random.randint(0,2))
-        id2 = not id1
+        # get random team
+        team1 = np.random.randint(1,3)
+        team2 = -team1 + 3
 
-        cls.clients[user1].send_enter_game(cls.clients[user2], id1)
-        cls.clients[user2].send_enter_game(cls.clients[user1], id2)
+        cls.clients[user1].send_enter_game(cls.clients[user2], team1)
+        cls.clients[user2].send_enter_game(cls.clients[user1], team2)
