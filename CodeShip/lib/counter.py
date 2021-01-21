@@ -55,12 +55,13 @@ class Counter:
             time = cls.funcs['time'][i]
             
             if iteration > 0:
-                performance = time / iteration
+                # pass it to μs
+                performance = 10e6 * time / iteration
             else:
                 performance = 0
             
             print(name)
-            print(f'    iterations: {iteration}   performance: {performance:.4f} sec   total: {time:.3f} sec')
+            print(f'    iterations: {iteration}   performance: {performance:.0f} μsec   total: {time:.3f} sec')
             print('---')
 
     @classmethod

@@ -258,6 +258,25 @@ class TextBox(Form):
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
+    def set_marge_text(self, width: int, scaled=False):
+        '''
+        Set the width of the marge used with the text.
+
+        Parameters
+        ---
+        `width`: int  
+        The width of the marge
+
+        `scaled`: bool  
+        If the given width is scaled to the current window dimension
+        '''
+        if scaled:
+            self.MARGE_TEXT = Dimension.inv_scale(width)
+            self._rs_marge_text = round(width)
+        else:
+            self.MARGE_TEXT = round(width)
+            self._rs_marge_text = Dimension.E(width)
+
     def get_text(self, lines: bool = False) -> Union[str, list]:
         '''
         Return the text of the TextBox,  
@@ -270,7 +289,10 @@ class TextBox(Form):
             return self._text[:]
 
     def set_text(self, text: Union[str, list]):
-        '''Set the text of the TextBox'''
+        '''
+        Set the text of the TextBox.  
+        The `text` argument can be either str or list[str].
+        '''
         if type(text) == list:
             self._text = functools.reduce(lambda x,y: x + '\n' + y, text)
             self._lines = list(text)
