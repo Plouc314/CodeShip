@@ -34,9 +34,11 @@ POS_TCAUSE = POS_TWIN + np.array([0, 210])
 POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 280])
 
 DIM_CADRE_ACTIONS = np.array([400, 400])
+DIM_TITLE_ACTIONS = np.array([390, 50])
 POS_CADRE_ACTS1 = np.array([600, 50])
 POS_CADRE_ACTS2 = np.array([2150, 50])
-POS_TEXT_ACTS = np.array([5, 5])
+POS_TITLE_ACTS = np.array([5,5])
+POS_TEXT_ACTS = np.array([5, 60])
 DIM_TEXT_ACTS = np.array([390, 390])
 
 titles = ['HP', 'Shield', 'Engine', 'Speed', 'Orientation', 'Script errors']
@@ -86,18 +88,30 @@ text_value1 = TextBox(DIM_TEXT_VALUE, POS_CADRE1 + X_TB2 + Y_TB2, font=Font.f(35
 text_value2 = TextBox(DIM_TEXT_VALUE, POS_CADRE2 + X_TB2 + Y_TB2, font=Font.f(35),
             text=['' for _ in range(4)], continuous_text=True, centered=False)
 
-text_actions1 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS1 + POS_TEXT_ACTS, font=Font.f(24),
+title_actions1 = TextBox(DIM_TITLE_ACTIONS, POS_CADRE_ACTS1 + POS_TITLE_ACTS, font=Font.f(35),
+            text='Script Actions', color=C.XLIGHT_BLUE)
+
+title_actions2 = TextBox(DIM_TITLE_ACTIONS, POS_CADRE_ACTS2 + POS_TITLE_ACTS, font=Font.f(35),
+            text='Script Actions', color=C.XLIGHT_BLUE)
+
+text_actions1 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS1 + POS_TEXT_ACTS, font=Font.f(25),
             continuous_text=True, centered=False, color=C.XLIGHT_BLUE)
 
-text_actions2 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS2 + POS_TEXT_ACTS, font=Font.f(24),
+text_actions2 = TextBox(DIM_TEXT_VALUE, POS_CADRE_ACTS2 + POS_TEXT_ACTS, font=Font.f(25),
             continuous_text=True, centered=False, color=C.XLIGHT_BLUE)
-
-text_actions1.set_marge_text(5)
-text_actions2.set_marge_text(5)
 
 text_win = TextBox(DIM_TWIN, POS_TWIN, font=Font.f(90), marge=True)
 
 text_cause = TextBox(DIM_TCAUSE, POS_TCAUSE, font=Font.f(30), color=C.XLIGHT_GREY, marge=True)
+
+text_actions1.set_marge_text(5)
+text_actions2.set_marge_text(5)
+
+text_info1.set_text_color([C.DARK_GREEN, C.DARK_BLUE, C.DARK_YELLOW, C.BLACK, C.DARK_PURPLE, C.DARK_RED])
+text_info2.set_text_color([C.DARK_GREEN, C.DARK_BLUE, C.DARK_YELLOW, C.BLACK, C.DARK_PURPLE, C.DARK_RED])
+
+text_value1.set_text_color([C.DARK_YELLOW, C.BLACK, C.DARK_PURPLE, C.DARK_RED])
+text_value2.set_text_color([C.DARK_YELLOW, C.BLACK, C.DARK_PURPLE, C.DARK_RED])
 
 states = ['base', 'end']
 
@@ -122,6 +136,8 @@ components = [
     ('f blue shield hp1', form_blue_shield_hp1),
     ('f red shield hp2', form_red_shield_hp2),
     ('f blue shield hp2', form_blue_shield_hp2),
+    ('title actions1', title_actions1),
+    ('title actions2', title_actions2),
     ('t actions1', text_actions1),
     ('t actions2', text_actions2),
     ('t win', text_win),
@@ -129,6 +145,8 @@ components = [
 ]
 
 class GameInterface(Page):
+
+    MAX_ACTIONS = 10
 
     def __init__(self, client):
 
@@ -145,8 +163,8 @@ class GameInterface(Page):
         '''
         Set the two players
         '''
-        self.own_player= own_player
-        self.opp_player= opp_player
+        self.own_player = own_player
+        self.opp_player = opp_player
 
         self.set_text(f't username{own_player.team}', own_player.username)
         self.set_text(f't username{opp_player.team}', opp_player.username)
@@ -210,6 +228,9 @@ class GameInterface(Page):
         else:
             dim_x = (current_hp / total_hp) * DIM_HP[0]
 
+        if dim_x <= 0:
+            dim_x = DIM_HP[0]
+
         form = self.get_component(f'f blue shield hp{team}')
         form.set_dim((dim_x, DIM_HP[1]), scale=True)
 
@@ -239,19 +260,16 @@ class GameInterface(Page):
 
         self._set_value(0, f'{100*total_force}%', team)
 
-    def update_api_actions(self, team):
+    def update_api_actions(self, player):
         '''
         Update the API pending actions
         '''
-        text = self.get_component(f't actions{team}')
+        text = self.get_component(f't actions{player.team}')
 
         lines = []
 
-        for action in self.own_player.get_cache():
-            line = action['block']
-            line += '   ' + action['func'].__name__
-
-            lines.append(line)
+        for action in player.get_cache(string_format=True):
+            lines.append(action)
 
         if len(lines) == 0:
             lines = ''
@@ -274,7 +292,8 @@ class GameInterface(Page):
             string = time.strftime("%M:%S", time.gmtime(current_time))
             self.set_text('t time', string)
 
-        self.update_api_actions(self.own_player.team)
+        self.update_api_actions(self.own_player)
+        self.update_api_actions(self.opp_player)
 
         self.set_hp(self.own_player.team, self.own_player.ship)
         self.set_hp(self.opp_player.team, self.opp_player.ship)
@@ -290,8 +309,8 @@ class GameInterface(Page):
         self._set_value(1, f'{self.opp_player.ship.get_speed(scalar=True):.0f}',
             self.opp_player.team)          
 
-        self._set_value(2, f'{self.own_player.ship.orien:.0f}', self.own_player.team)
-        self._set_value(2, f'{self.opp_player.ship.orien:.0f}', self.opp_player.team)
+        self._set_value(2, f'{get_deg(self.own_player.ship.orien):.0f}', self.own_player.team)
+        self._set_value(2, f'{get_deg(self.opp_player.ship.orien):.0f}', self.opp_player.team)
 
         self._set_value(3, f'{self.own_player.n_script_error}', self.own_player.team)
         self._set_value(3, f'{self.opp_player.n_script_error}', self.opp_player.team)

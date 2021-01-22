@@ -131,17 +131,20 @@ class Block:
         self._action_timer = 0
         self._is_delay_active = False
 
-    def _add_action(self, func, *args, delay=0, **kwargs):
+    def _add_action(self, func, *args, delay=0, desc=None, **kwargs):
         '''
-        Add an action to the action list,
-        given the function, the args and kwargs
+        Internal method.  
+        Add an action to the actions list,
+        given the function, the args and kwargs,
+        The desc is what is displayed on the interface.
         '''
         action = WeakDict(
-            block = self.__repr__(), # for the interface
             func = func,
             delay = delay,
             args = args,
-            kwargs = kwargs
+            kwargs = kwargs,
+            block = self.__repr__(), # for the interface
+            desc = desc, # for the interface
         )
         
         self._actions.append(action)
@@ -149,8 +152,19 @@ class Block:
         # add weakref of action -> display it on the game interface
         API.add_action_to_cache( weakref.ref(action) )
 
+    def _is_pending_action(self, name):
+        '''
+        Internal method.  
+        Return if an action of given name is already set.
+        '''
+        for action in self._actions:
+            if action['func'].__name__ == name:
+                return True
+        return False
+
     def _exec_actions(self):
         '''
+        Internal method.  
         Execute all pending actions
         '''
         for action in self._actions:
@@ -160,6 +174,7 @@ class Block:
 
     def _run_actions(self):
         '''
+        Internal method.  
         Execute pending actions,  
         Update delay
         '''
@@ -196,14 +211,22 @@ class Block:
         if self.team == 'opp':
             raise ValueError("Try to give order to opponent ship.")
 
-        self._add_action(API._ships[self.team].blocks[self.key].set_activate, True)
+        self._add_action(API._ships[self.team].blocks[self.key].set_activate, True, 
+                    delay=Spec.RUNTIME_DELAY, desc='activate')
 
     def deactivate(self):
         '''Deactivate the block.'''
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        self._add_action(API._ships[self.team].blocks[self.key].set_activate, False)
+        self._add_action(API._ships[self.team].blocks[self.key].set_activate, False,
+                    delay=Spec.RUNTIME_DELAY, desc='deactivate')
+
+    def is_activated(self) -> bool:
+        '''
+        Return if the block is actived
+        '''
+        return API._ships[self.team].blocks[self.key].get_activate()
 
     def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
@@ -214,7 +237,7 @@ class Block:
         return API._ships[self.team].blocks[self.key].get_power_output()
 
     def __repr__(self):
-        return f'{self.name} API Object key:{self.key}'
+        return f'{self.name} {self.key}'
 
 class Generator(Block):
     '''
@@ -257,7 +280,8 @@ class Shield(Block):
         A value between 1 and `Constants.shield_max_intensity`
         '''
         self._add_action(API._ships[self.team].blocks[self.key].set_intensity, 
-            value, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
+            value, at_runtime=bool(API._state),
+            delay=Spec.SHIELD_DELAY, desc=f'set_intensity: {value}')
 
     def add_block(self, block):
         '''
@@ -282,10 +306,18 @@ class Shield(Block):
         if block is self:
             raise ValueError(f"{self} can't protect itself.")
 
-        other_block = API._ships[self.team].blocks[block.key]
+        if self._is_pending_action('add_prtc_block'):
+            return
+
+        base_block = API._ships[self.team].blocks[block.key]
+
+        # check if block already protected
+        if API._ships[self.team].blocks[self.key].is_block(base_block):
+            return
 
         self._add_action(API._ships[self.team].blocks[self.key].add_prtc_block,
-            other_block, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
+            base_block, at_runtime=bool(API._state), 
+            delay=Spec.SHIELD_DELAY, desc=f'add_block {block}')
 
     def remove_block(self, block):
         '''
@@ -299,10 +331,18 @@ class Shield(Block):
         `block`: Block / child object...  
         One of the API block (of your team...)
         '''
-        other_block = API._ships[block.team].blocks[block.key]
+        base_block = API._ships[block.team].blocks[block.key]
+
+        if self._is_pending_action('remove_prtc_block'):
+            return
+
+        # check if block already protected
+        if not API._ships[self.team].blocks[self.key].is_block(base_block):
+            return
 
         self._add_action(API._ships[self.team].blocks[self.key].remove_prtc_block,
-            other_block, delay=Spec.SHIELD_DELAY, at_runtime=bool(API._state))
+            base_block,  at_runtime=bool(API._state),
+            delay=Spec.SHIELD_DELAY, desc=f'remove_block: {block}')
 
 class Turret(Block):
     '''
@@ -330,7 +370,14 @@ class Turret(Block):
         '''
         Return if the turret is rotating.
         '''
-        return API._ships[self.team].blocks[self.key].is_rotating
+        if API._ships[self.team].blocks[self.key].is_rotating:
+            return True
+        
+        # check if a rotation order is set
+        if self._is_pending_action('rotate'):
+            return True
+        
+        return False
 
     def rotate(self, target_angle: int):
         '''
@@ -347,7 +394,7 @@ class Turret(Block):
             raise ValueError("Try to give order to opponent ship.")
 
         self._add_action(API._ships[self.team].blocks[self.key].rotate, target_angle,
-            delay=Spec.TURRET_ROTATE_DELAY)
+            delay=Spec.TURRET_ROTATE_DELAY, desc=f'rotate: {target_angle}°')
 
     def get_orientation(self):
         '''Return the orientation of the turret (degree)'''

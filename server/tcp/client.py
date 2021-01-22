@@ -78,10 +78,10 @@ class Client(ClientTCP):
         except:
             self.print("Error occured in splitting opperation.", warning=True)
 
-        #try:
-        self.identifiers[identifier](content)
-        #except:
-        #    self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
+        try:
+            self.identifiers[identifier](content)
+        except:
+            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
 
         if identifier in ["sc","sca"]:
             return

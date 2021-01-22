@@ -50,7 +50,8 @@ class App(Application):
 
         # set up updater - start download
         self.updater = self.get_page(Spec.PAGE_MENU).get_component('updater')
-        self.updater.load_server_data()
+        #self.updater.load_server_data()
+        self.updater.ready = True
 
     def manage_updater(self):
         '''

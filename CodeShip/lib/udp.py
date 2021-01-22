@@ -22,9 +22,7 @@ class ErrorUDP:
 
 class Spec:
     BUFSIZE = 4096
-    FORMAT = 'utf-8'
-    CONNECT_MSG = "!CONNECT"
-    DISCONNECT_MSG = "!DISCONNECT"
+    DISCONNECT_MSG = b"!DISCONNECT"
 
 
 class ClientUDP:
@@ -45,14 +43,12 @@ class ClientUDP:
         '''
         return self._socket.getsockname()[1]
 
-    def send(self, msg, addr=None):
+    def send(self, msg: bytes, addr=None):
         '''
         Send the given message to the client.  
         If `addr` is not specified: take default address.  
         In case of error: abort operation.  
         '''
-        msg = msg.encode(Spec.FORMAT)
-
         msg += b' ' * (Spec.BUFSIZE - len(msg))
 
         if addr == None:
@@ -73,10 +69,11 @@ class ClientUDP:
 
             # receive msg
             msg, address = self._socket.recvfrom(Spec.BUFSIZE)
-            msg = msg.decode(Spec.FORMAT).strip()
             
-            if msg != Spec.DISCONNECT_MSG:
-                self.on_message(msg)
+            if Spec.DISCONNECT_MSG in msg:
+                break
+            
+            self.on_message(msg)
 
     @staticmethod
     def on_message(msg):

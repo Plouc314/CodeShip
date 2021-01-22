@@ -237,7 +237,7 @@ class Profil(Page):
         if not np.any(grid):
             form_ship.set_surface(img_question)
         else:
-            ship = Ship.from_grid(0, grid)
+            ship = Ship.from_grid(grid, 0)
             ship.compile()
 
             form_ship.set_surface(ship.get_surface('original'))

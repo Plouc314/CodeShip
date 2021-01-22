@@ -32,6 +32,9 @@ class Player:
         # store weak ref of every actions
         self._actions_cache = []
 
+        # for remotely controlled player
+        self.str_cache = None
+
         self.create_ship(grid)
 
         if with_script:
@@ -170,12 +173,32 @@ class Player:
         '''
         self._actions_cache.append(action)
     
-    def get_cache(self):
+    def get_cache(self, string_format=False):
         '''
         Access actions cache.  
-        Return a generator of the cache, filter dead references.
+        Return a generator of the cache, filter dead references.  
+        If string_format=True, return a displayable string of the action (str)
         '''
-        for action in self._actions_cache:
-            if not action() is None:
-                yield action()
+        if not self.str_cache is None:
+            for string in self.str_cache:
+                yield string
+
+        else:
+            i = 0
+
+            while i != len(self._actions_cache):
+                action = self._actions_cache[i]
+
+                if not action() is None:
+                    i += 1
+
+                    action = action()
+
+                    if string_format:
+                        yield action['block'] + ':   ' + action['desc']
+                    else:
+                        yield action
+                
+                else:
+                    self._actions_cache.pop(i)
             

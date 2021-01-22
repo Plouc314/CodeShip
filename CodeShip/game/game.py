@@ -79,11 +79,10 @@ class Game:
             'opp': Player(opp_username, (-team + 3), opp_grid),
         }
 
-        self.setup_interface(own_username, opp_username)
-
         if not self.game_client is None:
             self.game_client.set_opp_team(self.players['opp'].team)
 
+        self.setup_interface()
         API.set_players(self.players['own'], self.players['opp'])
         BulletSystem.set_players(self.players['own'], self.players['opp'])
         CollisionSystem.set_ships(self.players['own'].ship, self.players['opp'].ship)
@@ -91,17 +90,12 @@ class Game:
         if initiate_api:
             self.init_script()
 
-    def setup_interface(self, own_username, opp_username):
+    def setup_interface(self):
         '''
-        set up the game interface, start the clock.
+        set up the game interface,  
+        start the clock.
         '''
-        players = [None, None]
-
-        # team can take either 1 or 2
-        players[self.players['own'].team - 1] = self.players['own']
-        players[self.players['opp'].team - 1] = self.players['opp']
-
-        self.interface.set_players(*players)
+        self.interface.set_players(self.players['own'], self.players['opp'])
         self.interface.start_clock()
 
     def reset_values(self):

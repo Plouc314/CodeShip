@@ -16,9 +16,6 @@ class ErrorServer:
 
 class Spec:
     BUFSIZE = 4096
-    FORMAT = 'utf-8'
-    CONNECT_MSG = "!CONNECT"
-    DISCONNECT_MSG = "!DISCONNECT"
 
 class ServerUDP:
 
@@ -94,7 +91,6 @@ class ServerUDP:
 
             # receive msg
             msg, address = self.socket.recvfrom(Spec.BUFSIZE)
-            msg = msg.decode(Spec.FORMAT).strip()
 
             ip = address[0]
             
@@ -127,13 +123,11 @@ class ClientUDP:
         '''
         raise NotImplementedError("on_message method must be implemented.")
 
-    def send(self, msg):
+    def send(self, msg: bytes):
         '''
         Send the given message to the client.  
         In case of error: abort operation.  
         '''
-        msg = msg.encode(Spec.FORMAT)
-
         msg += b' ' * (Spec.BUFSIZE - len(msg))
 
         self.server.socket.sendto(msg, self.addr)

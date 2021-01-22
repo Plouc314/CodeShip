@@ -93,8 +93,6 @@ class Spec:
     TIME_EXPL = 3 # frame
 
     # game
-    OWN_TEAM = 1
-    OPP_TEAM = 2
     COLOR_P1 = C.BLUE
     COLOR_P2 = C.PURPLE
     DCOLOR_P1 = C.DARK_BLUE

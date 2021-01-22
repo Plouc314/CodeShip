@@ -289,6 +289,16 @@ class Shield(Block):
         self.get_surface('original').blit(img_shield, (Spec.DIM_BLOCK-Spec.DIM_ITEM)//2)
         self.set_surface(self.get_surface('original'))
 
+    def is_block(self, block) -> bool:
+        '''
+        Return if the given block is protected by the shield.
+        '''
+        for info in self.blocks:
+            if info['block'] is block:
+                return True
+            
+        return False
+
     def update_state(self):
         '''
         Regenerate shield of protected blocks.
@@ -503,6 +513,9 @@ class Turret(Block):
         Update the turret's fire delay timer,  
         rotate the turret according to its circular speed.
         '''
+        if not self.active:
+            return
+
         # update timer
         self.fire_delay += 1
 
@@ -516,8 +529,8 @@ class Turret(Block):
                 self.orien -= 360
 
             # check if the orientation is near to the target_angle
-            low = self.target_angle - Spec.TURRET_MAX_SPEED
-            high = self.target_angle + Spec.TURRET_MAX_SPEED
+            low = self.target_angle - 2*Spec.TURRET_MAX_SPEED
+            high = self.target_angle + 2*Spec.TURRET_MAX_SPEED
 
             if low <= self.orien <= high: # orien in bounds
                 self.is_rotating = False
@@ -618,7 +631,6 @@ class Turret(Block):
         '''
         If possible, fire a bullet -> add it in the bulletsystem.
         '''
-
         if not self.active:
             return
         
