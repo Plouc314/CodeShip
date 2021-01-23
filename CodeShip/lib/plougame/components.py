@@ -231,6 +231,8 @@ class TextBox(Form):
     ---
     `set_text`: Set the text displayed, can be on multiple lines  
     `get_text`: Return text attribute  
+    `set_text_color`: Set the color of the text  
+    `set_marge_text`: Set the marge used with the text  
     `set_centered`: Set if the text is centered  
     `display`: Display the instance.  
     '''
@@ -249,10 +251,14 @@ class TextBox(Form):
         
         self._centered = centered
         self.font = font
-        self._text_color = text_color
         self._as_marge = marge
         self._is_dynamic = dynamic_dim
         self._continuous_text = continuous_text
+        
+        self._text_color = text_color
+        self._is_multiples_colors = False
+        self._text_colors = []
+        
         self.set_text(text)
 
         if self._is_dynamic:
@@ -276,6 +282,25 @@ class TextBox(Form):
         else:
             self.MARGE_TEXT = round(width)
             self._rs_marge_text = Dimension.E(width)
+
+    def set_text_color(self, color: Union[list, tuple]):
+        '''
+        Set the text color,  
+        the color argument can be either a color,
+        in that case set the color of the whole text, 
+        or a list of color (one per line), in that case
+        each line will have its own color.
+        '''
+        if type(color) == list:
+            # check that there is one color per line
+            assert len(color) == len(self._lines), "Must give one color per line."
+
+            self._is_multiples_colors = True
+            self._text_colors = color
+        
+        else:
+            self._is_multiples_colors = False
+            self._text_color = color
 
     def get_text(self, lines: bool = False) -> Union[str, list]:
         '''
@@ -338,6 +363,12 @@ class TextBox(Form):
         if pos is None:
             pos = self._sc_pos
 
+        # set color
+        if not self._is_multiples_colors:
+            colors = [self._text_color for _ in range(len(self._lines))]
+        else:
+            colors = self._text_colors
+
         if not self._continuous_text:
             # split the box in n part for n lines
             y_line = round(self._sc_dim[1]/len(self._lines))
@@ -351,7 +382,7 @@ class TextBox(Form):
             if not self._centered:
                 x_marge = self._rs_marge_text
         
-            font_text = self.font['font'].render(line, True, self._text_color)
+            font_text = self.font['font'].render(line, True, colors[i])
         
             surface.blit(font_text, rl(pos[0] + x_marge, pos[1] + i * y_line + y_marge))
 

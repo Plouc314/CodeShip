@@ -214,8 +214,18 @@ class Interface:
             cls.y_padding.set_dim_pos(dim_py, pos, update_original=False)
 
         # resize every objects
-        for gui_obj in cls._gui_objects:
+        to_remove = []
+
+        for i, gui_obj in enumerate(cls._gui_objects):
             
+            # check if ref still exist
+            if gui_obj() is None:
+                to_remove.append(i)
+                continue
+
+            # get ref
+            gui_obj = gui_obj()
+
             # resize dimension
             gui_obj.set_dim_pos(gui_obj._unsc_dim, gui_obj._unsc_pos, 
                         scale_pos=True, scale_dim=True, update_original=False)
@@ -228,6 +238,9 @@ class Interface:
             if hasattr(gui_obj, 'font'):
                 fontsize = gui_obj.font['size']
                 gui_obj.font = Font.f(fontsize)
+
+        for idx in to_remove[::-1]:
+            cls._gui_objects.pop(idx)
 
         # replace subpages
         for subpage in cls._subpages:

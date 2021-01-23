@@ -91,7 +91,7 @@ class Form:
         if rescale:
             # add every gui obj to interface to be able to rezise gui objs auto
             # add a weak reference -> don't keep instance alive for nothing
-            self._interface._gui_objects.append(weakref.proxy(self))
+            self._interface._gui_objects.append(weakref.ref(self))
 
     def get_pos(self, scaled=False) -> [int, int]:
         '''

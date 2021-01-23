@@ -1,8 +1,10 @@
-from .auxiliary import Dimension
+from .auxiliary import Dimension, Font
 from .form import Form
-from .components import TextBox, Button, InputText, ScrollList
+from .components import TextBox, Button, InputText, ScrollList, Cadre
 from .interface import Interface
+from .formatter import Formatter
 from typing import List, Set, Dict, Tuple, Union
+
 
 class Page:
     '''
@@ -44,7 +46,9 @@ class Page:
     `display`: Display the instance.  
     '''
 
-    def __init__(self, states: List[str], components: List, active_states='none'):
+    formatter = Formatter()
+
+    def __init__(self, states: List[str], components: List[Tuple], active_states='none'):
         
         self._states = list(states)
         self._states_history = [states[0]]
@@ -74,6 +78,42 @@ class Page:
         for name, obj in components:
             self.add_component(name, obj, active_states=active_states)
     
+    @classmethod
+    def from_json(cls, path, states, active_states='none',
+            path_templates=None, formatter=None):
+        '''
+        Create a Page object given a .json file.
+        The .json file will be processed by the `Formatter` object,
+        see its documentation for further informations.
+
+        Paramters
+        ---
+        `path`: str  
+        The file path of the .json file
+
+        `states`: list[str]  
+        All the possible states of the page
+
+        `active_states`: str  
+        Take either `"none"` or `"all"`, the default active states of the components.
+        
+        `path_templates`: str  
+        The file path of the .json file containing templates to be processed
+        first
+
+        `formatter`: Formatter  
+        Can give custom `Formatter` object to use
+        '''
+        if formatter is None:
+            formatter = cls.formatter
+
+        if path_templates != None:
+            formatter.process_templates(path_templates)
+            
+        components = formatter.get_components(path)
+
+        return cls(states, components, active_states=active_states)
+
     def change_page(self, new_page):
         '''
         Need to be member of an Application object.
