@@ -19,7 +19,8 @@ class Page:
     All the possible states of the page
     
     `components`: list[tuple[name, object]]  
-    Take all the components of the page.
+    Take all the components of the page, the name is what will be used to
+    refer to the object once the Page is created (with `get_component` for example).
     
     `active_states`: str  
     Take either `"none"` or `"all"`, the default active states of the components.
@@ -102,7 +103,7 @@ class Page:
         first
 
         `formatter`: Formatter  
-        Can give custom `Formatter` object to use
+        Can give a custom `Formatter` object to use
         '''
         if formatter is None:
             formatter = cls.formatter
@@ -110,7 +111,7 @@ class Page:
         if path_templates != None:
             formatter.process_templates(path_templates)
             
-        components = formatter.get_components(path)
+        components = formatter.get_components(path, attribute_errors="warning")
 
         return cls(states, components, active_states=active_states)
 

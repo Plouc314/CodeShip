@@ -2,7 +2,8 @@ from .form import Form
 from .components import TextBox, Button, InputText, ScrollList, Cadre
 from .auxiliary import Font, C
 from typing import List, Set, Dict, Tuple, Union
-import json, re
+import numpy as np
+import warnings, json, re
 
 map_class = {
     'Form': Form,
@@ -15,13 +16,151 @@ map_class = {
 
 class Formatter:
     '''
-    Formatter used to process JSON-like files.
+    Formatter used to process JSON files.
     '''
 
     def __init__(self):
         self._templates = {}
+        self._vars = {}
 
-    def get_color(self, string: str) -> tuple:
+    def get_components(self, path) -> List[Tuple]:
+        '''
+        Create all the components defined in the .json file of the
+        given path.  
+        
+        Each component must specify a "type" key, with its class name,
+        to create a TextBox object: `"type": "TextBox"`
+
+        Can use variables (see `process_variables` doc) and
+        templates (see `process_templates` doc).
+
+        Return
+        ---
+        A list of tuples with each time a pair: (name, object)
+        It is the same format as the `components` argument of the `Page` object.
+
+        Example
+        ---
+        With the template "test-like" and variable `font_size` defined previously,  
+        `title = TextBox(dim, [100, 50], text="Example", color=C.LIGHT_BLUE, 
+        font=Font.f(font_size))`  
+        is equivalent as: 
+        ```
+        {
+            "title": {
+                "type": "TextBox",
+                "template": "text-like",
+                "pos": [100, 50],
+                "text": "Example",
+                "font": "$font_size",
+                "color": "light blue"
+            }
+        }
+        ```
+
+        '''
+        # load file
+        with open(path, 'r') as file:
+            data = json.load(file)
+
+        # process variables
+        self._handeln_variables(data)
+
+        # create components
+        components = []
+
+        for name, infos in data.items():
+
+            assert 'type' in infos.keys(), "Each component must specify a type."
+
+            self._process_expressions(infos, name=name)
+
+            _class = infos.pop('type')
+            _class = map_class[_class]
+
+            infos = self._process_special_attributes(infos)
+
+            infos = self._handeln_template(infos, name=name)
+
+            if not 'dim' in infos.keys():
+                infos['dim'] = None
+
+            # create the component
+            try:
+                component = _class(**infos)
+            except TypeError as e:
+                raise TypeError(self._get_error('attribute', str(e), name))
+
+            components.append((name, component))
+        
+        return components
+
+    def process_templates(self, path):
+        '''
+        Process & store the templates of the file at the given path.  
+        
+        A template is a set of predefined attributes that can then
+        be used to simplify the creation of component.
+
+        Here is an example of a template ("template 1") that define
+        the color and dimension attributes.
+        ```
+        {
+            "template 1": {
+                "color": "blue",
+                "dim": [200, 60]
+            }
+        }
+        ```
+        '''
+        # load file
+        with open(path, 'r') as file:
+            data = json.load(file)
+
+        # process variables
+        self._handeln_variables(data)
+        
+        for name, infos in data.items():
+            
+            self._process_expressions(infos, name=name)
+
+            infos = self._process_special_attributes(infos)
+
+            if name in self._templates.keys():
+                # update old template with new one
+                self._templates[name] = {**self._templates[name], **infos}
+            else:
+                # create new template
+                self._templates[name] = infos
+
+    def process_variables(self, path):
+        '''
+        Process & store the variables of the file at the given path.
+
+        Once defined, a variable can be used to set any attribute,
+        to use it, just write `"$variable_name"`. It can also be used
+        in an expression, `"$ 23 + variable_name"`.
+
+        Example:
+        ```
+        {
+            "var1": 20,
+            "var2": [30, 120],
+            "var3": "$var1 - 10",
+            "var4": "$ [10, 10] + var2"
+        }
+        ```
+        '''
+        # load file
+        with open(path, 'r') as file:
+            data = json.load(file)
+
+        self._process_expressions(data)
+
+        for name, value in data.items():         
+            self._vars[name] = value
+
+    def _get_color(self, string: str) -> tuple:
         '''
         Return a tuple of the color given a string.  
         Will format the string to the variables name's format
@@ -33,12 +172,13 @@ class Formatter:
 
         return getattr(C, format_string)
 
-    def _handeln_template(self, data: dict) -> dict:
+    def _handeln_template(self, data: dict, name: str=None) -> dict:
         '''
         Handeln potential template(s).  
         Check if a template is specified,
         if so and template unknow: raise an error,
-        else merge template and given data.
+        else merge template and given data.  
+        Argument: `name` is for error tracking.
         '''
         if not 'template' in data.keys() and not 'templates' in data.keys():
             return data
@@ -52,84 +192,13 @@ class Formatter:
 
         for tpl_name in tpl_names:
             
-            assert tpl_name in self._templates.keys(), f"Unknown template: '{tpl_name}'"
+            assert tpl_name in self._templates.keys(), self._get_error('template', tpl_name, name)
 
             # merge tamplates
             template = {**template, **self._templates[tpl_name]}
 
         # finally add data
         return {**template, **data}
-
-    def get_components(self, path) -> List[Tuple]:
-        '''
-        Create all the components defined in the .json file of the
-        given path.  
-        Process the file to handeln any variables or expressions.  
-        Return a list of tuples with each time a pair: name, object
-        It is the same format as the `components`argument of the `Page` object.
-        '''
-        # load file
-        with open(path, 'r') as file:
-            string = file.read()
-
-        # process string
-        string = self.process_variables(string)
-        string = self.evaluate_values(string)
-        
-        # use json decoder
-        try:
-            data = json.loads(string)
-        except:
-            raise SyntaxError("JSON decoder failed, processed file:\n"+string)
-
-        # create components
-        components = []
-
-        for name, infos in data.items():
-
-            assert 'type' in infos.keys(), "Each component must specify a type."
-
-            _class = infos.pop('type')
-            _class = map_class[_class]
-
-            infos = self._process_special_attributes(infos)
-
-            infos = self._handeln_template(infos)
-
-            if not 'dim' in infos.keys():
-                infos['dim'] = None
-
-            component = _class(**infos)
-
-            components.append((name, component))
-        
-        return components
-
-    def process_templates(self, path):
-        '''
-        Process the templates
-        '''
-         # load file
-        with open(path, 'r') as file:
-            string = file.read()
-
-        # process string
-        string = self.process_variables(string)
-        string = self.evaluate_values(string)
-        
-        # use json decoder
-        data = json.loads(string)
-
-        for name, infos in data.items():
-            
-            infos = self._process_special_attributes(infos)
-
-            if name in self._templates.keys():
-                # update old template with new one
-                self._templates[name] = {**self._templates[name], **infos}
-            else:
-                # create new template
-                self._templates[name] = infos
 
     def _process_special_attributes(self, data: dict) -> dict:
         '''
@@ -141,61 +210,100 @@ class Formatter:
             data['font'] = Font.f(data['font'])
 
         if 'color' in data.keys():
-            data['color'] = self.get_color(data['color'])
+            data['color'] = self._get_color(data['color'])
         
         if 'text_color' in data.keys():
-            data['text_color'] = self.get_color(data['text_color'])
+            data['text_color'] = self._get_color(data['text_color'])
 
         return data
 
-    def process_variables(self, string: str):
+    def _handeln_variables(self, data: dict):
         '''
-        Identify and subsitute variables by their value.  
+        Look for variables (`"vars"` entry),  
+        process & store variables  
         '''
-        # var_data is a list of (variable name, value)
-        var_data = re.findall('([a-zA-Z0-9_]+)\s?=\s?(.+)', string)
-
-        # select part of string that contains the json data
-        match = re.search('^\{', string, flags=re.MULTILINE)
-        idx = match.span()[0]
-        string = string[idx:]
-
-        for name, value in var_data:
-            while name in string:
-                string = string.replace(name, value)
+        if not 'vars' in data.keys():
+            return
         
-        return string.strip()
-        
-    def evaluate_values(self, string: str):
-        '''
-        Evaluate each value of the .json file,
-        return a readable string for the json module.  
-        Must be executed after `process_variables`.
-        '''
-        expressions = re.findall('.+:\s?([^{[\n]+)', string)
+        vars = data.pop('vars')
+        self._process_expressions(vars, name='vars')
 
-        for exp in expressions:
-            
-            # get rid of null exp (by ex. the dicts)
-            if not exp.strip():
-                continue
-            
-            # remove potential coma at the end
-            if exp[-1] == ',':
-                exp = exp[:-1]
+        for name, value in vars.items():         
+            self._vars[name] = value
 
-            # don't evaluate boolean values
-            if exp == 'true' or exp == 'false':
+    def _process_expressions(self, data: dict, name: str=None):
+        '''
+        Look for values with `$` and process them.  
+        Update value of data with processed values.  
+        '''
+        for key in data.keys():
+            
+            if type(data[key]) != str:
                 continue
 
-            try:
-                evaluated = eval(exp)
-            except:
-                raise ValueError(f"Couldn't evaluate expression: '{exp}'")
+            if data[key][0] == '$':
+                data[key] = self._process_exp(data[key][1:], name=name, key=key)
 
-            if type(evaluated) == str:
-                string = string.replace(exp, f'"{evaluated}"')
-            else:
-                string = string.replace(exp, str(evaluated))
+    def _process_exp(self, exp: str, name: str=None, key: str=None):
+        '''
+        Process the value of an expression containing at least one variable  
+        Args: name and key are for errors tracking.  
+        Return the processed value
+        '''
+        original_exp = exp[:]
 
-        return string
+        # process variables
+        vars = re.findall('([a-zA-Z_][a-zA-Z0-9_]*)', exp)
+
+        for var in vars:
+            
+            assert var in self._vars.keys(), self._get_error('var', var, name, key)
+
+            value = self._vars[var]
+            
+            exp = exp.replace(f'{var}', str(value))
+        
+        # process lists
+        lists = re.findall('(\[[^\]]+\])', exp)
+
+        for _list in lists:
+            exp = exp.replace(_list, f'np.array({_list})')
+
+        # try to eval the expression
+        try:
+            exp = eval(exp)
+        except:
+            raise ValueError(self._get_error('exp', original_exp, name, key))
+
+        return exp
+    
+    def _get_error(self, category, value, name=None, key=None):
+        '''
+        Return a formatted error message.
+        Parameters:  
+        category: the type of error: ("var", "exp", "template")  
+        value: the value specified in the error message  
+        name: the key of the current entry (global)  
+        key the key of the current entry (local)
+        '''
+        msg = ''
+
+        if name != None:
+            msg += f"\n\tName: '{name}' "
+        
+        if key != None:
+            msg += f"\n\tKey: '{key}' "
+
+        if category == 'var':
+            msg += f"\n\tUnknown variable: '{value}'"
+        
+        elif category == 'exp':
+            msg += f"\n\tCouldn't evaluate expression: {value}"
+        
+        elif category == 'template':
+            msg += f"\n\tUnknown template: '{value}'"
+
+        elif category == 'attribute':
+            msg += f"\n\tInitialisation failed: '{value}'"
+
+        return msg
