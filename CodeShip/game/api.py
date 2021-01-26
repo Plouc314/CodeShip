@@ -259,7 +259,27 @@ class Shield(Block):
     '''
     Block `Shield`, inherit from `Block`
 
-    Not implemented.
+    The purpose of a Shield block is to protect other blocks
+    by providing them shield-hitpoints that add up to their
+    normal hitpoints.
+
+    Each protected block receive a amound of shield-hitpoints,
+    when the block is hit, it will lost part of them. They will then
+    slowly regenerate.
+
+    The Shield cannot protect an unlimited number of blocks, the maximum number
+    is stored in `Constants.shield_blocks_limit`. It has also an intensity which define
+    the amound of provided shield hitpoints and its power consumption (more details on
+    `set_intensity`).
+
+    The methods executed during intitialisation (in `init` function) are not subject to
+    a delay, on the other hand, the methods executed at runtime are subject to a delay.
+    
+    Methods
+    ---
+    `set_intensity`: Set the shield's intensity  
+    `add_block`: Set a block to be protected by the shield  
+    `remove_block`: Set a block not to be protected by the shield
     '''
     name = 'Shield'
 

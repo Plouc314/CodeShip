@@ -37,6 +37,10 @@ class Counter:
             
             cls.funcs['time'][index] += time.time() - st
             
+            if cls.funcs['names'][index] == 'Ship._compute_blocks_abs_centers':
+                if cls.funcs['iterations'][index] == 1:
+                    cls.funcs['time'][index] = 0
+
             return r
         
         return inner
@@ -56,7 +60,7 @@ class Counter:
             
             if iteration > 0:
                 # pass it to μs
-                performance = 10e6 * time / iteration
+                performance = 1e6 * time / iteration
             else:
                 performance = 0
             

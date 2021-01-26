@@ -1,4 +1,5 @@
 import pygame
+import numba
 import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
@@ -112,7 +113,7 @@ class Ship:
         '''
         return self.form.get_surface(surf_type=surf_type)
 
-    def get_mask(self):
+    def get_mask(self) -> pygame.mask.Mask:
         '''
         Return the pygame.mask.Mask object of the ship.
         '''
@@ -285,7 +286,9 @@ class Ship:
         '''
         # create a surface that contains all the blocks
         dim_surf = Spec.DIM_BLOCK * Spec.SIZE_GRID_SHIP
-        surface = pygame.Surface(dim_surf, pygame.SRCALPHA)
+        surface = pygame.Surface(dim_surf)
+        surface.set_colorkey(C.WHITE)
+        surface.fill(C.WHITE)
 
         for block in self.blocks.values():
             pos = block.coord * Spec.DIM_BLOCK
@@ -345,7 +348,7 @@ class Ship:
         
         self.form.set_pos(self.pos, scale=True)
 
-        self._compute_blocks_abs_centers()
+        self._compute_blocks_abs_centers(Spec.SIZE_BLOCK)
 
         # update main surface
         self._update_surf()
@@ -367,7 +370,10 @@ class Ship:
 
     @Counter.add_func
     def _process_mask(self):
-        self._mask = pygame.mask.from_surface(self.form.get_surface('main'))
+        # get white pixels
+        self._mask = pygame.mask.from_threshold(self.form.get_surface('main'), C.WHITE, (1,1,1))
+        # set mask to other pixels
+        self._mask.invert()
 
     @Counter.add_func
     def update_turrets(self):
@@ -492,32 +498,29 @@ class Ship:
                         return
     
     @Counter.add_func
-    def _compute_blocks_abs_centers(self):
+    def _compute_blocks_abs_centers(self, size_block):
         '''
         Compute the absolute (scaled) center of all the blocks
         '''
-        abs_center = np.array(self.form.get_center(scale=False))
+        abs_center = np.array(self.form.get_center(scale=False), dtype=float)
         rel_center = abs_center - self.pos
 
         for key, block in self.blocks.items():
             
-            x,y = block.coord
-            x *= Spec.SIZE_BLOCK
-            y *= Spec.SIZE_BLOCK
-            x += Spec.SIZE_BLOCK // 2
-            y += Spec.SIZE_BLOCK // 2            
+            coord = np.array(block.coord, dtype=float)
+            coord *= size_block
+            coord += size_block // 2
+            coord -= rel_center
 
-            x -= rel_center[0]
-            y -= rel_center[1]
-
-            length, alpha = get_polar((x,y))
+            length, alpha = get_polar(coord)
+            
             alpha += self.orien
+
             x, y = get_cartesian(length, alpha)
 
-            x += rel_center[0] + self.pos[0]
-            y += rel_center[1] + self.pos[1]
+            coord += rel_center + self.pos
 
-            self.abs_centers[key] = np.array((x, y), dtype=int)
+            self.abs_centers[key] = coord.astype(int)
 
     def get_key_by_pos(self, pos):
         '''

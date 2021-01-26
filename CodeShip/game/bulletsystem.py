@@ -8,11 +8,11 @@ from lib.counter import Counter
 # load images
 folder = "game/imgs/"
 
-img_bullet = pygame.image.load(folder + 'bullet.png')
+img_bullet = pygame.image.load(folder + 'bullet.png').convert_alpha()
 img_bullet = pygame.transform.rotate(img_bullet, -90)
 img_bullet = pygame.transform.scale(img_bullet, Spec.DIM_BULLET)
 
-img_expl = pygame.image.load(folder + 'explosion.png')
+img_expl = pygame.image.load(folder + 'explosion.png').convert_alpha()
 img_expl = pygame.transform.scale(img_expl, Spec.DIM_MAX_EXPL)
 
 class Bullet(Form):

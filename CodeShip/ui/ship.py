@@ -175,9 +175,9 @@ Power output: {Spec.POWER_ENERGIE}
 '''
 desc_shield = f'''
 Shield
-Not implemented yet.
+Provide hp to other blocks.
 Price: {Spec.PRICE_SHIELD}   HP: {Spec.HP_BLOCK}
-Power consumption: {Spec.POWER_CONS}
+Power consumption: {Spec.POWER_CONS} - {Spec.POWER_CONS*Spec.SHIELD_MAX_INTENSITY}
 '''
 desc_turret = f'''
 Turret

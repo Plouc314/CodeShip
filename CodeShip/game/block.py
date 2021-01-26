@@ -10,16 +10,16 @@ from data.spec import Spec
 # load imgs
 folder = "game/imgs/"
 
-img_shield = pygame.image.load(folder + 'shield.png')
+img_shield = pygame.image.load(folder + 'shield.png').convert_alpha()
 img_shield = pygame.transform.scale(img_shield, Spec.DIM_ITEM)
 
-img_generator = pygame.image.load(folder + 'generator.png')
+img_generator = pygame.image.load(folder + 'generator.png').convert_alpha()
 img_generator = pygame.transform.scale(img_generator, Spec.DIM_ITEM)
 
-img_engine = pygame.image.load(folder + 'engine.png')
+img_engine = pygame.image.load(folder + 'engine.png').convert_alpha()
 img_engine = pygame.transform.scale(img_engine, Spec.DIM_ITEM)
 
-img_turret = pygame.image.load(folder + 'turret.png')
+img_turret = pygame.image.load(folder + 'turret.png').convert_alpha()
 img_turret = pygame.transform.rotate(img_turret, 270)
 img_turret = pygame.transform.scale(img_turret, Spec.DIM_TURRET)
 
