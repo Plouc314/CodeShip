@@ -16,23 +16,62 @@ map_class = {
 
 class Formatter:
     '''
-    Formatter used to process JSON files.
+    Formatter used to process JSON files.  
+
+    The aim of the formatter is to create the components of a Page object
+    given one (or more) JSON files.
+
+    Methods
+    ---
+    `get_components`: Create components for Page object from JSON file  
+    `process_templates`: Process & store templates for later use from JSON file  
+    `process_variables`: Process & store variables for later use from JSON file  
+    `set_variables`: Set new variables in cache  
+    `get_variables`: get variables cache  
+    `clear`: Clear variables cache
     '''
 
-    def __init__(self):
+    def __init__(self, variables: dict=None):
         self._templates = {}
+        
+        if variables is None:
+            self._vars = {}
+        else:
+            self._vars = variables
+
+    def set_variables(self, variables: dict):
+        '''
+        Set new variables in the Formatter cache.  
+        It won't erase any existing variables but rather
+        updating the existing ones and create new ones.
+        
+        To clear the variables cache, call the `clear` method.
+        '''
+        self._set_new_vars(variables)
+
+    def get_variables(self) -> dict:
+        '''
+        Return the variables cache of the Formatter.
+        '''
+        return self._vars.copy()
+
+    def clear(self):
+        '''
+        Clear the variables cache.
+        '''
         self._vars = {}
 
     def get_components(self, path) -> List[Tuple]:
         '''
-        Create all the components defined in the .json file of the
+        Create all the components defined in the JSON file of the
         given path.  
         
         Each component must specify a "type" key, with its class name,
         to create a TextBox object: `"type": "TextBox"`
 
         Can use variables (see `process_variables` doc) and
-        templates (see `process_templates` doc).
+        templates (see `process_templates` doc).  
+        Variables can also be defined in the same JSON file by defining a `"vars"` entry (dict).
 
         Return
         ---
@@ -102,6 +141,8 @@ class Formatter:
         A template is a set of predefined attributes that can then
         be used to simplify the creation of component.
 
+        Variables can also be defined in the file, by defining a `"vars"` entry (dict).
+
         Here is an example of a template ("template 1") that define
         the color and dimension attributes.
         ```
@@ -156,9 +197,7 @@ class Formatter:
             data = json.load(file)
 
         self._process_expressions(data)
-
-        for name, value in data.items():         
-            self._vars[name] = value
+        self._set_new_vars(data)
 
     def _get_color(self, string: str) -> tuple:
         '''
@@ -226,10 +265,9 @@ class Formatter:
             return
         
         vars = data.pop('vars')
-        self._process_expressions(vars, name='vars')
 
-        for name, value in vars.items():         
-            self._vars[name] = value
+        self._process_expressions(vars, name='vars')
+        self._set_new_vars(vars)
 
     def _process_expressions(self, data: dict, name: str=None):
         '''
@@ -251,17 +289,6 @@ class Formatter:
         Return the processed value
         '''
         original_exp = exp[:]
-
-        # process variables
-        vars = re.findall('([a-zA-Z_][a-zA-Z0-9_]*)', exp)
-
-        for var in vars:
-            
-            assert var in self._vars.keys(), self._get_error('var', var, name, key)
-
-            value = self._vars[var]
-            
-            exp = exp.replace(f'{var}', str(value))
         
         # process lists
         lists = re.findall('(\[[^\]]+\])', exp)
@@ -271,12 +298,24 @@ class Formatter:
 
         # try to eval the expression
         try:
-            exp = eval(exp)
+            exp = eval(exp, globals(), self._vars)
         except:
             raise ValueError(self._get_error('exp', original_exp, name, key))
 
         return exp
     
+    def _set_new_vars(self, data: dict):
+        '''
+        Set new variables.
+        '''
+        for name, value in data.items():
+
+            # cast iterable to np.ndarray
+            if type(value) in [list, tuple]:
+                value = np.array(value)
+            
+            self._vars[name] = value
+
     def _get_error(self, category, value, name=None, key=None):
         '''
         Return a formatted error message.

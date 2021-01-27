@@ -39,17 +39,6 @@ def get_pressed_key(pressed):
     elif pressed[pygame.K_QUOTE] and pressed[pygame.K_LSHIFT]:
         return '?'
 
-def rl(*args):
-    '''Round list of floats'''
-
-    if len(args) == 1:
-        args = args[0]
-    args = list(args)
-    
-    for i in range(len(args)):
-        args[i] = int(round(args[i]))
-    return args
-
 def get_dark_color(color):
     dark_color = []
     for i in range(3):

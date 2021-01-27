@@ -1,4 +1,5 @@
 import pygame
+import numpy as np
 
 class Dimension:
     _f = 1
@@ -64,51 +65,29 @@ class Dimension:
         return cls.scale(cls.WINDOW)
 
     @classmethod
-    def scale(cls, x, factor=None, fp=5):
+    def scale(cls, x, factor=None):
         
         if factor:
             f = factor
         else:
             f = cls._f
 
-        # check if x is iterable
-        try:
-            iter(x)
-        
-        except TypeError: # not iterable          
-            x = round(x*f, fp)
+        if type(x) in [int, float]:
+            return x * f
 
-        else: # iterable
-            x = list(x)
-            for i in range(len(x)):
-                x[i] = round(x[i]*f, fp)
-            
-        return x
+        return np.array(x, dtype='float64') * f
 
     @classmethod
-    def inv_scale(cls, x, fp=5):
+    def inv_scale(cls, x):
         '''
         Inverse the scale of the number: scale -> unscale ( note: unscale -> ?!@#@ )
-
-        Arguments:
-            - fp : floating point of the unscaled number (to keep precision)
-
         '''
         f = 1/cls._f
         
-        # check if x is iterable
-        try:
-            iter(x)
-        
-        except: # not iterable
-            x = round(x*f, fp)
-        
-        else: # iterable
-            x = list(x)
-            for i in range(len(x)):
-                x[i] = round(x[i]*f, fp)
-            
-        return x
+        if type(x) in [int, float]:
+            return x * f
+
+        return np.array(x, dtype='float64') * f
 
     @classmethod
     def E(cls, x, *, fp=None):

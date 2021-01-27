@@ -21,6 +21,7 @@ which are, from the less abstract to the greater one:
 # - Page: add frame func, in/out page func
 # - Form: init marge value stored -> has marge when displayed
 # - remove Cadre object
+# - replace font.render with a cache
 
 import pygame
 

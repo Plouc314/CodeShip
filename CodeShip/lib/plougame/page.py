@@ -111,7 +111,7 @@ class Page:
         if path_templates != None:
             formatter.process_templates(path_templates)
             
-        components = formatter.get_components(path, attribute_errors="warning")
+        components = formatter.get_components(path)
 
         return cls(states, components, active_states=active_states)
 

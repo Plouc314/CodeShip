@@ -2,7 +2,6 @@ import pygame
 from pygame.locals import *
 from .form import Form
 from .auxiliary import Dimension, Font, C
-from .helper import rl
 from .spec import Specifications as Spec
 import time
 
@@ -19,7 +18,6 @@ class Interface:
     Methods
     ---
     `setup`: Initialize the module, create the window  
-    `add_resizable_objects`: Add custom objects to be rescaled auto by Interface  
     `run`: Update the screen, get the inputs for current frame, check for quit events...  
     '''
     clock = pygame.time.Clock()
@@ -34,7 +32,7 @@ class Interface:
 
     @classmethod
     def setup(cls, dim: (int, int), title: str, *, fullscreen=False,
-            background_color=C.WHITE, static=False):
+            background_color=C.WHITE, flags=None, static=False):
         '''
         Parameters
         ---
@@ -50,6 +48,10 @@ class Interface:
         `background_color`: tuple  
         The background color of the window.
         
+        `flags`: int  
+        The pygame flags used to create the screen, by default:
+        `HWSURFACE`,`DOUBLEBUF`,`RESIZABLE`
+
         `static`: bool  
         To be implemented.
         '''
@@ -68,7 +70,10 @@ class Interface:
         if fullscreen:
             dim = cls._get_screen_dim()
         
-        cls.screen = pygame.display.set_mode(dim, HWSURFACE|DOUBLEBUF|RESIZABLE)
+        if flags is None:
+            flags = HWSURFACE|DOUBLEBUF|RESIZABLE
+
+        cls.screen = pygame.display.set_mode(dim, flags)
         cls.screen.fill(cls.background_color)
         cls._set_screen(cls.screen)
 
@@ -106,22 +111,6 @@ class Interface:
     def is_static(cls):
         '''Return if the Interface is static, if not, it is dynamic'''
         return cls._is_static
-
-    @classmethod
-    def add_resizable_objs(cls, objects: list):
-        '''
-        Object's method on_rezise(self, scale_factor) will be called when window is rezised
-        
-        scale_factor: factor of dimension compared to initial dimension
-        '''
-        # resize a first time
-        for obj in objects:
-            # check that each object has a on_resize method, else: don't add obj to resizable ones
-            if hasattr(obj, 'on_resize'):
-                obj.on_resize(Dimension.get_factor())
-                cls._resize_objects.append(obj)
-            else:
-                print('WARNING: resizable objects must have an on_resize(self, scale_factor) method')
 
     @classmethod
     def is_frame_displayed(cls):
@@ -245,9 +234,6 @@ class Interface:
         # replace subpages
         for subpage in cls._subpages:
             subpage._sc_pos = Dimension.scale(subpage._unsc_pos)
-
-        for rz_obj in cls._resize_objects:
-            rz_obj.on_resize(scale_factor)
 
     @classmethod
     def _display(cls, fill=True, update=True):

@@ -1,5 +1,6 @@
 import pygame
-from .helper import mean, rl, get_dark_color, get_light_color
+import numpy as np
+from .helper import mean, get_dark_color, get_light_color
 from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
 import weakref
@@ -56,7 +57,7 @@ class Form:
     '''
     screen = None
     _interface = None
-    _dev_rotation = (0,0)
+    _dev_rotation = np.array([0,0], dtype='float64')
     
     def __init__(self, dim, pos, color=C.WHITE, *, rescale=True, scale_pos=True, 
                 scale_dim=True, center=False, surface=None, with_font=False, marge=False):
@@ -130,27 +131,30 @@ class Form:
         if surface is None:
             # by default: create a uni-colored surface
             self._surf['type'] = 'default'
-            self._surf['original'] = pygame.Surface(rl(self._unsc_dim), pygame.SRCALPHA)
-            self._surf['main'] = pygame.Surface(rl(self._sc_dim), pygame.SRCALPHA)
+            self._surf['original'] = pygame.Surface(self._unsc_dim.astype(int))
+            self._surf['main'] = pygame.Surface(self._sc_dim.astype(int))
             self._surf['main'].fill(self._color)
             self._surf['original'].fill(self._color)
+            self._flags = 0
        
         elif type(surface) == pygame.Surface:
             # if custom surface: keep a original surf to rescale properly
             self._surf['type'] = 'custom'
             self._surf['original'] = surface
-            self._surf['main'] = pygame.transform.scale(surface, rl(self._sc_dim))
-       
+            self._surf['main'] = pygame.transform.scale(surface, self._sc_dim.astype(int))
+            self._flags = surface.get_flags()
+
         else:
             # numpy array
             self._surf['type'] = 'custom'
             self._surf['original'] = pygame.surfarray.make_surface(surface)
-            self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
+            self._surf['main'] = pygame.transform.scale(self._surf['original'], self._sc_dim.astype(int))
+            self._flags = self._surf['main'].get_flags()
 
         # if defined set font surfs
         self._surf['font'] = None
         if with_font:
-            self._surf['font'] = pygame.Surface(rl(self._sc_dim))
+            self._surf['font'] = pygame.Surface(self._sc_dim.astype(int))
             try:
                 self._surf['font'].fill(self._color)
             except:
@@ -177,7 +181,7 @@ class Form:
         if angle == 0:
             return # potentially more efficient
     
-        new_main = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
+        new_main = pygame.transform.scale(self._surf['original'], self._sc_dim.astype(int))
 
         # get none rotated center
         x1, y1 = new_main.get_rect().center
@@ -199,19 +203,19 @@ class Form:
         self._set_pos_attr(self._sc_pos, update_original=False, compensate_rotation=True)
     
         if self._surf['font'] and rotate_font:
-            self._surf['font'] = pygame.transform.rotate(pygame.Surface(rl(self._sc_dim), pygame.SRCALPHA), angle)
+            self._surf['font'] = pygame.transform.rotate(pygame.Surface(self._sc_dim.astype(int)), angle)
             self._surf['font'].fill(self._color)
 
-    def get_mask(self, *, scale=True, with_marge=False, with_font=False):
+    def get_mask(self, *, scaled=True, with_marge=False, with_font=False):
         '''
         Return a pygame.mask.Mask object of the Form.
 
         Arguments:
-            - scale : if the created mask is scaled to the current window's dimension
+            - scaled : if the created mask is scaled to the current window's dimension
             - with_marge : if the marges are included in the mask
             - with_font : if the font is included in the mask
         '''
-        surf = self.compile(scale=scale, with_marge=with_marge, with_font=with_font, extend_dim=with_marge)
+        surf = self.compile(scaled=scaled, with_marge=with_marge, with_font=with_font, extend_dim=with_marge)
 
         return pygame.mask.from_surface(surf)
 
@@ -228,10 +232,10 @@ class Form:
             self._sc_dim = Dimension.scale(dim)
         
             if update_original:
-                self._unsc_dim = list(dim)
+                self._unsc_dim = np.array(dim, dtype='float64')
         
         else:
-            self._sc_dim = list(dim)
+            self._sc_dim = np.array(dim, dtype='float64')
         
             if update_original:
                 self._unsc_dim = Dimension.inv_scale(dim)
@@ -252,13 +256,13 @@ class Form:
         if scale:
             
             if update_original:
-                self._unsc_pos = list(pos)
+                self._unsc_pos = np.array(pos, dtype='float64')
             
             if compensate_rotation:
                 # add potential deviation -> if rotation occured
                 pos = Dimension.scale(self._unsc_pos)
                 dev = Dimension.scale(self._dev_rotation)
-                self._sc_pos = [pos[0] - dev[0], pos[1] - dev[1]]
+                self._sc_pos = pos - dev
             else:
                 self._sc_pos = Dimension.scale(pos)
             
@@ -271,9 +275,9 @@ class Form:
                 # add potential deviation -> if rotation occured
                 pos = Dimension.scale(self._unsc_pos)
                 dev = Dimension.scale(self._dev_rotation)
-                self._sc_pos = [pos[0] - dev[0], pos[1] - dev[1]]
+                self._sc_pos = pos - dev
             else:
-                self._sc_pos = list(pos)
+                self._sc_pos = np.array(pos, dtype='float64')
 
     def set_marge_width(self, width: int, *, scale=False):
         '''
@@ -332,7 +336,7 @@ class Form:
         Display the margin of the instance, given a surface and potentialy a position.
         '''
 
-        if pos == None:
+        if pos is None:
             to_set_corners = False
         else:
             self._set_corners(pos=pos)
@@ -364,9 +368,9 @@ class Form:
             surface = self.screen
 
         if pos is None:
-            pos = rl(self._sc_pos)
+            pos = self._sc_pos.astype(int)
         else:
-            pos = rl(pos)
+            pos = np.array(pos, dtype=int)
         
         # order of display : 1) font 2) main 3) marge
         if self._surf['font']:
@@ -383,15 +387,12 @@ class Form:
         if `dif_pos` is specified, it will be substract(!) to the mouse position.  
         In case of static interface, a True returning value would activate the current frame.
         '''
-        if dif_pos == None:
+        if dif_pos is None:
             dif_pos = Dimension.scale(self._dif_pos_on_it)
 
-        mouse_pos = pygame.mouse.get_pos()
-        
-        mouse_pos = (
-            mouse_pos[0] - dif_pos[0],
-            mouse_pos[1] - dif_pos[1],
-        )
+        mouse_pos = np.array(pygame.mouse.get_pos(), dtype='float64')
+        mouse_pos -= dif_pos
+
         is_on_it = False
 
         if mouse_pos[0] > self.TOPLEFT[0] and mouse_pos[0] < self.TOPRIGHT[0]:
@@ -420,36 +421,33 @@ class Form:
         '''
         Set the TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT attributes
         '''
-
-        if pos == None:
+        if pos is None:
             pos = self._sc_pos
 
-        self.TOPLEFT = rl(pos)
-        self.TOPRIGHT = rl(pos[0]+self._sc_dim[0],pos[1])
-        self.BOTTOMLEFT = rl(pos[0], pos[1]+self._sc_dim[1])
-        self.BOTTOMRIGHT = rl(pos[0]+self._sc_dim[0],pos[1]+self._sc_dim[1])
+        self.TOPLEFT = np.array( pos , dtype='int32')
+        self.TOPRIGHT = np.array( [pos[0]+self._sc_dim[0],pos[1]] , dtype='int32')
+        self.BOTTOMLEFT = np.array( [pos[0], pos[1]+self._sc_dim[1]] , dtype='int32')
+        self.BOTTOMRIGHT = np.array( [pos[0]+self._sc_dim[0],pos[1]+self._sc_dim[1]] , dtype='int32')
 
-    def get_center(self, scale=False, fp=5):
+    def get_center(self, scale=False):
         '''
         Return the position of the center of the form
 
         Arguments:
             - scale : if the center is scaled to the current window dimension
-            - fp : the floating point
         '''
-        x, y = self._surf['main'].get_rect().center
-        x, y = Dimension.inv_scale((x,y))
+        center = np.array(self._surf['main'].get_rect().center)
+        center = Dimension.inv_scale(center)
         # patch rotation deviation
-        x -= self._dev_rotation[0]
-        y -= self._dev_rotation[1]
+        center -= self._dev_rotation
+
         # add position -> get absolute position
-        x += self._unsc_pos[0]
-        y += self._unsc_pos[1]
+        center += self._unsc_pos
 
         if scale:
-            x,y = Dimension.scale((x,y), fp=fp)
-
-        return [x,y]
+            return Dimension.scale(center)
+        else:
+            return center
 
     def _rescale_surf(self):
         '''
@@ -457,13 +455,13 @@ class Form:
         '''
         
         if self._surf['type'] == 'default':
-            self._surf['main'] = pygame.Surface(rl(self._sc_dim))
+            self._surf['main'] = pygame.Surface(self._sc_dim.astype(int))
             self._surf['main'].fill(self._color)
         else:
-            self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
+            self._surf['main'] = pygame.transform.scale(self._surf['original'], self._sc_dim.astype(int))
         
         if self._surf['font']:
-            self._surf['font'] = pygame.Surface(rl(self._sc_dim))
+            self._surf['font'] = pygame.Surface(self._sc_dim.astype(int))
             self._surf['font'].fill(self._color)
 
     def set_pos(self, pos, *, center=False, scale=False):
@@ -482,11 +480,13 @@ class Form:
         if not center:
             self._set_pos_attr(pos, scale=scale, compensate_rotation=is_rotated)
             self._set_corners()
+        
         else:
             if scale:
                 pos = Dimension.scale(pos)
 
-            pos = [pos[0]-self._sc_dim[0]/2, pos[1]-self._sc_dim[1]/2]
+            pos -= self._sc_dim/2
+
             self._set_pos_attr(pos, compensate_rotation=is_rotated)
             self._set_corners()
 
@@ -538,19 +538,19 @@ class Form:
 
         return copy
 
-    def compile(self, *, scale=False, with_marge=True, with_font=True, extend_dim=False):
+    def compile(self, *, scaled=False, with_marge=True, with_font=True, extend_dim=False):
         '''
         Compile all the elements of the instance into one pygame.Surface object.  
         Return a pygame.Surface object.  
 
         Arguments:
-            - scale : if created surface is scaled to the current window's dimension
+            - scaled : if created surface is scaled to the current window's dimension
             - with_marge : if the marges are added to the surface
             - with_font : when the instance has a font (custom surface), if True: add the font to the surface
             - extend_dim : if True & with_marge=True, adapt the surface's dimension to fit in the entire marges
         '''
         # adapt every value / surface according to scale parameter
-        if scale:
+        if scaled:
             dim_attr = self._sc_dim
             marge_width = self._rs_marge_width
             surf_main = self._surf['main']
@@ -565,19 +565,19 @@ class Form:
 
             if with_font:
                 # create font surf
-                surf_font = pygame.Surface(rl(self._unsc_dim))
+                surf_font = pygame.Surface(self._unsc_dim.astype(int))
                 surf_font.fill(self._color)
 
         # create the base - a transparent surface
         if with_marge and extend_dim:
             # take the marge width into account to create the base surface
-            dim = (dim_attr[0] + marge_width, dim_attr[1] + marge_width)
+            dim = dim_attr + marge_width
             dif_pos = marge_width//2 # put all the elements according to the extended surface
         else:
             dim = dim_attr
             dif_pos = 0
-        
-        surface = pygame.Surface(dim, pygame.SRCALPHA)
+
+        surface = pygame.Surface(dim, self._flags)
 
         if self._surf['font'] != None and with_font:
             surface.blit(surf_font, (dif_pos, dif_pos))

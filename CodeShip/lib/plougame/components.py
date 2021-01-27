@@ -1,7 +1,8 @@
 import pygame
+import numpy as np
 import functools
 from .form import Form
-from .helper import Delayer, center_text, get_pressed_key, rl, get_dark_color, get_light_color
+from .helper import Delayer, center_text, get_pressed_key, get_dark_color, get_light_color
 from .auxiliary import Dimension, Font, C
 from .spec import Specifications as Spec
 from typing import List, Dict, Tuple, Union
@@ -141,7 +142,7 @@ class Button(Form):
                 if self._surf['font']: # check if has a font
                     self._surf['font'].fill(self._color)
                 else:
-                    self._surf['main'] = pygame.transform.scale(self._surf['original'], rl(self._sc_dim))
+                    self._surf['main'] = pygame.transform.scale(self._surf['original'], self._sc_dim.astype(int))
             else:
                 self._surf['main'].fill(self._color)
 
@@ -154,7 +155,7 @@ class Button(Form):
         if surface == None:
             surface = self.screen
 
-        if pos == None:
+        if pos is None:
             pos = self._sc_pos
 
         if text == None:
@@ -173,7 +174,7 @@ class Button(Form):
         font_text = self.font['font'].render(text, True, self.text_color)
         
         # display font
-        pos = rl(pos[0] + x_marge, pos[1] + y_marge)
+        pos = np.array([pos[0] + x_marge, pos[1] + y_marge], dtype=int)
 
         surface.blit(font_text, pos)
 
@@ -250,11 +251,12 @@ class TextBox(Form):
         super().__init__(dim, pos, color, scale_dim=scale_dim, scale_pos=scale_pos, marge=marge)
         
         self._centered = centered
-        self.font = font
+        self._font = font
         self._as_marge = marge
         self._is_dynamic = dynamic_dim
         self._continuous_text = continuous_text
-        
+        self._rendered_text = None
+
         self._text_color = text_color
         self._is_multiples_colors = False
         self._text_colors = []
@@ -325,6 +327,11 @@ class TextBox(Form):
             self._text = text
             self._lines = text.split('\n')
 
+        # set rendered text cache : TODO
+        self._rendered_text = []
+        for line in self._lines:
+            self._rendered_text.append( None )
+
         if self._is_dynamic:
             self._set_dim_as_to_text()
 
@@ -340,7 +347,7 @@ class TextBox(Form):
         Set the dim of the instance according to the text.
         '''
         biggest_line = ' ' + max(self._lines, key=len) + ' '
-        width, height = self.font['font'].size(biggest_line)
+        width, height = self._font['font'].size(biggest_line)
 
         dim = [
             width + self._rs_marge_text,
@@ -373,18 +380,18 @@ class TextBox(Form):
             # split the box in n part for n lines
             y_line = round(self._sc_dim[1]/len(self._lines))
         else:
-            width, height = self.font['font'].size(self._lines[0])
+            width, height = self._font['font'].size(self._lines[0])
             y_line = height + self._rs_marge_text
 
         for i, line in enumerate(self._lines):
-            x_marge, y_marge = center_text((self._sc_dim[0], y_line), self.font['font'], line)
+            x_marge, y_marge = center_text((self._sc_dim[0], y_line), self._font['font'], line)
         
             if not self._centered:
                 x_marge = self._rs_marge_text
         
-            font_text = self.font['font'].render(line, True, colors[i])
+            font_text = self._font['font'].render(line, True, colors[i])
         
-            surface.blit(font_text, rl(pos[0] + x_marge, pos[1] + i * y_line + y_marge))
+            surface.blit(font_text, np.array([pos[0] + x_marge, pos[1] + i * y_line + y_marge], dtype=int))
 
     def display(self, surface=None, pos=None):
         '''
@@ -642,8 +649,8 @@ class InputText(Button):
         y_top = self.TOPLEFT[1] + y_marge
         y_bottom = self.BOTTOMLEFT[1] - y_marge
 
-        top_pos = rl(x, y_top)
-        bottom_pos = rl(x, y_bottom)
+        top_pos = np.array([x, y_top], dtype=int)
+        bottom_pos = np.array([x, y_bottom], dtype=int)
         
         if self.is_cursor_displayed:
             pygame.draw.line(surface, C.BLACK, top_pos, bottom_pos, self.CURSOR_WIDTH)
