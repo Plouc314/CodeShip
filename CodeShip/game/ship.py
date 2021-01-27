@@ -299,6 +299,8 @@ class Ship:
             # add block to surface
             surface.blit(block_surf, pos)
 
+        surface = surface.convert()
+
         # create Form object with created surface
         self.form = Form(dim_surf, self.pos, surface=surface)
 

@@ -28,6 +28,7 @@
         "lib/plougame/auxiliary.py",
         "lib/plougame/components.py",
         "lib/plougame/form.py",
+        "lib/plougame/formatter.py",
         "lib/plougame/helper.py",
         "lib/plougame/interface.py",
         "lib/plougame/page.py",

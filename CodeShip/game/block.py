@@ -1,4 +1,4 @@
-import pygame
+import pygame, os
 import numpy as np
 from lib.plougame import Form, C
 from lib.plougame.helper import Delayer
@@ -8,18 +8,18 @@ from data.spec import Spec
 
 
 # load imgs
-folder = "game/imgs/"
+folder =  os.path.join("game", "imgs")
 
-img_shield = pygame.image.load(folder + 'shield.png').convert_alpha()
+img_shield = pygame.image.load(os.path.join(folder ,'shield.png')).convert_alpha()
 img_shield = pygame.transform.scale(img_shield, Spec.DIM_ITEM)
 
-img_generator = pygame.image.load(folder + 'generator.png').convert_alpha()
+img_generator = pygame.image.load(os.path.join(folder ,'generator.png')).convert_alpha()
 img_generator = pygame.transform.scale(img_generator, Spec.DIM_ITEM)
 
-img_engine = pygame.image.load(folder + 'engine.png').convert_alpha()
+img_engine = pygame.image.load(os.path.join(folder ,'engine.png')).convert_alpha()
 img_engine = pygame.transform.scale(img_engine, Spec.DIM_ITEM)
 
-img_turret = pygame.image.load(folder + 'turret.png').convert_alpha()
+img_turret = pygame.image.load(os.path.join(folder ,'turret.png')).convert_alpha()
 img_turret = pygame.transform.rotate(img_turret, 270)
 img_turret = pygame.transform.scale(img_turret, Spec.DIM_TURRET)
 

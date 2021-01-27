@@ -24,6 +24,11 @@ else:
     else:
         raise ValueError("Unknown address.")
 
+show_stats = False
+
+if '-s' in sys.argv:
+    show_stats = True
+
 client = UIClient((ip, Spec.PORT))
 game = Game(client)
 app = App(client, game)
@@ -42,7 +47,8 @@ while Interface.running:
     else:
         game.run(pressed, events)
 
-Counter.print_result()
+if show_stats:
+    Counter.print_result()
 
 client.disconnect()
 game.game_client.stop()

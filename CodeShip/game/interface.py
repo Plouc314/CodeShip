@@ -45,7 +45,7 @@ titles = ['HP', 'Shield', 'Engine', 'Speed', 'Orientation', 'Script errors']
 
 ### components ###
 
-text_time = TextBox(Spec.DIM_MEDIUM_TEXT, POS_TIME, marge=True, color=C.XLIGHT_GREY)
+text_time = TextBox(Spec.DIM_MEDIUM_TEXT, POS_TIME, marge=True, color=C.XLIGHT_GREY, font=Font.f(40))
 
 cadre_1 = Cadre(DIM_CADRE, POS_CADRE1)
 cadre_2 = Cadre(DIM_CADRE, POS_CADRE2)
