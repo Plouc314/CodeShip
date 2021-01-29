@@ -3,6 +3,7 @@ from lib.plougame import Interface, C
 
 # first setup the interface -> to create Form objects
 Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=True)
+    #flags=pygame.HWSURFACE|pygame.DOUBLEBUF)
 
 from game.game import Game
 from ui.app import App
@@ -12,17 +13,14 @@ from lib.counter import Counter
 import sys
 
 # get addr
-if len(sys.argv) == 1:
+if '-a1' in sys.argv:
     ip = Spec.IP_HOST1
+elif '-a2' in sys.argv:
+    ip = Spec.IP_HOST2
+elif '-a2' in sys.argv:
+    ip = Spec.IP_HOST3
 else:
-    if sys.argv[1] == '-a1':
-        ip = Spec.IP_HOST1
-    elif sys.argv[1] == '-a2':
-        ip = Spec.IP_HOST2
-    elif sys.argv[1] == '-a3':
-        ip = Spec.IP_HOST3
-    else:
-        raise ValueError("Unknown address.")
+    ip = Spec.IP_PUBLIC
 
 show_stats = False
 

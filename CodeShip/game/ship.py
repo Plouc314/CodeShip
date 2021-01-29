@@ -1,5 +1,4 @@
 import pygame
-import numba
 import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
