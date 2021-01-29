@@ -1,10 +1,13 @@
 import pandas as pd
 import numpy as np
+from spec import Spec
 
 class DataBase:
 
     df = None
     filepath = 'db/data/data.csv'
+
+    grid_shape = Spec.SHIP_GRID_SHAPE
 
     @classmethod
     def load(cls):
@@ -38,8 +41,6 @@ class DataBase:
             arr = np.load(f"db/data/ships/{user}.npy")
 
             cls.ships[user] = arr
-
-        cls.grid_shape = cls.ships[cls.df.index[0]].shape
 
     @classmethod
     def load_scripts(cls):
