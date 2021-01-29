@@ -92,7 +92,7 @@ class Button(Form):
         self._highlighted = highlight
         self._centered = centered
         self._has_marge = has_marge
-        self.font = font
+        self._font = font
         self._logic = None
 
     def pushed(self, events):
@@ -165,13 +165,13 @@ class Button(Form):
             return
         
         # get marges
-        x_marge, y_marge = center_text(self._sc_dim, self.font['font'], text)
+        x_marge, y_marge = center_text(self._sc_dim, self._font['font'], text)
         
         if not self._centered:
             x_marge = self._rs_marge_text
         
         # create font
-        font_text = self.font['font'].render(text, True, self.text_color)
+        font_text = self._font['font'].render(text, True, self.text_color)
         
         # display font
         pos = np.array([pos[0] + x_marge, pos[1] + y_marge], dtype=int)
@@ -523,7 +523,7 @@ class InputText(Button):
 
         # check that the text fit in dim
         try:
-            center_text(self._sc_dim, self.font['font'], self._text,  ignore_exception=False)
+            center_text(self._sc_dim, self._font['font'], self._text,  ignore_exception=False)
         except ValueError:
             self._text = self._text[:-1]
             self.cursor_place -= 1
@@ -637,10 +637,10 @@ class InputText(Button):
             self._set_corners(pos=pos)
 
         # get text dim until cursor position
-        width, height = self.font['font'].size(self._text[:self.cursor_place])
+        width, height = self._font['font'].size(self._text[:self.cursor_place])
         
         # get marges
-        x_marge, y_marge = center_text(self._sc_dim, self.font['font'], self._text[:self.cursor_place])
+        x_marge, y_marge = center_text(self._sc_dim, self._font['font'], self._text[:self.cursor_place])
         if not self._centered:
             x_marge = self._rs_marge_text
 

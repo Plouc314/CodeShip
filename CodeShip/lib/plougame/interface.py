@@ -224,9 +224,9 @@ class Interface:
             gui_obj._rs_marge_text = Dimension.E(gui_obj.MARGE_TEXT)
 
             # rezise existing fonts
-            if hasattr(gui_obj, 'font'):
-                fontsize = gui_obj.font['size']
-                gui_obj.font = Font.f(fontsize)
+            if hasattr(gui_obj, '_font'):
+                fontsize = gui_obj._font['size']
+                gui_obj._font = Font.f(fontsize)
 
         for idx in to_remove[::-1]:
             cls._gui_objects.pop(idx)

@@ -127,14 +127,22 @@ class C:
 
 class Font:
     '''
-    Create pygame fonts,  
-    use `f` method
+    Static object  
+    Create pygame fonts  
+    Use `f` method to generate a font.  
+    The `fontname` attribute can be modified, it is the default fontname.
     '''
     fontname = 'Arial'
     @classmethod
-    def f(cls, size):
+    def f(cls, size, fontname: str=None):
         '''
         Create a font of the given size,  
+        if `fontname` is specified, generate the specified font,
+        else use the default font (`fontname` attribute).  
         In the format: `{'size':size,'font':pygame.font}`
         '''
+        if fontname is None:
+            fontname = cls.fontname
+
         return {'size':size , 'font':pygame.font.SysFont(cls.fontname, Dimension.E(size))}
+
