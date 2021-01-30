@@ -19,10 +19,6 @@ class Spec:
     IP_HOST1 = '127.0.0.1'
     IP_HOST2 = '192.168.1.149'
     IP_HOST3 = '127.0.0.2'
-    
-    SEP_MAIN = '|'
-    SEP_CONTENT = ','
-    SEP_CONTENT2 = '*'
 
     ### game ###
 

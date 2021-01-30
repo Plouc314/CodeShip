@@ -51,7 +51,7 @@ class DataBase:
             with open(f"db/data/scripts/{user}.txt", 'r') as file:
                 script = file.read()
             
-            cls.scripts[user] = script
+            cls.scripts[user] = script.split('\n')
 
     @classmethod
     def store(cls):
@@ -79,7 +79,7 @@ class DataBase:
     def store_scripts(cls):
         for user, script in cls.scripts.items():
             with open(f"db/data/scripts/{user}.txt", 'w') as file:
-                file.write(script)
+                file.write('\n'.join(script))
 
     @classmethod
     def get_ship(cls, username):

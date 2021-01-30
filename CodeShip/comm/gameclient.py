@@ -6,8 +6,6 @@ from data.spec import Spec
 import numpy as np
 from lib.counter import Counter
 
-sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
-
 class GameData:
     def __init__(self, player):
 

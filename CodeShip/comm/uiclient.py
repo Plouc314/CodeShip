@@ -1,10 +1,8 @@
 import threading, pickle
-from lib.tcp import ClientTCP, Message
+from lib.tcp import ClientTCP, Message, ErrorTCP
 from lib.console import Console
 from data.spec import Spec
 import numpy as np
-
-sep_m, sep_c, sep_c2 = Spec.SEP_MAIN, Spec.SEP_CONTENT, Spec.SEP_CONTENT2
 
 class UIClient(ClientTCP):
 
@@ -12,6 +10,8 @@ class UIClient(ClientTCP):
 
         super().__init__(addr, connect=connect)
         self.username = None
+
+        self._script_cache = []
 
         # store the identifiers of the comm as key
         # the values are the msg send by the server
@@ -57,7 +57,20 @@ class UIClient(ClientTCP):
         Split the identifier and content of the message.  
         Store the content in the designated container.
         '''
-        msg = pickle.loads(msg)
+        try:
+            msg = pickle.loads(msg)
+        except:
+            ErrorTCP.call("Unpickling failed.")
+            return
+
+        # look for script line
+        if msg.identifier == 'scl':
+            self._script_cache.append(msg.content)
+            return
+
+        elif msg.identifier == 'sc':
+            msg.content = '\n'.join(self._script_cache)
+            self._script_cache = []
 
         container = self.in_data[msg.identifier]
 
@@ -94,6 +107,13 @@ class UIClient(ClientTCP):
             content = str(msg.content)
 
         Console.print('[TCP] {' + msg.identifier + '} ' + content)
+
+    def _send_script(self, script: str):
+        '''
+        Send the script by little chunk to the client
+        '''
+        for line in script.split('\n'):
+            self.send(Message('scl', line), pickling=True)
 
     def connect_udp(self, port):
         '''
@@ -182,7 +202,8 @@ class UIClient(ClientTCP):
         else:
             identifier = 'sc'
 
-        self.send(Message(identifier, script), pickling=True)
+        self._send_script(script)
+        self.send(Message(identifier, None), pickling=True)
 
     def send_script_status(self, status):
         '''

@@ -1,5 +1,6 @@
 import socket, pickle
 from time import sleep
+from lib.console import Console
 
 class ErrorTCP:
     '''
@@ -18,7 +19,7 @@ class ErrorTCP:
         else:
             call_type = "ERROR"
         
-        print(f"[TCP] [{call_type}] {traceback}")
+        Console.print(f"[TCP] [{call_type}] {traceback}")
 
 
 class Spec:

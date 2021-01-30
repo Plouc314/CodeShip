@@ -19,6 +19,9 @@ class Client(ClientTCP):
         # unique tag to identify the game in Interaction
         self.game_tag = None
 
+        # store the script lines temporarely
+        self._script_cache = []
+
         # store the identifiers of the comm as key
         # the values are the methods called for each of the identifier
         self.identifiers = {
@@ -33,6 +36,7 @@ class Client(ClientTCP):
             'dg': self.demand_game,
             'rdg': self.response_demand_game,
             'shcf': self.ship_config,
+            'scl': self.on_script_line,
             'sc': self.save_script,
             'scst': self.set_script_status,
             'sca': self.script_analysis,
@@ -109,8 +113,9 @@ class Client(ClientTCP):
         self._send_ship()
 
         # script
-        script = DataBase.get_script(self.username) 
-        self.send(Message('sc', script), pickling=True)
+        script = DataBase.get_script(self.username)
+        self._send_script(script)
+        self.send(Message('sc', None), pickling=True)
 
         # script status
         script_status = DataBase.get_script_status(self.username)
@@ -153,6 +158,13 @@ class Client(ClientTCP):
         # ship status
         self.send(Message('shst', DataBase.get_ship_status(self.username)), pickling=True)
 
+    def _send_script(self, script: list):
+        '''
+        Send the script by little chunk to the client
+        '''
+        for line in script:
+            self.send(Message('scl', line), pickling=True)
+
     def send_enter_game(self, opp_client, team):
         '''
         Send to client that he's entering in a game.  
@@ -160,7 +172,8 @@ class Client(ClientTCP):
         '''
         # send script
         script = DataBase.get_script(self.username)
-        self.send(Message('sc', script), pickling=True)
+        self._send_script(script)
+        self.send(Message('sc', None), pickling=True)
 
         # send opp ship grid
         arr = DataBase.get_ship(opp_client.username)
@@ -355,18 +368,24 @@ class Client(ClientTCP):
 
         self.send(Message('shst', 1), pickling=True)
 
-    def save_script(self, script):
+    def save_script(self, status):
         '''
         Store the script
         '''
+        script = self._script_cache
         DataBase.set_script(self.username, script)
 
-    def script_analysis(self, content):
+        # empty cache
+        self._script_cache = []
+
+    def script_analysis(self, status):
         '''
         Analyse the script, look for cheating attempts.  
         Send response to user.
         '''
-        script = content
+        script = '\n'.join(self._script_cache)
+        self._script_cache = []
+        
         fine = True        
 
         script = script.replace('  ', ' ')
@@ -430,6 +449,12 @@ class Client(ClientTCP):
         Set if the user is waiting to enter a game.
         '''
         Interaction.set_user_waiting_game(self.username, content)
+
+    def on_script_line(self, line):
+        '''
+        Store the line in the script cache
+        '''
+        self._script_cache.append(line)
 
     def display_msg(self, msg: Message):
         '''

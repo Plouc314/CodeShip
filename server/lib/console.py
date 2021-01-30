@@ -28,8 +28,9 @@ class Console:
         string = string.replace('[ERROR]', cls.colored('[ERROR]', 'red'))
         string = string.replace('[WARNING]', cls.colored('[WARNING]', 'red'))
         
-        ip = re.findall('\|[a-zA-Z0-9\.]+\|', string)[0]
-        string = string.replace(ip, cls.colored(ip, 'green'))
+        ips = re.findall('\|[a-zA-Z0-9\.]+\|', string)
+        if len(ips) > 0:
+            string = string.replace(ips[0], cls.colored(ips[0], 'green'))
 
         ids = re.findall('\{[a-z]+\}', string)
 
