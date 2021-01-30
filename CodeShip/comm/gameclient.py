@@ -1,5 +1,6 @@
 import threading, pickle
 from lib.udp import ClientUDP, ErrorUDP
+from lib.console import Console
 from game.bulletsystem import BulletSystem, Bullet
 from data.spec import Spec
 import numpy as np
@@ -61,7 +62,7 @@ class GameClient(ClientUDP):
         self.running = True
         self._thread = threading.Thread(target=self.run)
         self._thread.start()
-        print("[UDP] Started client's thread.")
+        Console.print("[UDP] Started client's thread.")
 
     def reset_values(self):
         '''

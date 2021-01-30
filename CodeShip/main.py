@@ -17,7 +17,7 @@ if '-a1' in sys.argv:
     ip = Spec.IP_HOST1
 elif '-a2' in sys.argv:
     ip = Spec.IP_HOST2
-elif '-a2' in sys.argv:
+elif '-a3' in sys.argv:
     ip = Spec.IP_HOST3
 else:
     ip = Spec.IP_PUBLIC

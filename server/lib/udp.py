@@ -1,4 +1,5 @@
 import socket, threading
+from lib.console import Console
 from time import time, sleep
 from spec import Spec
 
@@ -12,7 +13,7 @@ class ErrorServer:
         else:
             call_type = '[ERROR]'
         
-        print('[UDP]', call_type, traceback)
+        Console.print('[UDP]', call_type, traceback)
 
 class Spec:
     BUFSIZE = 4096

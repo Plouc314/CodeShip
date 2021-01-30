@@ -34,6 +34,7 @@
         "lib/plougame/page.py",
         "lib/plougame/spec.py",
         "data/spec.py",
+        "lib/console.py",
         "lib/tcp.py",
         "lib/udp.py",
         "main.py",

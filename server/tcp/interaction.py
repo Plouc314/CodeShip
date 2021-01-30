@@ -1,10 +1,7 @@
 import numpy as np
+from lib.tcp import Message
 from db.db import DataBase
 from spec import Spec
-
-sep_m = Spec.SEP_MAIN
-sep_c = Spec.SEP_CONTENT
-sep_c2 = Spec.SEP_CONTENT2
 
 class Interaction:
     '''
@@ -24,11 +21,11 @@ class Interaction:
 
 
     @classmethod
-    def send(cls, username, msg):
+    def send(cls, username, msg: Message):
         '''
         Send a message to one of the connected users
         '''
-        cls.clients[username].send(msg)
+        cls.clients[username].send(msg, pickling=True)
 
     @classmethod
     def remove(cls, username):
@@ -108,7 +105,7 @@ class Interaction:
 
         for friend in friends:
             if cls.is_user(friend):
-                cls.send(friend, f'frs{sep_m}{username}{sep_c2}{int(state)}')
+                cls.send(friend, Message('frs', [[username, state]]))
 
     @classmethod
     def send_general_chat_msg(cls, username, msg):
@@ -122,8 +119,7 @@ class Interaction:
                 continue
         
             # send message
-            msg = f'gc{sep_m}{username}{sep_c}{msg}'
-            client.send(msg)
+            client.send(Message('gc', [username, msg]), pickling=True)
 
     @classmethod
     def send_private_chat_msg(cls, sender, target, msg):
@@ -132,23 +128,21 @@ class Interaction:
         else abort msg.
         '''
         if cls.is_user(target):
-    
-            msg = f'pc{sep_m}{sender}{sep_c}{msg}'
-            cls.clients[target].send(msg)
+            cls.clients[target].send(Message('pc', [sender, msg]), pickling=True)
 
     @classmethod
     def send_demand_friend(cls, target, sender):
         '''
         Send the friend demand to the requested user.
         '''
-        cls.clients[target].send(f'dfr{sep_m}{sender}')
+        cls.clients[target].send(Message('dfr', sender), pickling=True)
 
     @classmethod
     def send_demand_game(cls, target, sender):
         '''
         Send the game demand to the requested user.
         '''
-        cls.clients[target].send(f'dg{sep_m}{sender}')
+        cls.clients[target].send(Message('dg', sender), pickling=True)
 
     @classmethod
     def set_user_waiting_game(cls, username, state):

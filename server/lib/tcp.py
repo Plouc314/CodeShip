@@ -1,4 +1,5 @@
-import socket, threading
+import socket, threading, pickle
+from lib.console import Console
 from time import time, sleep
 
 class ErrorServer:
@@ -12,17 +13,21 @@ class ErrorServer:
             call_type = "[ERROR]"
 
         if id == None:
-            print("[TCP]", call_type, traceback)
+            Console.print("[TCP]", call_type, traceback)
         else:
-            print(f"[TCP] {call_type} |{id}| {traceback}")
-        
+            Console.print(f"[TCP] |{id}| {call_type} {traceback}")
+
 
 class Spec:
     HEADER = 64
     FORMAT = 'utf-8'
-    CONNECT_MSG = "!CONNECT"
-    DISCONNECT_MSG = "!DISCONNECT"
+    CONNECT_MSG = b"!CONNECT"
+    DISCONNECT_MSG = b"!DISCONNECT"
 
+class Message:
+    def __init__(self, identifier, content):
+        self.identifier = identifier
+        self.content = content
 
 class ServerTCP:
     '''
@@ -76,7 +81,7 @@ class ServerTCP:
 
             conn, addr = self._socket.accept()
 
-            print(f'[TCP] |{addr[0]}| Connected.')
+            Console.print(f'[TCP] |{addr[0]}| Connected.')
 
             self.on_connection(conn, addr)
 
@@ -172,7 +177,6 @@ class ClientTCP:
         Wait until receiving a message on own connection.  
         Message with header, in case of error: abort operation.
         '''
-        
         try:
             msg_length = self.conn.recv(Spec.HEADER).decode(Spec.FORMAT)
         except:
@@ -188,19 +192,23 @@ class ClientTCP:
                 ErrorServer.call("Connection closed.", self.call_id, warning=True)
             return
 
-        try:
-            msg_length = int(msg_length)
-            msg = self.conn.recv(msg_length).decode(Spec.FORMAT)
-            return msg
-        except:
-            ErrorServer.call("Failure receiving message.", self.call_id)
+        #try:
+        msg_length = int(msg_length)
+        msg = self.conn.recv(msg_length)
+        return msg
+        #except:
+        #    ErrorServer.call("Failure receiving message.", self.call_id)
         
-    def send(self, msg):
+    def send(self, msg, pickling=False):
         '''
         Send the given message to the client.  
+        If pickling=True, pickle the message.  
         In case of error: abort operation.  
         '''
-        message = msg.encode(Spec.FORMAT)
+        if pickling:
+            message = pickle.dumps(msg)
+        else:
+            message = msg.encode(Spec.FORMAT)
         
         length = len(message)
         msg_length = str(length).encode(Spec.FORMAT)

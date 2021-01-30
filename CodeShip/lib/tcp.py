@@ -1,4 +1,4 @@
-import socket
+import socket, pickle
 from time import sleep
 
 class ErrorTCP:
@@ -24,9 +24,13 @@ class ErrorTCP:
 class Spec:
     HEADER = 64
     FORMAT = 'utf-8'
-    CONNECT_MSG = "!CONNECT"
-    DISCONNECT_MSG = "!DISCONNECT"
+    CONNECT_MSG = b"!CONNECT"
+    DISCONNECT_MSG = b"!DISCONNECT"
 
+class Message:
+    def __init__(self, identifier, content):
+        self.identifier = identifier
+        self.content = content
 
 class ClientTCP:
     '''
@@ -83,7 +87,7 @@ class ClientTCP:
 
         while self.connected:
 
-            msg = self.receive()
+            msg = self.receive(decode=False)
 
             if msg != None:
                 self.on_message(msg)
@@ -93,7 +97,7 @@ class ClientTCP:
         Send disconnection message to the server.     
         '''
         if self.connected:
-            self.send(Spec.DISCONNECT_MSG)
+            self.send(Spec.DISCONNECT_MSG.decode())
             self.connected = False
 
     @staticmethod
@@ -105,31 +109,32 @@ class ClientTCP:
         '''
         raise NotImplementedError("on_message method must be implemented.")
 
-    def send(self, msg):
+    def send(self, msg, pickling=False):
         '''
         Send the given message to the client.  
+        If pickling=True, pickle the message.  
         In case of error: abort operation.  
         '''
+        if pickling:
+            message = pickle.dumps(msg)
+        else:
+            message = msg.encode(Spec.FORMAT)
+        
         # send header
-        length = len(msg)
-
-        msg = msg.encode(Spec.FORMAT)
-
+        length = len(message)
         msg_length = str(length).encode(Spec.FORMAT)
         msg_length += b' ' * (Spec.HEADER - len(msg_length))
         
         try:
             self._socket.send(msg_length)
-
-            sleep(.1)
-
-            self._socket.send(msg)
+            self._socket.send(message)
         except:
-            ErrorTCP.call("Failure sending message: " + msg.decode(Spec.FORMAT))
-    
-    def receive(self):
+            ErrorTCP.call("Failure sending message: " + msg)
+
+    def receive(self, decode=True):
         '''
         Wait until receiving a message on own connection.  
+        If decode=True, decode the received msg (`decode` string method).  
         Message with header, in case of error: abort operation.
         '''
         msg_length = self._socket.recv(Spec.HEADER).decode(Spec.FORMAT)
@@ -139,7 +144,12 @@ class ClientTCP:
 
         try:
             msg_length = int(msg_length)
-            msg = self._socket.recv(msg_length).decode(Spec.FORMAT)
-            return msg
+            msg = self._socket.recv(msg_length)
         except:
             ErrorTCP.call("Failure receiving message.")
+            return
+        
+        if decode:
+            return msg.decode(Spec.FORMAT)
+        else:
+            return msg

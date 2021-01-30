@@ -1,12 +1,10 @@
 import numpy as np
-from lib.tcp import ClientTCP
+import pickle
+from lib.tcp import ClientTCP, Message
+from lib.console import Console
 from tcp.interaction import Interaction
 from db.db import DataBase
 from spec import Spec
-
-sep_m = Spec.SEP_MAIN
-sep_c = Spec.SEP_CONTENT
-sep_c2 = Spec.SEP_CONTENT2
 
 class Client(ClientTCP):
 
@@ -65,7 +63,7 @@ class Client(ClientTCP):
         '''
         Set udp client in udp socket
         '''
-        address = (self.ip, int(content))
+        address = (self.ip, content)
         Interaction.connect_udp(address)
 
     def on_message(self, msg):
@@ -74,19 +72,18 @@ class Client(ClientTCP):
         Call the method linked to the identifier.
         '''
         try:
-            identifier, content = msg.split(sep_m)
+            msg = pickle.loads(msg)
         except:
-            self.print("Error occured in splitting opperation.", warning=True)
+            self.print("Error occured in unpickling opperation.", warning=True)
+            return
 
         try:
-            self.identifiers[identifier](content)
+            self.identifiers[msg.identifier](msg.content)
         except:
-            self.print(f"Error occured in identifier attribution: {identifier}", warning=True)
+            self.print(f"Error occured in identifier attribution: {msg.identifier}", warning=True)
 
-        if identifier in ["sc","sca"]:
-            return
-            
-        self.print(msg)
+        # display message
+        self.display_msg(msg)
 
     def _log_client(self, username):
         '''
@@ -112,12 +109,12 @@ class Client(ClientTCP):
         self._send_ship()
 
         # script
-        script = DataBase.get_script(self.username)
-        self.send(f'sc{sep_m}{script}')
+        script = DataBase.get_script(self.username) 
+        self.send(Message('sc', script), pickling=True)
 
         # script status
         script_status = DataBase.get_script_status(self.username)
-        self.send(f'scst{sep_m}{script_status}')
+        self.send(Message('scst', script_status), pickling=True)
 
         # friend demands
         dfrs = DataBase.get_friend_demands(self.username)
@@ -131,125 +128,91 @@ class Client(ClientTCP):
 
     def _send_connected_friends(self):
         '''Send the status of each friend of client'''
-        # friends
-        msg = f'frs{sep_m}'
+        friends = []
 
         # get friends
-        friends = DataBase.get_friends(self.username)
+        username_friends = DataBase.get_friends(self.username)
 
-        for friend in friends:
+        for username in username_friends:
 
-            # look if friend is connected
-            if Interaction.is_user(friend):
-                is_connected = 1
-            else:
-                is_connected = 0
+            friends.append([
+                username,
+                Interaction.is_user(username)
+            ])
 
-            msg += f'{friend}{sep_c2}{is_connected}'
-
-            # add separation
-            if not friend == friends[-1]:
-                msg += sep_c
-
-        # doesn't send message if user doesn't have friends
-        if len(friends) != 0:
-            self.send(msg)
-
-    def format_ship_grid(self, username=None):
-        '''
-        Return the ship grid formated as a string,  
-        if not username is given, send client's ship,  
-        separated by `SEP_CONTENT2`.
-        '''
-        if username == None:
-            username = self.username
-
-        arr = DataBase.get_ship(username)
-        string = ''
-
-        for x in range(arr.shape[0]):
-            for y in range(arr.shape[1]):
-                string += f'{arr[x,y]}{sep_c2}'
-
-        # remove last sep
-        string = string[:-1]
-
-        return string
+        self.send(Message('frs', friends), pickling=True)
 
     def _send_ship(self):
         '''
         Send the ship grid and ship status
         '''
-
         # ship grid
-        msg = f'sh{sep_m}'
-        msg += self.format_ship_grid()
-
-        self.send(msg)
+        arr = DataBase.get_ship(self.username)
+        self.send(Message('sh', arr), pickling=True)
 
         # ship status
-        status = DataBase.get_ship_status(self.username)
-        self.send(f'shst{sep_m}{status}')
+        self.send(Message('shst', DataBase.get_ship_status(self.username)), pickling=True)
 
-    def send_enter_game(self, opp_client, pos_id):
+    def send_enter_game(self, opp_client, team):
         '''
         Send to client that he's entering in a game.  
-        pos_id specify the starting position of the ship.
+        team specify the starting position of the ship.
         '''
         # send script
         script = DataBase.get_script(self.username)
-        self.send(f'sc{sep_m}{script}')
+        self.send(Message('sc', script), pickling=True)
 
         # send opp ship grid
-        self.send(f'igsh{sep_m}{opp_client.format_ship_grid()}')
+        arr = DataBase.get_ship(opp_client.username)
+        self.send(Message('igsh', arr), pickling=True)
 
         # send own ship grid
-        self.send(f'sh{sep_m}{self.format_ship_grid()}')
+        arr = DataBase.get_ship(self.username)
+        self.send(Message('sh', arr), pickling=True)
 
         # notify in game | opponent username, the position id of the ship
-        self.send(f'ign{sep_m}{opp_client.username}{sep_c}{int(pos_id)}')
+        self.send(Message('ign', [opp_client.username, team]), pickling=True)
 
     def login(self, content):
         '''
         Log the user in.  
         Content: username, password
         '''
-        username, password = content.split(sep_c)
+        username, password = content
 
         # check that the username exists and that the password is correct
         if DataBase.is_user(username):
 
             if Interaction.is_user(username):
                 # can't log in -> already connected
-                self.send(f'rlg{sep_m}0')
+                self.send(Message('rlg',False), pickling=True)
                 return
 
             if DataBase.get_password(username) == password:
                 # log in
-                self.send(f'rlg{sep_m}1')
-
+                self.send(Message('rlg',True), pickling=True)
                 self._log_client(username)
                 return
         
         # can't log in
-        self.send(f'rlg{sep_m}0')
+        self.send(Message('rlg',False), pickling=True)
     
     def sign_up(self, content):
         '''
         Create a new account.  
         Content: username, password
         '''
-        username, password = content.split(sep_c)
+        username, password = content
 
         # try to add the new user
         if DataBase.add_user(username, password):
             # sign up
-            self.send(f'rsg{sep_m}1')
+            self.send(Message('rsg',True), pickling=True)
         
             self._log_client(username)
         else:
             # can't sign up
-            self.send(f'rsg{sep_m}0')
+            self.send(Message('rsg',False), pickling=True)
     
     def general_chat(self, content):
         '''
@@ -263,7 +226,7 @@ class Client(ClientTCP):
         Send a message to the other user
         Content: username, msg
         '''
-        target, msg = content.split(sep_c)
+        target, msg = content
 
         Interaction.send_private_chat_msg(self.username, target, msg)        
 
@@ -276,23 +239,20 @@ class Client(ClientTCP):
         loss = DataBase.get_loss(username)
         ship = DataBase.get_ship(username)
         friends = DataBase.get_friends(username)
+        grid = DataBase.get_ship(username)
 
-        # add stats
-        msg = f'rpd{sep_m}{username}{sep_c}{wins}{sep_c}{loss}{sep_c}'
-        
-        # add friends
-        for friend in friends:
-            if friend != self.username:
-                msg += friend + sep_c2
-        
-        if msg[-1] == sep_c2:
-            msg = msg[:-1]
-        msg += sep_c
+        if self.username in friends:
+            friends.remove(self.username)
 
-        # add ship's grid
-        msg += self.format_ship_grid(username=username)
+        msg = Message('rpd',{
+            'username': username,
+            'wins': wins,
+            'loss': loss,
+            'friends': friends,
+            'grid': grid
+        })
 
-        self.send(msg)
+        self.send(msg, pickling=True)
 
     def demand_friend(self, content):
         '''
@@ -315,7 +275,7 @@ class Client(ClientTCP):
 
         if is_error:
             # send error in friend demand
-            self.send(f'rdfr{sep_m}0')
+            self.send(Message('rdfr', False), pickling=True)
             return
 
         DataBase.add_friend_demand(content, self.username)
@@ -325,15 +285,15 @@ class Client(ClientTCP):
             Interaction.send_demand_friend(content, self.username)
 
         # send friend demand is ok
-        self.send(f'rdfr{sep_m}1')
+        self.send(Message('rdfr', True), pickling=True)
 
     def response_demand_friend(self, content):
         '''
         Manage the response of a friend demand.
         Content: username, response
         '''
-        username, response = content.split(sep_c)
-        response = int(response)
+        username, response = content
+
         is_connected = False # if sender is connected
 
         DataBase.remove_friend_demand(self.username, username)
@@ -344,10 +304,10 @@ class Client(ClientTCP):
             # send to new friend that we are connected
             if Interaction.is_user(username):
                 is_connected = True
-                Interaction.send(username, f'frs{sep_m}{self.username}{sep_c2}1')
+                Interaction.send(username, Message('frs', [[self.username, True]]))
 
             # send to client if new friend is connected
-            self.send(f'frs{sep_m}{username}{sep_c2}{int(is_connected)}')
+            self.send(Message('frs', [[userame, is_connected]]), pickling=True)
     
     def demand_game(self, content):
         '''
@@ -365,49 +325,41 @@ class Client(ClientTCP):
             is_error = True
 
         if is_error:
-            # send error in friend demand
-            self.send(f'rdg{sep_m}0')
+            # send error in game demand
+            self.send(Message('rdg', False), pickling=True)
             return
 
         Interaction.send_demand_game(content, self.username)
 
-        # send friend demand is ok
-        self.send(f'rdg{sep_m}1')
+        # send game demand is ok
+        self.send(Message('rdg', True), pickling=True)
 
     def response_demand_game(self, content):
         '''
         Manage the response of a game demand.
         Content: username, response
         '''
-        username, response = content.split(sep_c)
-        response = int(response)
+        username, response = content
 
         if response:
             # start a new game
             Interaction.create_game(self.username, username)
 
-    def ship_config(self, content):
+    def ship_config(self, arr):
         '''
         Store the new ship config of the client,  
         Store the ship status, send it to the client
         '''
-        arr = content.split(sep_c)
-
-        # compute shape of the ship
-        size = int(np.sqrt(len(arr)))
-
-        arr = np.array(arr, dtype=int).reshape((size, size))
-
         DataBase.set_ship(self.username, arr)
         DataBase.set_ship_status(self.username, 1)
 
-        self.send(f'shst{sep_m}1')
+        self.send(Message('shst', 1), pickling=True)
 
-    def save_script(self, content):
+    def save_script(self, script):
         '''
         Store the script
         '''
-        DataBase.set_script(self.username, content)
+        DataBase.set_script(self.username, script)
 
     def script_analysis(self, content):
         '''
@@ -433,13 +385,13 @@ class Client(ClientTCP):
                 fine = False
                 break
 
-        self.send(f'rsca{sep_m}{int(fine)}')
+        self.send(Message('rsca', fine), pickling=True)
 
-    def end_game(self, content):
+    def end_game(self, has_win):
         '''
         Set the user to be out (game finished) of his game in Interaction
         '''
-        if int(content):
+        if has_win:
             result = 'win'
         else:
             result = 'loss'
@@ -450,39 +402,60 @@ class Client(ClientTCP):
         '''
         Send some info to the other user of the game
         '''
-        Interaction.send(self.opponent, f'gis{sep_m}{content}')
+        Interaction.send(self.opponent, Message('gis', content))
 
     def in_game_error(self, content):
         '''
         Send to the other user the number of errors that occured in the script.
         '''
-        Interaction.send(self.opponent, f'ige{sep_m}{content}')
+        Interaction.send(self.opponent, Message('ige', content))
 
     def set_script_status(self, content):
         '''
         Set the status of the user script.
         '''
-        DataBase.set_script_status(self.username, int(content))
+        DataBase.set_script_status(self.username, content)
 
         # send status back to user
-        self.send(f'scst{sep_m}{content}')
+        self.send(Message('scst', content), pickling=True)
 
     def set_ship_status(self, content):
         '''
         Set the status of the user ship.
         '''
-        DataBase.set_ship_status(self.username, int(content))
+        DataBase.set_ship_status(self.username, content)
 
     def set_waiting_game_state(self, content):
         '''
         Set if the user is waiting to enter a game.
         '''
-        Interaction.set_user_waiting_game(self.username, int(content))
+        Interaction.set_user_waiting_game(self.username, content)
 
-    def print(self, string, warning=False):
+    def display_msg(self, msg: Message):
+        '''
+        Display the Message to the terminal
+        in a pretty printing way.
+        '''
+        display_content = True
+
+        if type(msg.content) is str and '\n' in msg.content:
+            display_content = False
+        elif type(msg.content) is np.ndarray:
+            display_content = False
+        
+        if display_content:
+            self.print('{' + msg.identifier + '} ' + str(msg.content))
+        else:
+            self.print('{' + msg.identifier + '}')
+
+    def print(self, string, *strings, warning=False):
         '''
         Print a string to the terminal.  
         '''
+
+        # compose string
+        for _str in strings:
+            string += ' ' + _str
 
         if self.logged:
             id = self.username
@@ -494,4 +467,4 @@ class Client(ClientTCP):
         else:
             warn = ''
 
-        print(f'[TCP] {warn}|{id}| {string}')
+        Console.print(f'[TCP] {warn}|{id}| {string}')

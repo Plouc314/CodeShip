@@ -1,4 +1,5 @@
 from lib.udp import ServerUDP
+from lib.console import Console
 from udp.client import Client
 from spec import Spec
 import threading
@@ -14,7 +15,7 @@ class Server(ServerUDP):
         '''
         Create a client given it's address
         '''
-        print(f"[UDP] |{addr[0]}| Connected.")
+        Console.print(f"[UDP] |{addr[0]}| Connected.")
         client = Client(addr)
         self.add_client(client)
 

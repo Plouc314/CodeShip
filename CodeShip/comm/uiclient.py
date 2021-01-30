@@ -1,5 +1,6 @@
-import threading
-from lib.tcp import ClientTCP
+import threading, pickle
+from lib.tcp import ClientTCP, Message
+from lib.console import Console
 from data.spec import Spec
 import numpy as np
 
@@ -36,30 +37,6 @@ class UIClient(ClientTCP):
             'ige' : None, # opponent's number of errors in script
         }
 
-        # store the identifiers of the comm as key
-        # for each key, a function will process the incoming data
-        self.processes = {
-            'rlg' : lambda x: int(x),
-            'rsg' : lambda x: int(x),
-            'frs' : self.on_friends,
-            'rdfr': lambda x: int(x),
-            'rdg' : lambda x: int(x),
-            'dfr' : lambda x: x,
-            'dg'  : lambda x: x,
-            'gc'  : self.on_chat_msg,
-            'pc'  : self.on_chat_msg,
-            'rpd' : self.on_profil_infos,
-            'sh'  : self.on_ship,
-            'shst': lambda x: int(x),
-            'sc'  : lambda x: x,
-            'scst': lambda x: int(x),
-            'rsca': lambda x: int(x),
-            'ign' : lambda x: x.split(sep_c),
-            'igsh': self.opponent_grid,
-            'gis' : lambda x: int(x),
-            'ige' : lambda x: int(x),
-        }
-
     def connect(self):
         '''
         Try to connect to the server.  
@@ -80,19 +57,16 @@ class UIClient(ClientTCP):
         Split the identifier and content of the message.  
         Store the content in the designated container.
         '''
-        identifier, content = msg.split(sep_m)
+        msg = pickle.loads(msg)
 
-        if identifier != "sc":
-            print('[TCP]', msg)
-
-        content = self.processes[identifier](content)
-
-        container = self.in_data[identifier]
+        container = self.in_data[msg.identifier]
 
         if type(container) == list:
-            container.append(content)
+            container.append(msg.content)
         else:
-            self.in_data[identifier] = content
+            self.in_data[msg.identifier] = msg.content
+        
+        self.display_msg(msg)
 
     def get_data(self, identifier):
         '''
@@ -102,146 +76,100 @@ class UIClient(ClientTCP):
         '''
         return ContextManager(self, identifier)
 
+    def display_msg(self, msg: Message):
+        '''
+        Display the Message to the terminal
+        in a pretty printing way.
+        '''
+        if type(msg.content) is str and '\n' in msg.content:
+            content = ''
+        elif type(msg.content) is np.ndarray:
+            content = ''
+        
+        # player stats
+        elif msg.identifier == 'rpd':
+            content = msg.content['username']
+
+        else:
+            content = str(msg.content)
+
+        Console.print('[TCP] {' + msg.identifier + '} ' + content)
+
     def connect_udp(self, port):
         '''
         Send the udp port to enable the server to send udp msg to local
         '''
-        self.send(f'udp{sep_m}{port}')
-
-    def on_chat_msg(self, content):
-        '''
-        Return chat msg in format: `[username, message]`
-        '''
-        return content.split(sep_c)
-
-    def on_friends(self, content):
-        '''
-        Return friends in format: `list` `[username, is_connected]`
-        '''
-        content = content.split(sep_c)
-        content = [data.split(sep_c2) for data in content]
-        return [[username, int(conn)] for username, conn in content]
-
-    def on_profil_infos(self, content):
-        '''
-        Return the infos in format: `{username, wins, loss, friends, grid}`
-        '''
-        username, wins, loss, friends, grid = content.split(sep_c)
-
-        wins = int(wins)
-        loss = int(loss)
-
-        friends = friends.split(sep_c2)
-
-        grid = np.array(grid.split(sep_c2), dtype=int)
-        grid = grid.reshape(Spec.SHAPE_GRID_SHIP)
-
-        return {'username':username, 'wins':wins, 'loss':loss, 'friends':friends, 'grid':grid}
-
-    def on_ship(self, content):
-        '''
-        Return the ship as a np.ndarray.
-        '''
-        arr = content.split(sep_c2)
-        arr = np.array(arr, dtype=int)
-        return arr.reshape(Spec.SHAPE_GRID_SHIP)
-
-    def opponent_grid(self, content):
-        '''
-        Set the opponent's ship grid
-        '''
-        arr = content.split(sep_c2)
-        arr = np.array(arr, dtype=int)
-        return arr.reshape(Spec.SHAPE_GRID_SHIP)
+        self.send(Message('udp', port), pickling=True)
 
     def send_logout(self):
         '''
         Send to the server that client is logging out.
         ID: lo
         '''
-        self.send(f'lo{sep_m}')
+        self.send(Message('lo', None), pickling=True)
 
     def send_login(self, username, password):
         '''
         Send the login information to the server.  
         ID : lg
         '''
-        msg = f'lg{sep_m}{username}{sep_c}{password}'
-
-        self.send(msg)
+        self.send(Message('lg', [username, password]), pickling=True)
     
     def send_sign_up(self, username, password):
         '''
         Send the sign up information to the server.  
         ID : sg
         '''
-        msg = f'sg{sep_m}{username}{sep_c}{password}'
-
-        self.send(msg)
+        self.send(Message('sg', [username, password]), pickling=True)
 
     def send_general_chat_msg(self, message):
         '''
         Send a message on the general chat.
         ID : gc
         '''
-        msg = f'gc{sep_m}{message}'
-
-        self.send(msg)
+        self.send(Message('gc', message), pickling=True)
 
     def send_private_chat_msg(self, username, message):
         '''
         Send a message on the general chat.
         ID : pc
         '''
-        msg = f'pc{sep_m}{username}{sep_c}{message}'
-
-        self.send(msg)
+        self.send(Message('pc', [username, message]), pickling=True)
 
     def send_demand_friend(self, username):
         '''
         Send a friend demand.
         ID: dfr
         '''
-        msg = f'dfr{sep_m}{username}'
-
-        self.send(msg)
+        self.send(Message('dfr', username), pickling=True)
 
     def send_response_dfr(self, username, response):
         '''
         Send if accepted or not a friend demand.
         ID: rdfr
         '''
-        self.send(f'rdfr{sep_m}{username}{sep_c}{int(response)}')
+        self.send(Message('rdfr', [username, response]), pickling=True)
 
     def send_demand_game(self, username):
         '''
         Send a game demand.
         ID: dg
         '''
-        self.send(f'dg{sep_m}{username}')
+        self.send(Message('dg', username), pickling=True)
 
     def send_response_game_demand(self, username, response):
         '''
         Send if accepted or not a game demand.
         ID: rdg
         '''
-        self.send(f'rdg{sep_m}{username}{sep_c}{int(response)}')
+        self.send(Message('rdg', [username,response]), pickling=True)
 
     def send_ship_config(self, arr):
         '''
         Send the new ship of client.
         ID: shcf
         '''
-        msg = f'shcf{sep_m}'
-
-        for x in range(Spec.SIZE_GRID_SHIP):
-            for y in range(Spec.SIZE_GRID_SHIP):
-                msg += f'{arr[x,y]}{sep_c}'
-
-        # remove last sep
-        msg = msg[:-1]
-
-        self.send(msg)
+        self.send(Message('shcf', arr), pickling=True)
 
     def send_script(self, script, analysis=False):
         '''
@@ -254,35 +182,35 @@ class UIClient(ClientTCP):
         else:
             identifier = 'sc'
 
-        self.send(f'{identifier}{sep_m}{script}')
+        self.send(Message(identifier, script), pickling=True)
 
     def send_script_status(self, status):
         '''
         Send the status of the script
         ID: scst
         '''
-        self.send(f'scst{sep_m}{int(status)}')
+        self.send(Message('scst', status), pickling=True)
 
     def send_wait_game_status(self, status):
         '''
         Send if the user is waiting to enter a game
         ID: wg
         '''
-        self.send(f'wg{sep_m}{int(status)}')
+        self.send(Message('wg', status), pickling=True)
 
     def send_end_game(self, has_win):
         '''
         Send that the game is finished, send if user has win the game.
         ID: egst
         '''
-        self.send(f'egst{sep_m}{int(has_win)}')
+        self.send(Message('egst', has_win), pickling=True)
 
     def send_profil_demand(self, username):
         '''
         Send a demand for the server to send info about the user
         ID: pd
         '''
-        self.send(f'pd{sep_m}{username}')
+        self.send(Message('pd', username), pickling=True)
 
     def send_game_init_info(self, max_shield_hp):
         '''
@@ -290,14 +218,14 @@ class UIClient(ClientTCP):
         initalisation.
         ID: gis
         '''
-        self.send(f'gis{sep_m}{max_shield_hp}')
+        self.send(Message('gis', max_shield_hp), pickling=True)
     
     def send_in_game_error(self, n_error):
         '''
         Send to the other user the number of error that occured in the script.
         ID: ige
         '''
-        self.send(f'ige{sep_m}{n_error}')
+        self.send(Message('ige', n_error), pickling=True)
 
 class ContextManager:
     '''
