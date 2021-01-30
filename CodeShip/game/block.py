@@ -362,12 +362,12 @@ class Shield(Block):
         '''
         Dispatch shield hp to all added blocks.
         '''
-        if self.n_prtc_block == 0:
-            return
-
         if self.intensity == None:
             # by default the intensity is the same as the number of protected blocks.
             self.intensity = self.n_prtc_block
+
+        if self.n_prtc_block == 0:
+            return
 
         # set number of shield hp per block
         hp = Spec.SHIELD_HP * self.intensity / self.n_prtc_block

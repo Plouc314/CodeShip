@@ -349,7 +349,7 @@ class Ship:
         
         self.form.set_pos(self.pos, scale=True)
 
-        self._compute_blocks_abs_centers(Spec.SIZE_BLOCK)
+        self._compute_blocks_abs_centers()
 
         # update main surface
         self._update_surf()
@@ -499,7 +499,7 @@ class Ship:
                         return
     
     @Counter.add_func
-    def _compute_blocks_abs_centers(self, size_block):
+    def _compute_blocks_abs_centers(self):
         '''
         Compute the absolute (scaled) center of all the blocks
         '''
@@ -509,8 +509,8 @@ class Ship:
         for key, block in self.blocks.items():
             
             coord = np.array(block.coord, dtype=float)
-            coord *= size_block
-            coord += size_block // 2
+            coord *= Spec.SIZE_BLOCK
+            coord += Spec.SIZE_BLOCK // 2
             coord -= rel_center
 
             length, alpha = get_polar(coord)

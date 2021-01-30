@@ -122,7 +122,7 @@ class Menu(Page):
             
         # change button text
         button = self.get_component('b play')
-        button.font = Font.f(60)
+        button.set_font(**Font.f(60))
         button.set_text("Play")
 
     def b_play(self):
@@ -156,7 +156,7 @@ class Menu(Page):
             
             # change button text
             button = self.get_component('b play')
-            button.font = Font.f(30)
+            button.set_font(**Font.f(30))
             button.set_text("Waiting for opponent...")
         
         else:

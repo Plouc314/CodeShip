@@ -73,6 +73,8 @@ class Button(Form):
     ---
     `set_text`: Set the text displayed  
     `get_text`: Return text attribute  
+    `set_font`: Set the font used to display the text  
+    `get_font`: Return the font used to display the text  
     `pushed`: Return if the instance has been clicked.  
     `set_logic`: Define the function executed when the button is pushed
     (must execute `run` method).  
@@ -109,6 +111,19 @@ class Button(Form):
     def get_text(self) -> str:
         ''' Return the text '''
         return self._text
+
+    def set_font(self, font:pygame.font.Font, size:int):
+        '''
+        Set the font of the instance.
+        '''
+        self._font = {'size':size, 'font':font}
+    
+    def get_font(self) -> dict:
+        '''
+        Return the instance's font on the format:
+        {"size" `int`, "font" `pygame.font.Font`}
+        '''
+        return self._font.copy()
 
     def set_logic(self, func):
         '''
@@ -232,6 +247,8 @@ class TextBox(Form):
     ---
     `set_text`: Set the text displayed, can be on multiple lines  
     `get_text`: Return text attribute  
+    `set_font`: Set the font used to display the text  
+    `get_font`: Return the font used to display the text  
     `set_text_color`: Set the color of the text  
     `set_marge_text`: Set the marge used with the text  
     `set_centered`: Set if the text is centered  
@@ -284,6 +301,19 @@ class TextBox(Form):
         else:
             self.MARGE_TEXT = round(width)
             self._rs_marge_text = Dimension.E(width)
+
+    def set_font(self, font:pygame.font.Font, size:int):
+        '''
+        Set the font of the instance.
+        '''
+        self._font = {'size':size, 'font':font}
+    
+    def get_font(self) -> dict:
+        '''
+        Return the instance's font on the format:
+        {"size" `int`, "font" `pygame.font.Font`}
+        '''
+        return self._font.copy()
 
     def set_text_color(self, color: Union[list, tuple]):
         '''
