@@ -192,12 +192,12 @@ class ClientTCP:
                 ErrorServer.call("Connection closed.", self.call_id, warning=True)
             return
 
-        #try:
-        msg_length = int(msg_length)
-        msg = self.conn.recv(msg_length)
-        return msg
-        #except:
-        #    ErrorServer.call("Failure receiving message.", self.call_id)
+        try:
+            msg_length = int(msg_length)
+            msg = self.conn.recv(msg_length)
+            return msg
+        except:
+            ErrorServer.call("Failure receiving message.", self.call_id)
         
     def send(self, msg, pickling=False):
         '''

@@ -517,7 +517,7 @@ class Ship:
             
             alpha += self.orien
 
-            x, y = get_cartesian(length, alpha)
+            coord = get_cartesian(length, alpha)
 
             coord += rel_center + self.pos
 

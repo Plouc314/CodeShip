@@ -35,6 +35,7 @@ class UIClient(ClientTCP):
             'igsh': None, # opponent's ship grid
             'gis' : None, # opponent info after initalisation
             'ige' : None, # opponent's number of errors in script
+            'olg' : None, # opponent left the game
         }
 
     def connect(self):
@@ -276,6 +277,7 @@ class ContextManager:
             'igsh': None,
             'gis' : None,
             'ige' : None,
+            'olg' : None,
         }
 
         # pass identifiers to list

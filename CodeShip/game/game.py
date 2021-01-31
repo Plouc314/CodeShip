@@ -115,6 +115,12 @@ class Game:
         '''
         ended = False
 
+        with self.ui_client.get_data('olg') as has_left:
+            if has_left:
+                ended = True
+                has_win = True
+                cause = "Your opponent has disconnected." 
+
         if self.players['own'].n_script_error > Spec.MAX_SCRIPT_ERROR:
             ended = True
             has_win = False

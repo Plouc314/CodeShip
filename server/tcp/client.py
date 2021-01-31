@@ -52,16 +52,25 @@ class Client(ClientTCP):
         Executed on disconnection, to have a clean disconnection
         '''
         self.logged = False
-        
-        if self.username != None:
-            Interaction.send_connection_state(self.username, False)
-
-            # remove from Interaction
-            Interaction.remove(self.username)
-
-            self.username = None
-
         self.print("Disconnected.")
+
+        if self.username is None:
+            return
+        
+        # inform friends
+        Interaction.send_connection_state(self.username, False)
+
+        # remove from Interaction
+        Interaction.remove(self.username)
+
+        # if in game -> inform opponent that is leaving
+        if not self.game_tag is None:
+            Interaction.send(self.opponent, Message('olg',True))
+
+            # count game as a loss
+            DataBase.increment_loss(self.username)
+
+        self.username = None
 
     def connect_udp(self, content):
         '''
@@ -320,7 +329,7 @@ class Client(ClientTCP):
                 Interaction.send(username, Message('frs', [[self.username, True]]))
 
             # send to client if new friend is connected
-            self.send(Message('frs', [[userame, is_connected]]), pickling=True)
+            self.send(Message('frs', [[username, is_connected]]), pickling=True)
     
     def demand_game(self, content):
         '''
@@ -417,6 +426,10 @@ class Client(ClientTCP):
 
         Interaction.set_game_result(self.game_tag, self.username, result)
 
+        # reset game values
+        self.game_tag = None
+        self.opponent = None
+
     def on_game_init_state(self, content):
         '''
         Send some info to the other user of the game
@@ -488,8 +501,6 @@ class Client(ClientTCP):
             id = self.ip
 
         if warning:
-            warn = '[WARNING] '
+            Console.print(f'[TCP] |{id}| [WARNING] {string}')
         else:
-            warn = ''
-
-        Console.print(f'[TCP] {warn}|{id}| {string}')
+            Console.print(f'[TCP] |{id}| {string}')
