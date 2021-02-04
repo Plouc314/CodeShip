@@ -479,6 +479,8 @@ class SubPage(Page):
     def __init__(self, states: List[str], components: List, pos: [int, int], 
             active_states='none'):
 
+        self._has_pos = False
+
         super().__init__(states, components, active_states=active_states)
 
         self.set_pos(pos)
@@ -503,16 +505,39 @@ class SubPage(Page):
             self._unsc_pos = list(pos)
             self._sc_pos = Dimension.scale(pos)
     
+        self._has_pos = True
         self._set_dif_pos()
 
-    def _set_dif_pos(self):
+    def _set_dif_pos(self, components: list=None):
         '''
         Set the difference of position of all the components for the `on_it` method,
-        set the `_dif_pos_on_it` attribute of `Form`.
+        set the `_dif_pos_on_it` attribute of `Form`.  
+        If `components` is specified, set the `_dif_pos_on_it` attribute of them.  
         '''
-        for comp_info in self._components.values():
-            comp_info['object']._dif_pos_on_it[0] += self._unsc_pos[0]
-            comp_info['object']._dif_pos_on_it[1] += self._unsc_pos[1]
+        if not self._has_pos:
+            return
+
+        if components is None:
+            components = (v['object'] for v in self._components.values())
+
+        for component in components:
+            component._dif_pos_on_it[0] += self._unsc_pos[0]
+            component._dif_pos_on_it[1] += self._unsc_pos[1]
+
+    def add_component(self, name, obj, active_states=None):
+        '''
+        Add a component to the page.  
+        The component can be a subclass of one of these: SubPage, Form, Cadre, TextBox, Button, InputText
+
+        Arguments:
+        - name: the name of the component  
+        - obj: the instance of the component
+        - active_states: the states where the component will be active, by default: all
+        '''
+        super().add_component(name, obj, active_states=active_states)
+
+        # set dif pos on new object
+        self._set_dif_pos(components=[obj])
 
     def display(self, dif_pos=None):
         '''

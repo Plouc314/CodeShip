@@ -51,7 +51,7 @@ class Formatter:
 
     def get_variables(self) -> dict:
         '''
-        Return the variables cache of the Formatter.
+        Return the variables cache of the Formatter. (dict)
         '''
         return self._vars.copy()
 
