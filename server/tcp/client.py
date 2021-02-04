@@ -476,8 +476,8 @@ class Client(ClientTCP):
         '''
         display_content = True
 
-        if type(msg.content) is str and '\n' in msg.content:
-            display_content = False
+        if msg.identifier == 'scl':
+            return
         elif type(msg.content) is np.ndarray:
             display_content = False
         
