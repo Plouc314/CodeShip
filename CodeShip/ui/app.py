@@ -2,7 +2,7 @@ from lib.plougame import Application, TextBox, Font, C
 from ui.connection import Connection
 from ui.menu import Menu
 from ui.friends import Friends
-from ui.ship import Ship
+from ui.editor import Editor
 from ui.profil import Profil
 from ui.updater import Updater
 from data.spec import Spec
@@ -25,7 +25,7 @@ class App(Application):
             (Spec.PAGE_MENU, Menu(client)),
             (Spec.PAGE_CONN, Connection(client)),
             (Spec.PAGE_FRIENDS, Friends(client)),
-            (Spec.PAGE_SHIP, Ship(client)),
+            (Spec.PAGE_EDITOR, Editor(client)),
             (Spec.PAGE_PROFIL, Profil(client))
         ]
 
@@ -129,6 +129,9 @@ class App(Application):
                 # set username attr in client
                 self.client.username = self.username
                 
+                # store profil infos on local
+                Spec.update_local_profil(self.username, self.client)
+
                 self.change_page(Spec.PAGE_MENU, state='logged')
 
             elif rlg == 0 or rsg == 0:

@@ -32,6 +32,9 @@ text_error = TextBox(None, POS_ERROR_CONN, color=C.DARK_RED, dynamic_dim=True,
 button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
                     text="Connect", font=Font.f(40))
 
+button_offline = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB), color=C.LIGHT_BLUE,
+                    text="Offline", font=Font.f(40))
+
 button_logout = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB2), color=C.LIGHT_BLUE,
                     text="Log out", font=Font.f(40))
 
@@ -60,6 +63,7 @@ components = [
     ('title', title),
     ('t error', text_error),
     ('b conn', button_conn),
+    ('b offline', button_offline),
     ('b logout', button_logout),
     ('t username', text_username),
     ('b friends', button_friends),
@@ -85,7 +89,7 @@ class Menu(Page):
         super().__init__(states, components)
 
         self.set_states_components(None, 'title')
-        self.set_states_components('unlogged', ['doc', 'updater'])
+        self.set_states_components('unlogged', ['doc', 'updater', 'b offline'])
         self.set_states_components('logged',
         ['t username', 'b friends', 'b editor', 'chat', 'b logout', 'b play'])
 
@@ -171,7 +175,7 @@ class Menu(Page):
         
     def b_ship(self):
         # go to the ship page
-        self.change_page(Spec.PAGE_SHIP)
+        self.change_page(Spec.PAGE_EDITOR)
 
     def b_conn(self):
         # try to connect to the server

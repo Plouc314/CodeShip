@@ -1,3 +1,14 @@
+from data.spec import Spec
+
+if not Spec.JSON_DATA['setup']:
+    # perform setup instructions
+    try:
+        import setup
+    except:
+        print("Setup failed...")
+
+    Spec.set_json_variable('setup', True)
+
 import pygame
 from lib.plougame import Interface, C
 
@@ -8,7 +19,6 @@ Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=Tr
 from game.game import Game
 from ui.app import App
 from comm.uiclient import UIClient
-from data.spec import Spec
 from lib.counter import Counter
 import sys
 

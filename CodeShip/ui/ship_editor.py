@@ -1,6 +1,5 @@
 import pygame
-from lib.plougame import Page, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
-from ui.script_analyser import ScriptAnalyser
+from lib.plougame import SubPage, TextBox, Button, Font, C
 from data.spec import Spec
 import numpy as np
 
@@ -88,37 +87,25 @@ class Block(Button):
 
 ### Components ###
 
-Y_TB = 100
-X_TB1 = 100
+Y_GR = -70
+X_GR1 = 0
+X_GR2 = 190
 
-Y_GR = 330
-X_GR1 = 300
-X_GR2 = 490
-
-X_LB = 1220
-Y_LB1 = 400
-Y_LB2 = 585
-Y_LB3 = 770
-Y_LB4 = 955
-Y_LB5 = 1140
+X_LB = 920
+Y_LB1 = 0
+Y_LB2 = 185
+Y_LB3 = 370
+Y_LB4 = 555
+Y_LB5 = 740
 
 DIM_BUTTON_BLOCK = np.array([160, 160])
 DIM_GR_BUTT = np.array([180, 60])
 DIM_GR_TEXT = np.array([280, 60])
 DIM_TEXT_BLOCK = np.array([500, 160])
 
-POS_GRID = np.array([300, 400])
-POS_INFO = np.array([300, 1320])
-
-POS_SCRIPT = np.array([1920, 400])
+POS_INFO = np.array([0, 920])
 
 ### base ###
-
-title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
-                text="Editor", font=Font.f(80))
-
-button_back = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
-                text="Back", font=Font.f(35))
 
 button_edit = Button(DIM_GR_BUTT, (X_GR1, Y_GR), color=C.LIGHT_BLUE,
                 text="Edit", font=Font.f(35))
@@ -141,13 +128,9 @@ button_shield = Block((X_LB, Y_LB3), DIM_BUTTON_BLOCK, 3, color=C.LIGHT_GREEN)
 button_turret = Block((X_LB, Y_LB4), DIM_BUTTON_BLOCK, 4, color=C.LIGHT_GREEN)
 button_engine = Block((X_LB, Y_LB5), DIM_BUTTON_BLOCK, 5, color=C.LIGHT_GREEN)
 
-script_analyser = ScriptAnalyser(POS_SCRIPT)
-
 states = ['base', 'edit']
 
 components = [
-    ('title', title),
-    ('b back', button_back),
     ('b edit', button_edit),
     ('b save', button_save),
     ('t info', text_info),
@@ -157,8 +140,7 @@ components = [
     ('b generator', button_generator),
     ('b engine', button_engine),
     ('b shield', button_shield),
-    ('b turret', button_turret),
-    ('script analyser', script_analyser)
+    ('b turret', button_turret)
 ]
 
 desc_block = f'''
@@ -209,12 +191,11 @@ map_credits = {
     5:Spec.PRICE_ENGINE
 }
 
-class Ship(Page):
+class ShipEditor(SubPage):
     
-    def __init__(self, client):
+    def __init__(self, pos):
 
-        self.client = client
-        script_analyser.client = client
+        self.client = None
 
         self.blocks = None
         self.credits = 0
@@ -223,21 +204,18 @@ class Ship(Page):
         self.is_grab_active = False
         self.grab_block = Block((0,0), DIM_BLOCK, 0)
 
-        super().__init__(states, components)
+        super().__init__(states, components, pos)
         
-        self.set_states_components(None, ['title', 'b back', 'script analyser'])
         self.set_states_components('base', 'b edit')
         self.set_states_components('edit',
             ['b save', 't credits', 
             'b block', 'b generator', 'b shield', 'b engine', 'b turret'])
 
-        self.add_button_logic('b back', self.go_back)
         self.add_button_logic('b edit', self.b_edit)
         self.add_button_logic('b save', self.b_save)
 
         self._add_block_buttons_logic()
 
-        self.set_in_state_func('base', self.in_base)
         self.set_in_state_func('edit', self.in_edit)
         self.set_out_state_func('edit', self.out_edit)
 
@@ -245,8 +223,7 @@ class Ship(Page):
         '''
         Set the grid of the ship (a np.ndarray)
         '''
-        self.grid = grid
-        self.get_component('script analyser').grid = grid        
+        self.grid = grid        
 
         self._create_blocks()
         self._set_credits()
@@ -287,13 +264,11 @@ class Ship(Page):
 
     def in_base(self):
         '''
+        To be executed when entering in base state.  
         Check if the server sent a ship conf,
         if yes, set the ship conf
         '''
         self.change_display_state('t info', False)
-
-        # reset script analyser
-        self.get_component('script analyser').in_base()
 
         # set grid ship
         ship_arr = self.client.in_data['sh']
@@ -313,8 +288,8 @@ class Ship(Page):
             for y in range(self.grid.shape[1]):
                 
                 pos = [
-                    POS_GRID[0] + DIM_BLOCK[0] * x,
-                    POS_GRID[1] + DIM_BLOCK[1] * y,
+                    DIM_BLOCK[0] * x,
+                    DIM_BLOCK[1] * y,
                 ]
 
                 block = Block(pos, DIM_BLOCK, self.grid[x,y], coord=(x,y))
@@ -327,10 +302,10 @@ class Ship(Page):
         '''Add logic to the grab buttons'''
 
         for name, _type in [('b block', 1),
-                                  ('b generator', 2),
-                                  ('b engine', 5),
-                                  ('b shield', 3),
-                                  ('b turret', 4)]:
+                            ('b generator', 2),
+                            ('b engine', 5),
+                            ('b shield', 3),
+                            ('b turret', 4)]:
 
             logic = self._get_button_logic(_type)
 
@@ -391,9 +366,9 @@ class Ship(Page):
         if pressed[pygame.K_BACKSPACE]:
             self._remove_active_block()
 
-    def display(self):
+    def display(self, **kwargs):
 
-        super().display()
+        super().display(**kwargs)
 
         if self.is_grab_active:
             self.grab_block.display()

@@ -1,4 +1,4 @@
-import threading, pickle
+import threading, pickle, time
 from lib.tcp import ClientTCP, Message, ErrorTCP
 from lib.console import Console
 from data.spec import Spec

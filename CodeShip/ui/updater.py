@@ -1,4 +1,4 @@
-import requests, json, threading, time
+import requests, json, threading, time, os
 from lib.plougame import SubPage, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from data.spec import Spec
 from lib.counter import Counter
@@ -221,6 +221,8 @@ class Updater(SubPage):
         # replace
         for filename, scr in zip(self.server_data['files'], files_scr):
 
+            self._handeln_path(filename)
+
             if '.png' in filename:
                 with open(filename, 'wb') as file:
                     file.write(scr.content)
@@ -231,6 +233,20 @@ class Updater(SubPage):
 
         time.sleep(.5) # for the wow effect        
         self.is_update_done = True
+
+    def _handeln_path(self, path):
+        '''
+        Handeln any potential missing folder in path.
+        '''
+        path = path.split('/')
+        
+        if len(path) == 1:
+            return
+        
+        # check if all folders exists
+        folders = os.path.join(*path[:-1])
+        if not os.path.exists(folders):
+            os.makedirs(folders)
 
     def update_json_data(self):
         '''

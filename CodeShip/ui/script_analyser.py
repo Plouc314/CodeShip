@@ -74,7 +74,6 @@ class ScriptAnalyser(SubPage):
 
         # create game object -> test script
         self.game = Game(None, connected=False)
-        self.grid = None
 
         # store script module -> know if need to load or reload module
         self.script_module = None
@@ -195,8 +194,11 @@ class ScriptAnalyser(SubPage):
             self.set_error('import', tb_lines)
             return False
         
+        # get grid
+        grid = self.client.in_data['sh']
+
         # try runtime script
-        error_type, tb_lines = self.game.test_script(self.grid)
+        error_type, tb_lines = self.game.test_script(grid)
 
         if error_type == 'runtime':
             self.set_error('runtime', tb_lines)
