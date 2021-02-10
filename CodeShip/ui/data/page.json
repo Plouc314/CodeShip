@@ -1,0 +1,22 @@
+{
+    "title": {
+        "template": "title",
+        "text": "CodeShip"
+    },
+
+    "back": {
+        "template": "back",
+        "pos": [100, 100]
+    },
+
+    "script analyser": {
+        "type": "$ui.script_analyser.ScriptAnalyser",
+        "pos": [1920, 400]
+    },
+
+    "ship editor": {
+        "type": "$ui.ship_editor.ShipEditor",
+        "pos": [300, 400]
+    }
+
+}

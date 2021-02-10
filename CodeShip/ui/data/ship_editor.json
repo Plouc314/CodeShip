@@ -1,0 +1,96 @@
+{
+    "vars": {
+        "Y_GR": -70,
+        "X_GR1": 0,
+        "X_GR2": 190,
+        "X_LB": 920,
+        "Y_LB1": 0,
+        "Y_LB2": 185,
+        "Y_LB3": 370,
+        "Y_LB4": 555,
+        "Y_LB5": 740
+    },
+
+    "b edit": {
+        "template": "basic button",
+        "dim": [180, 60],
+        "pos": "$[X_GR1, Y_GR]",
+        "text": "Edit"
+    },
+
+    "b save": {
+        "template": "basic button",
+        "dim": [180, 60],
+        "pos": "$[X_GR1, Y_GR]",
+        "text": "Save"
+    },
+
+    "t info": {
+        "type": "TextBox",
+        "dim": null,
+        "pos": [0, 920],
+        "text": "Edit",
+        "color": "dark green",
+        "font": 30,
+        "text_color": "white",
+        "dynamic_dim": true
+    },
+
+    "t credits": {
+        "type": "TextBox",
+        "dim": [280, 60],
+        "pos": "$[X_GR2, Y_GR]",
+        "font": 35,
+        "marge": true
+    },
+
+    "t block": {
+        "type": "TextBox",
+        "dim": [500, 160],
+        "pos": [0,0],
+        "font": 35,
+        "color": "xlight grey",
+        "marge": true
+    },
+
+    "b block": {
+        "type": "$ui.ship_editor.Block",
+        "dim": [160, 160],
+        "pos": "$[X_LB, Y_LB1]",
+        "_type": 1,
+        "color": "light green"
+    },
+
+    "b generator": {
+        "type": "$ui.ship_editor.Block",
+        "dim": [160, 160],
+        "pos": "$[X_LB, Y_LB2]",
+        "_type": 2,
+        "color": "light green"
+    },
+
+    "b shield": {
+        "type": "$ui.ship_editor.Block",
+        "dim": [160, 160],
+        "pos": "$[X_LB, Y_LB3]",
+        "_type": 3,
+        "color": "light green"
+    },
+
+    "b turret": {
+        "type": "$ui.ship_editor.Block",
+        "dim": [160, 160],
+        "pos": "$[X_LB, Y_LB4]",
+        "_type": 4,
+        "color": "light green"
+    },
+
+    "b engine": {
+        "type": "$ui.ship_editor.Block",
+        "dim": [160, 160],
+        "pos": "$[X_LB, Y_LB5]",
+        "_type": 5,
+        "color": "light green"
+    }
+
+}

@@ -1,5 +1,8 @@
-
 {
+    "imports": [
+        "ui"
+    ],
+
     "title": {
         "type": "TextBox",
         "dim": [400,100],
@@ -13,5 +16,12 @@
         "color": "light blue",
         "font": 35,
         "text": "Back"
+    },
+
+    "basic button": {
+        "type": "Button",
+        "dim": "$DIM_MEDIUM_BUTTON",
+        "color": "light blue",
+        "font": 35
     }
 }

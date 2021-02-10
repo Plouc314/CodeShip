@@ -1,0 +1,78 @@
+{
+    "vars": {
+        "Y_BAR": 130,
+        "X_BAR1": 20,
+        "X_BAR2": 280,
+        "X_BAR3": 540,
+        "X_BAR4": 800
+    },
+
+    "cadre": {
+        "type": "Cadre",
+        "dim": [1100, 900],
+        "pos": [0,0]
+    },
+
+    "title": {
+        "type": "TextBox",
+        "dim": "$DIM_MEDIUM_TEXT",
+        "pos": [350, 30],
+        "marge": true,
+        "text": "Script",
+        "font": 50
+    },
+
+    "b analyse": {
+        "template": "basic button",
+        "pos": "$[X_BAR1, Y_BAR]",
+        "text": "Analyse"
+    },
+
+    "b load": {
+        "template": "basic button",
+        "pos": "$[X_BAR2, Y_BAR]",
+        "text": "Load"
+    },
+
+    "b save": {
+        "template": "basic button",
+        "pos": "$[X_BAR3, Y_BAR]",
+        "text": "Save"
+    },
+
+    "t status": {
+        "type": "TextBox",
+        "dim": [280, 60],
+        "pos": "$[X_BAR4, Y_BAR]",
+        "font": 35,
+        "text_color": "white"
+    },
+
+    "t info": {
+        "type": "TextBox",
+        "dim": null,
+        "pos": [30, 210],
+        "font": 30,
+        "text_color": "white",
+        "dynamic_dim": true
+    },
+
+    "title tb": {
+        "type": "TextBox",
+        "dim": "$DIM_MEDIUM_TEXT",
+        "pos": [30, 250],
+        "text": "Traceback",
+        "font": 35,
+        "centered": false
+    },
+
+    "t tb": {
+        "type": "TextBox",
+        "dim": [1100, 590],
+        "pos": [0, 310],
+        "font": 30,
+        "marge": true,
+        "continuous_text": true
+    }
+
+}

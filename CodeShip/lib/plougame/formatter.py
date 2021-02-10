@@ -3,7 +3,7 @@ from .components import TextBox, Button, InputText, ScrollList, Cadre
 from .auxiliary import Font, C
 from typing import List, Set, Dict, Tuple, Union
 import numpy as np
-import warnings, json, re, importlib
+import warnings, json, re, importlib, inspect
 
 map_class = {
     'Form': Form,
@@ -80,8 +80,10 @@ class Formatter:
         Create all the components defined in the JSON file of the
         given path.  
         
-        Each component must specify a "type" key, with its class name,
-        to create a TextBox object: `"type": "TextBox"`
+        Each component must specify a "type" key, with its class name or its class,  
+        for example, to create a TextBox object: `"type": "TextBox"`  
+        to create a custom object of class "Foo", you have to import it first (in "imports"
+        key, see `Formatter` doc), and then: `"type": "$Foo"`  
 
         Can use variables (see `process_variables` doc) and
         templates (see `process_templates` doc).  
@@ -132,12 +134,14 @@ class Formatter:
             self._process_expressions(infos, name=name)
 
             _class = infos.pop('type')
-            _class = map_class[_class]
+
+            # handeln custom classes
+            if inspect.isclass(_class):
+                pass
+            else:
+                _class = map_class[_class]
 
             infos = self._process_special_attributes(infos)
-
-            if not 'dim' in infos.keys():
-                infos['dim'] = None
 
             # create the component
             try:

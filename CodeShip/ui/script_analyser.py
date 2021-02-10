@@ -5,69 +5,17 @@ from data.spec import Spec
 import numpy as np
 import importlib, traceback, time, functools
 
-DIM_CADRE = np.array([1100, 900])
-POS_TITLE = np.array([350, 30])
-
-Y_BAR = 130
-X_BAR1 = 20
-X_BAR2 = 280
-X_BAR3 = 540
-X_BAR4 = 800
-
-POS_ERROR = np.array([30, 210])
-POS_T_TB = np.array([30, 250])
-POS_TB = np.array([0, 310])
-DIM_TB = np.array([1100, 590])
-DIM_STATUS = np.array([280, 60])
-
-# components
-
-cadre = Cadre(DIM_CADRE, (0,0))
-
-title = TextBox(Spec.DIM_MEDIUM_TEXT, POS_TITLE, marge=True,
-                text="Script", font=Font.f(50))
-
-button_analyse = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR1, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Analyse", font=Font.f(35))
-
-button_load = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR2, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Load", font=Font.f(35))
-
-button_save = Button(Spec.DIM_MEDIUM_BUTTON, (X_BAR3, Y_BAR), 
-                color=C.LIGHT_BLUE, text="Save", font=Font.f(35))
-
-text_status = TextBox(DIM_STATUS, (X_BAR4, Y_BAR),
-                font=Font.f(35), text_color=C.WHITE)
-
-text_info = TextBox((0,0), POS_ERROR, dynamic_dim=True,
-                font=Font.f(30), text_color=C.WHITE)
-
-title_traceback = TextBox(Spec.DIM_MEDIUM_TEXT, POS_T_TB, 
-                text="Traceback", font=Font.f(35), centered=False)
-
-text_traceback = TextBox(DIM_TB, POS_TB, 
-                font=Font.f(30), marge=True, continuous_text=True)
-
-components = [
-    ('cadre', cadre),
-    ('title', title),
-    ('b analyse', button_analyse),
-    ('b load', button_load),
-    ('b save', button_save),
-    ('t status', text_status),
-    ('title tb', title_traceback),
-    ('t tb', text_traceback),
-    ('t info', text_info)
-]
-
-states = ['base']
-
 class ScriptAnalyser(SubPage):
 
-    def __init__(self, pos):
+    def __init__(self, pos, offline=False):
+        
+        states = ['base']
+
+        components = Spec.formatter.get_components('ui/data/script_analyser.json')
 
         super().__init__(states, components, pos)
 
+        self.offline = offline
         self.client = None
         self.n_tb_lines = 12
         self.script_status = False

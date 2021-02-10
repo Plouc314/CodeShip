@@ -14,4 +14,3 @@ from .offline import Offline
 from .chat import Chat
 from .script_analyser import ScriptAnalyser
 from .ship_editor import ShipEditor
-from .app import App

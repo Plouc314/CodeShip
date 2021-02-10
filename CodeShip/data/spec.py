@@ -74,6 +74,7 @@ class Spec:
         
         with open(filename, 'w') as file:
             json.dump({
+                'username': username,
                 'script status': client.in_data['scst'],
                 'ship status': client.in_data['shst'],
                 'ship': client.in_data['sh'].tolist(),

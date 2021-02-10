@@ -514,9 +514,7 @@ class SubPage(Page):
         set the `_dif_pos_on_it` attribute of `Form`.  
         If `components` is specified, set the `_dif_pos_on_it` attribute of them.  
         '''
-        if not self._has_pos:
-            return
-
+        
         if components is None:
             components = (v['object'] for v in self._components.values())
 
@@ -537,7 +535,8 @@ class SubPage(Page):
         super().add_component(name, obj, active_states=active_states)
 
         # set dif pos on new object
-        self._set_dif_pos(components=[obj])
+        if self._has_pos:
+            self._set_dif_pos(components=[obj])
 
     def display(self, dif_pos=None):
         '''

@@ -85,64 +85,6 @@ class Block(Button):
         
         return surface
 
-### Components ###
-
-Y_GR = -70
-X_GR1 = 0
-X_GR2 = 190
-
-X_LB = 920
-Y_LB1 = 0
-Y_LB2 = 185
-Y_LB3 = 370
-Y_LB4 = 555
-Y_LB5 = 740
-
-DIM_BUTTON_BLOCK = np.array([160, 160])
-DIM_GR_BUTT = np.array([180, 60])
-DIM_GR_TEXT = np.array([280, 60])
-DIM_TEXT_BLOCK = np.array([500, 160])
-
-POS_INFO = np.array([0, 920])
-
-### base ###
-
-button_edit = Button(DIM_GR_BUTT, (X_GR1, Y_GR), color=C.LIGHT_BLUE,
-                text="Edit", font=Font.f(35))
-
-button_save = Button(DIM_GR_BUTT, (X_GR1, Y_GR), color=C.LIGHT_BLUE,
-                text="Save", font=Font.f(35))
-
-text_info = TextBox(None, POS_INFO, color=C.DARK_GREEN,
-                font=Font.f(30), text_color=C.WHITE, dynamic_dim=True)
-
-text_credits = TextBox(DIM_GR_TEXT, (X_GR2, Y_GR),
-                    text="", font=Font.f(35), marge=True)
-
-text_block = TextBox(DIM_TEXT_BLOCK, (0,0), color=C.XLIGHT_GREY,
-                    text="", font=Font.f(35), marge=True)
-
-button_block = Block((X_LB, Y_LB1), DIM_BUTTON_BLOCK, 1, color=C.LIGHT_GREEN)
-button_generator = Block((X_LB, Y_LB2), DIM_BUTTON_BLOCK, 2, color=C.LIGHT_GREEN)
-button_shield = Block((X_LB, Y_LB3), DIM_BUTTON_BLOCK, 3, color=C.LIGHT_GREEN)
-button_turret = Block((X_LB, Y_LB4), DIM_BUTTON_BLOCK, 4, color=C.LIGHT_GREEN)
-button_engine = Block((X_LB, Y_LB5), DIM_BUTTON_BLOCK, 5, color=C.LIGHT_GREEN)
-
-states = ['base', 'edit']
-
-components = [
-    ('b edit', button_edit),
-    ('b save', button_save),
-    ('t info', text_info),
-    ('t credits', text_credits),
-    ('t block', text_block),
-    ('b block', button_block),
-    ('b generator', button_generator),
-    ('b engine', button_engine),
-    ('b shield', button_shield),
-    ('b turret', button_turret)
-]
-
 desc_block = f'''
 Block
 No utility except to add hps.
@@ -193,8 +135,9 @@ map_credits = {
 
 class ShipEditor(SubPage):
     
-    def __init__(self, pos):
+    def __init__(self, pos, offline=False):
 
+        self.offline = False
         self.client = None
 
         self.blocks = None
@@ -204,8 +147,12 @@ class ShipEditor(SubPage):
         self.is_grab_active = False
         self.grab_block = Block((0,0), DIM_BLOCK, 0)
 
+        states = ['base', 'edit']
+
+        components = Spec.formatter.get_components('ui/data/ship_editor.json')
+
         super().__init__(states, components, pos)
-        
+
         self.set_states_components('base', 'b edit')
         self.set_states_components('edit',
             ['b save', 't credits', 
