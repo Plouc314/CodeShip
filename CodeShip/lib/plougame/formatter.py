@@ -3,7 +3,7 @@ from .components import TextBox, Button, InputText, ScrollList, Cadre
 from .auxiliary import Font, C
 from typing import List, Set, Dict, Tuple, Union
 import numpy as np
-import warnings, json, re
+import warnings, json, re, importlib
 
 map_class = {
     'Form': Form,
@@ -20,6 +20,20 @@ class Formatter:
 
     The aim of the formatter is to create the components of a Page object
     given one (or more) JSON files.
+
+    In all the various type JSON files (variables, templates, components),
+    each value can be a python expression, if the value is a string starting by "$".  
+    For example: `"name": "$'Bob' + ' ' + 'Pol'"` is equivalent to `"name": "Bob Pol"`.  
+    The lists are handled as numpy arrays: `"$[20,30] + [10,10]"` is the same as `[30,40]`.  
+    To use libraries in the expressions, a "imports" key can be specified, it will contain
+    a list of the libraries' names, example:  
+    ```
+    "imports": [
+        "math",
+        "numpy"
+    ]
+    ```
+
 
     Methods
     ---
@@ -47,7 +61,7 @@ class Formatter:
         
         To clear the variables cache, call the `clear` method.
         '''
-        self._set_new_vars(variables)
+        self._add_new_vars(variables)
 
     def get_variables(self) -> dict:
         '''
@@ -102,13 +116,16 @@ class Formatter:
         with open(path, 'r') as file:
             data = json.load(file)
 
-        # process variables
+        # process variables/imports
+        self._handeln_imports(data)
         self._handeln_variables(data)
 
         # create components
         components = []
 
         for name, infos in data.items():
+
+            infos = self._handeln_template(infos, name=name)
 
             assert 'type' in infos.keys(), "Each component must specify a type."
 
@@ -118,8 +135,6 @@ class Formatter:
             _class = map_class[_class]
 
             infos = self._process_special_attributes(infos)
-
-            infos = self._handeln_template(infos, name=name)
 
             if not 'dim' in infos.keys():
                 infos['dim'] = None
@@ -141,7 +156,8 @@ class Formatter:
         A template is a set of predefined attributes that can then
         be used to simplify the creation of component.
 
-        Variables can also be defined in the file, by defining a `"vars"` entry (dict).
+        Variables can also be defined in the file, by defining a `"vars"` entry
+        (see `process_variables` doc).
 
         Here is an example of a template ("template 1") that define
         the color and dimension attributes.
@@ -157,15 +173,14 @@ class Formatter:
         # load file
         with open(path, 'r') as file:
             data = json.load(file)
-
-        # process variables
+        
+        # process variables/imports
+        self._handeln_imports(data)
         self._handeln_variables(data)
         
         for name, infos in data.items():
             
             self._process_expressions(infos, name=name)
-
-            infos = self._process_special_attributes(infos)
 
             if name in self._templates.keys():
                 # update old template with new one
@@ -196,8 +211,9 @@ class Formatter:
         with open(path, 'r') as file:
             data = json.load(file)
 
+        self._handeln_imports(data)
         self._process_expressions(data)
-        self._set_new_vars(data)
+        self._add_new_vars(data)
 
     def _get_color(self, string: str) -> tuple:
         '''
@@ -267,7 +283,27 @@ class Formatter:
         vars = data.pop('vars')
 
         self._process_expressions(vars, name='vars')
-        self._set_new_vars(vars)
+        self._add_new_vars(vars)
+
+    def _handeln_imports(self, data: dict):
+        '''
+        Look for imports (`"imports"` entry),  
+        process & store imports  
+        '''
+        if not 'imports' in data.keys():
+            return
+        
+        imports: list = data.pop('imports')
+        vars_imports = {}
+
+        for name in imports:
+            try:
+                module = importlib.import_module(name)
+                vars_imports[name] = module
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError(self._get_error('module', name, key='imports'))
+        
+        self._add_new_vars(vars_imports)
 
     def _process_expressions(self, data: dict, name: str=None):
         '''
@@ -298,13 +334,13 @@ class Formatter:
 
         # try to eval the expression
         try:
-            exp = eval(exp, globals(), self._vars)
+            exp = eval(exp, {'np':np}, self._vars)
         except:
             raise ValueError(self._get_error('exp', original_exp, name, key))
 
         return exp
     
-    def _set_new_vars(self, data: dict):
+    def _add_new_vars(self, data: dict):
         '''
         Set new variables.
         '''
@@ -344,5 +380,8 @@ class Formatter:
 
         elif category == 'attribute':
             msg += f"\n\tInitialisation failed: '{value}'"
+
+        elif category == 'module':
+            msg += f"\n\tModule not found: '{value}'"
 
         return msg

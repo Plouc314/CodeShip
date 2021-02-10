@@ -98,6 +98,7 @@
     "PAGE_FRIENDS": "friends",
     "PAGE_EDITOR": "editor",
     "PAGE_PROFIL": "profil",
+    "PAGE_OFFLINE": "offline",
 
     "CHAT_MAX_MSG": 20
 }

@@ -17,6 +17,8 @@ class Spec:
     `set_attribute`: Set the value of a constant variable.
     '''
 
+    formatter: Formatter
+
     @classmethod
     def load(cls):
         '''

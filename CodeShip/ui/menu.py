@@ -97,6 +97,7 @@ class Menu(Page):
         self.add_button_logic('b friends', self.b_friends)
         self.add_button_logic('b editor', self.b_ship)
         self.add_button_logic('b play', self.b_play)
+        self.add_button_logic('b offline', self.b_offline)
 
         self.set_out_state_func('unlogged', self.out_unlogged)
         self.set_out_state_func('logged', self.out_logged)
@@ -168,6 +169,10 @@ class Menu(Page):
             self.client.send_wait_game_status(False)
 
             self.reset_play()
+
+    def b_offline(self):
+        # go to the offline page
+        self.change_page(Spec.PAGE_OFFLINE)
 
     def b_friends(self):
         # go to the friends page

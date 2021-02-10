@@ -1,10 +1,12 @@
 from lib.plougame import Application, TextBox, Font, C
-from ui.connection import Connection
-from ui.menu import Menu
-from ui.friends import Friends
-from ui.editor import Editor
-from ui.profil import Profil
-from ui.updater import Updater
+from ui import (Connection,
+                Menu,
+                Friends,
+                Editor,
+                Profil,
+                Updater,
+                Offline)
+
 from data.spec import Spec
 import time
 
@@ -26,7 +28,8 @@ class App(Application):
             (Spec.PAGE_CONN, Connection(client)),
             (Spec.PAGE_FRIENDS, Friends(client)),
             (Spec.PAGE_EDITOR, Editor(client)),
-            (Spec.PAGE_PROFIL, Profil(client))
+            (Spec.PAGE_PROFIL, Profil(client)),
+            (Spec.PAGE_OFFLINE, Offline(client))
         ]
 
         super().__init__(pages)
@@ -50,7 +53,8 @@ class App(Application):
 
         # set up updater - start download
         self.updater = self.get_page(Spec.PAGE_MENU).get_component('updater')
-        self.updater.load_server_data()
+        #self.updater.load_server_data()
+        self.updater.ready = True
 
     def manage_updater(self):
         '''
