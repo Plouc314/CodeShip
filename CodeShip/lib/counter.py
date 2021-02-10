@@ -1,5 +1,6 @@
 import time
 
+
 class Counter:
     '''
     Static object, monitor performance of functions.  
