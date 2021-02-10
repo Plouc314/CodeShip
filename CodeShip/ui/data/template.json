@@ -1,0 +1,17 @@
+
+{
+    "title": {
+        "type": "TextBox",
+        "dim": [400,100],
+        "pos": [1400, 100],
+        "font": 80
+    },
+
+    "back": {
+        "type": "Button",
+        "dim": "$DIM_MEDIUM_BUTTON",
+        "color": "light blue",
+        "font": 35,
+        "text": "Back"
+    }
+}
