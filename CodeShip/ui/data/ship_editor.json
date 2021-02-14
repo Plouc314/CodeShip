@@ -54,7 +54,7 @@
     },
 
     "b block": {
-        "type": "$ui.ship_editor.Block",
+        "type": "ui.ship_editor.Block",
         "dim": [160, 160],
         "pos": "$[X_LB, Y_LB1]",
         "_type": 1,
@@ -62,7 +62,7 @@
     },
 
     "b generator": {
-        "type": "$ui.ship_editor.Block",
+        "type": "ui.ship_editor.Block",
         "dim": [160, 160],
         "pos": "$[X_LB, Y_LB2]",
         "_type": 2,
@@ -70,7 +70,7 @@
     },
 
     "b shield": {
-        "type": "$ui.ship_editor.Block",
+        "type": "ui.ship_editor.Block",
         "dim": [160, 160],
         "pos": "$[X_LB, Y_LB3]",
         "_type": 3,
@@ -78,7 +78,7 @@
     },
 
     "b turret": {
-        "type": "$ui.ship_editor.Block",
+        "type": "ui.ship_editor.Block",
         "dim": [160, 160],
         "pos": "$[X_LB, Y_LB4]",
         "_type": 4,
@@ -86,7 +86,7 @@
     },
 
     "b engine": {
-        "type": "$ui.ship_editor.Block",
+        "type": "ui.ship_editor.Block",
         "dim": [160, 160],
         "pos": "$[X_LB, Y_LB5]",
         "_type": 5,

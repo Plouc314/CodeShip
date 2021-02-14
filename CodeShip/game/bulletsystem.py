@@ -212,12 +212,13 @@ class BulletSystem:
 
     @classmethod
     @Counter.add_func
-    def run(cls):
+    def run(cls, remote_control=True):
         '''
         Manage the bullets and explosions,  
-        Update the positions, handeln the collisions
+        Update the positions, handeln the collisions  
+        If remote_control=True, the bullet hitting the opponent ship
+        won't cause any damage -> control on opp local
         '''
-
         for i, life in enumerate(cls.recent_ids['lifetime']):
             life -= 1
             if life == 0:
@@ -234,7 +235,7 @@ class BulletSystem:
             bullet.update_state()
         
         cls.check_in_dim()
-        cls.handeln_collision()
+        cls.handeln_collision(remote_control=remote_control)
     
     @classmethod
     def display(cls):
@@ -270,13 +271,13 @@ class BulletSystem:
                 cls.bullets.remove(bullet)
 
     @classmethod
-    def handeln_collision(cls):
+    def handeln_collision(cls, remote_control=True):
         '''
         Check if one of the ships is hit by a bullet,  
         handeln collision effects.
         '''
         cls.check_collision_ship(cls.own_player)
-        cls.check_collision_ship(cls.opp_player, is_bullet_damage=False)
+        cls.check_collision_ship(cls.opp_player, is_bullet_damage=(not remote_control))
             
     @classmethod
     def check_collision_ship(cls, player, is_bullet_damage=True):

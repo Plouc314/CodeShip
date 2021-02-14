@@ -1,0 +1,126 @@
+{
+    "title": {
+        "template": "title",
+        "text": "CodeShip"
+    },
+
+    "t error": {
+        "template": "text info",
+        "pos": [100, 200],
+        "color": "dark red"
+    },
+
+    "b conn": {
+        "template": "basic button",
+        "pos": [100,100],
+        "text": "Connect",
+        "font": 40
+    },
+
+    "b offline": {
+        "template": "basic button",
+        "pos": [400,100],
+        "text": "Offline",
+        "font": 40
+    },
+
+    "b logout": {
+        "template": "basic button",
+        "pos": [100,200],
+        "text": "Log out",
+        "font": 40
+    },
+
+    "t username": {
+        "template": "text info",
+        "pos": [100,100],
+        "text_color": "black",
+        "font": 50
+    },
+
+    "b friends": {
+        "template": "basic button",
+        "pos": [400,200],
+        "text": "Friends",
+        "font": 40
+    },
+
+    "b editor": {
+        "template": "basic button",
+        "pos": [700,200],
+        "text": "Editor",
+        "font": 40
+    },
+
+    "b play": {
+        "template": "basic button",
+        "dim": "$DIM_BIG_BUTTON",
+        "pos": [1440,400],
+        "text": "Play",
+        "font": 60
+    },
+
+    "notif": {
+        "type": "TextBox",
+        "dim": "$DIM_NOTIF",
+        "pos": [630, 180],
+        "color": "light red",
+        "text_color": "white",
+        "text": "0",
+        "font": 25
+    },
+
+    "chat": {
+        "type": "ui.chat.Chat",
+        "pos": [2100, 1000],
+        "general_chat": true
+    },
+
+    "updater": {
+        "type": "ui.updater.Updater",
+        "pos": [100, 300]
+    },
+
+    "doc": {
+        "type": "ui.doc.Doc",
+        "pos": [900, 300]
+    },
+
+    "t title data": {
+        "type": "TextBox",
+        "dim": [800, 80],
+        "pos": [1200, 600],
+        "font": 60,
+        "marge": true,
+        "color": "dark yellow",
+        "text_color": "white",
+        "text": "Data synchronisation"
+    },
+
+    "t info data": {
+        "type": "TextBox",
+        "dim": [600, 100],
+        "pos": [1300, 740],
+        "font": 40,
+        "continuous_text": true,
+        "text": [
+            "Changes have been made locally,",
+            "do you want to keep them or revert them?"
+        ]
+    },
+
+    "b keep data": {
+        "template":"basic button",
+        "pos": [1300, 900],
+        "color": "light green",
+        "text": "Keep"
+    },
+
+    "b revert data": {
+        "template":"basic button",
+        "pos": [1660, 900],
+        "color": "light red",
+        "text": "Revert"
+    }
+
+}

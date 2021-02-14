@@ -1,103 +1,41 @@
 from lib.plougame import Interface, Page, TextBox, InputText, Button, Font, C
-from ui.chat import Chat
-from ui.updater import Updater
-from ui.doc import Doc
 from data.spec import Spec
 import numpy as np
 
-### TOP BAR ###
-
-Y_TB = 100
-Y_TB2 = 200
-X_TB1 = 100
-X_TB2 = 400
-X_TB3 = 700
-
-POS_UPDATER = np.array([X_TB1, 300])
-POS_CHAT = np.array([2100, 1000])
-POS_ERROR_CONN = np.array([X_TB1, Y_TB + 100])
+POS_ERROR_CONN = np.array([100, 200])
 POS_ERROR_PLAY = np.array([1800, 420])
-POS_NOTIF = np.array([X_TB2 + 230, Y_TB2-20])
-POS_PLAY = np.array([1440, 400])
-POS_DOC = np.array([900, 300])
 
-### Components ###
-
-title = TextBox(Spec.DIM_TITLE, Spec.POS_TITLE, 
-                            text="CodeShip", font=Font.f(80))
-        
-text_error = TextBox(None, POS_ERROR_CONN, color=C.DARK_RED, dynamic_dim=True,
-                    text="", font=Font.f(30), marge=True, text_color=C.WHITE)
-
-button_conn = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB), color=C.LIGHT_BLUE,
-                    text="Connect", font=Font.f(40))
-
-button_offline = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB), color=C.LIGHT_BLUE,
-                    text="Offline", font=Font.f(40))
-
-button_logout = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB1, Y_TB2), color=C.LIGHT_BLUE,
-                    text="Log out", font=Font.f(40))
-
-text_username = TextBox(None, (X_TB1, Y_TB), dynamic_dim=True,
-                    text="", font=Font.f(50), marge=True)
-
-button_friends = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB2, Y_TB2), color=C.LIGHT_BLUE,
-                    text="Friends", font=Font.f(40))
-
-button_editor = Button(Spec.DIM_MEDIUM_BUTTON, (X_TB3, Y_TB2), color=C.LIGHT_BLUE,
-                    text="Editor", font=Font.f(40))
-
-button_play = Button(Spec.DIM_BIG_BUTTON, POS_PLAY, color=C.LIGHT_BLUE,
-                    text="Play", font=Font.f(60))
-
-notif = TextBox(Spec.DIM_NOTIF, POS_NOTIF, color=C.LIGHT_RED, text_color=C.WHITE,
-                    text='0', font=Font.f(25))
-
-chat = Chat(POS_CHAT, general_chat=True)
-updater = Updater(POS_UPDATER)
-doc = Doc(POS_DOC)
-
-states = ['unlogged', 'logged']
-
-components = [
-    ('title', title),
-    ('t error', text_error),
-    ('b conn', button_conn),
-    ('b offline', button_offline),
-    ('b logout', button_logout),
-    ('t username', text_username),
-    ('b friends', button_friends),
-    ('b editor', button_editor),
-    ('b play', button_play),
-    ('notif', notif),
-    ('chat', chat),
-    ('updater', updater),
-    ('doc', doc)
-]
+states = ['unlogged', 'logged', 'ask data']
 
 class Menu(Page):
 
     def __init__(self, client):
 
-        self.client = client
+        components = Spec.formatter.get_components('ui/data/menu.json')
 
-        # set client in chat
-        chat.client = client
+        super().__init__(states, components)
 
         self.waiting_game = False
 
-        super().__init__(states, components)
+        self.client = client
+        self.get_component('chat').client = client
 
         self.set_states_components(None, 'title')
         self.set_states_components('unlogged', ['doc', 'updater', 'b offline'])
         self.set_states_components('logged',
         ['t username', 'b friends', 'b editor', 'chat', 'b logout', 'b play'])
 
+        self.set_states_components('ask data', 
+            ['t title data', 't info data', 'b keep data', 'b revert data'])
+
+        # logic play set in app.py
         self.add_button_logic('b conn', self.b_conn)
         self.add_button_logic('b friends', self.b_friends)
         self.add_button_logic('b editor', self.b_ship)
         self.add_button_logic('b play', self.b_play)
         self.add_button_logic('b offline', self.b_offline)
+        self.add_button_logic('b revert data', self.b_revert)
+        self.add_button_logic('b keep data', self.b_keep)
 
         self.set_out_state_func('unlogged', self.out_unlogged)
         self.set_out_state_func('logged', self.out_logged)
@@ -129,6 +67,18 @@ class Menu(Page):
         button = self.get_component('b play')
         button.set_font(**Font.f(60))
         button.set_text("Play")
+
+    def check_user_data(self):
+        '''
+        Check if there is data of the user on local,  
+        if so, check if there was an update on this data,  
+        if so, ask wether to keep these updates or revert them.
+        '''
+        if Spec.is_user_data(self.client.username):
+            data = Spec.load_user_data(self.client.username)
+            
+            if data['updated']:
+                self.change_state('ask data')
 
     def b_play(self):
         '''
@@ -169,6 +119,30 @@ class Menu(Page):
             self.client.send_wait_game_status(False)
 
             self.reset_play()
+
+    def b_keep(self):
+        ''' Send local data to the server '''
+        data = Spec.load_user_data(self.client.username)
+
+        script = '\n'.join(data['script'])
+        grid = np.array(data['ship'])
+
+        self.client.in_data['scst'] = data['script status']
+        self.client.in_data['sc'] = script
+        self.client.in_data['sh'] = grid
+        self.client.in_data['shst'] = data['ship status']
+
+        self.client.send_script(script)
+        self.client.send_script_status(data['script status'])
+        self.client.send_ship_config(grid)
+
+        # go to logged state
+        self.change_state('logged')
+
+    def b_revert(self):
+        ''' Go to logged state (data will be stored on local when quiting)'''
+        # go to logged state
+        self.change_state('logged')
 
     def b_offline(self):
         # go to the offline page

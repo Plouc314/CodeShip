@@ -56,15 +56,20 @@ class CollisionSystem:
             cls.speed_history['opp'].pop(0)
 
     @classmethod
-    def run(cls):
+    def run(cls, remote_control=True):
         '''
         Check if the ships are overlaping,
-        in that case: make the ships bounce (elastic collisions)
+        in that case: make the ships bounce (elastic collisions)  
+        If remote_control=True, only the "own" ship will bounce ->
+        other bounce on other local
         '''
         cls.update_history()
 
         if cls.is_collision():
-            cls.bounce()
+            cls.bounce(cls.own_ship)
+
+            if not remote_control:
+                cls.bounce(cls.opp_ship)
 
     @classmethod
     @collision_deco
@@ -95,13 +100,13 @@ class CollisionSystem:
             return False
     
     @classmethod
-    def bounce(cls):
+    def bounce(cls, ship):
         '''
-        Make own ship bounce after collision
+        Make ship bounce after collision
         Set acceleration of own ship.
         '''
         # compensate the ship's motor power
-        cls.own_ship.set_auxiliary_acc(-cls.own_ship.get_acc())
+        ship.set_auxiliary_acc(-ship.get_acc())
 
         # get mean speed
         own_speed = cls.speed_history['own'][0]
@@ -109,11 +114,11 @@ class CollisionSystem:
         speed = (own_speed + opp_speed) / 2
         
         # compute angle of collision
-        center = cls.own_ship.get_pos(scaled=True, center=True)
+        center = ship.get_pos(scaled=True, center=True)
 
         angle = cal_direction(center, cls.intersect)
 
-        cls.own_ship.speed = -to_vect(speed, angle)
+        ship.speed = -to_vect(speed, angle)
 
         # add random rotation
         if np.random.random() < .5:
@@ -121,4 +126,4 @@ class CollisionSystem:
         else:
             sign = 1
         
-        cls.own_ship.circular_speed += sign * Spec.BOUNCE_CIRCULAR_SPEED
+        ship.circular_speed += sign * Spec.BOUNCE_CIRCULAR_SPEED

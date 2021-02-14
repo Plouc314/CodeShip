@@ -137,7 +137,7 @@ class ShipEditor(SubPage):
     
     def __init__(self, pos, offline=False):
 
-        self.offline = False
+        self.offline = offline
         self.client = None
 
         self.blocks = None
@@ -184,7 +184,13 @@ class ShipEditor(SubPage):
         '''
         if self._check_ship_integrity():
             
-            self.client.send_ship_config(self.grid)
+            # store/save grid
+            if self.offline:
+                Spec.update_local_profil(self.client.username,
+                        'ship', self.grid.tolist())
+            else:
+                self.client.send_ship_config(self.grid)
+            
             self.change_state('base')
             
             # set text info
@@ -343,7 +349,8 @@ class ShipEditor(SubPage):
 
         # set pos of block text
         x, y = block.get_pos()
-        x += DIM_BUTTON_BLOCK[0]
+
+        x += self.get_component('b block').get_dim()[0]
 
         text_block.set_pos((x,y), scale=True)
 

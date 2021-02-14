@@ -132,11 +132,20 @@ class Player:
 
         return tb
 
-    def run(self, remote_control=False):
+    def run(self, remote_control=False, send_data=True):
         '''
-        Call Ship's run method
+        Call Ship's run method  
+        If remote_control=False:  
+        > Call user's script  
+        > Handeln out ship 
         '''
+        if not remote_control:
+            self.call_script_main(send_data=send_data)
+
         self.ship.run(remote_control=remote_control)
+
+        if not remote_control:
+            self.handeln_out_ship()
 
     def display(self):
         '''

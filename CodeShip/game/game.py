@@ -5,6 +5,7 @@ from game.collisions import CollisionSystem
 from game.api import API
 from game.interface import GameInterface
 from game.player import Player
+from game.bot import BotPlayer
 from lib.plougame import Dimension
 from lib.counter import Counter
 from data.spec import Spec
@@ -26,6 +27,9 @@ class Game:
 
         # if the game is active -> if the ship are moving...
         self._is_game_active = False
+
+        # if one of the player is a bot
+        self._is_bot = False
 
         self.game_client = None
         self.has_init_info = False
@@ -73,6 +77,7 @@ class Game:
         '''
         self.reset_values()
         self.running = True
+        self._is_bot = False
 
         self.players = {
             'own': Player(own_username, team, own_grid, with_script=True),
@@ -89,6 +94,34 @@ class Game:
 
         if initiate_api:
             self.init_script()
+
+    def setup_with_bot(self, team, own_grid, own_username):
+        '''
+        Set up `Game` instance for the game,
+        with one of the player being a bot,
+        given:  
+        `team` : Set the team used to set the position, color of the ships.  
+        `own_grid` : the grid used to create the ship.  
+        `own_username` : the username used to set up the game's interface.  
+        '''
+        self.reset_values()
+        self.running = True
+        self._is_bot = True
+
+        self.players = {
+            'own': Player(own_username, team, own_grid, with_script=True),
+            'opp': BotPlayer(-team + 3, 'bot1'),
+        }
+
+        self.setup_interface()
+        self.interface.has_opp_max_shield = True
+
+        API.set_players(self.players['own'], self.players['opp'])
+        BulletSystem.set_players(self.players['own'], self.players['opp'])
+        CollisionSystem.set_ships(self.players['own'].ship, self.players['opp'].ship)
+
+        self.init_script(send_data=False)
+        self.players['opp'].initiate(self.players['own'])
 
     def setup_interface(self):
         '''
@@ -109,9 +142,10 @@ class Game:
         BulletSystem.reset()
         CollisionSystem.reset()
 
-    def check_end_game(self):
+    def check_end_game(self, send_data=True):
         '''
-        Check if the game is ended.
+        Check if the game is ended.  
+        If send_data=True, send the game result to the server.
         '''
         ended = False
 
@@ -155,7 +189,9 @@ class Game:
             self._is_game_active = False
             self.has_init_info = False
             self.interface.set_end_game(has_win, cause)
-            self.ui_client.send_end_game(int(has_win))
+
+            if send_data:
+                self.ui_client.send_end_game(has_win)
 
     def quit_logic(self):
         '''
@@ -175,16 +211,16 @@ class Game:
             self.has_init_info = True
             self.players['opp'].total_shield_hp = shield_hp
 
-    def init_script(self):
+    def init_script(self, send_data=True):
         '''
         Run "init" function of user's script.  
         Set up blocks that need to be set up (Shield).  
         Send after init state to opponent.  
         Initiate the API
         '''
-        self.players['own'].call_script_init()
+        self.players['own'].call_script_init(send_data=send_data)
         API.init()
-        self.players['own'].finalize_initiation()
+        self.players['own'].finalize_initiation(send_data=send_data)
 
     def test_script(self, grid):
         '''
@@ -237,6 +273,16 @@ class Game:
         '''
         Run the game.
         '''
+        if self._is_bot:
+            self._run_with_bot(pressed, events)
+        else:
+            self._run_normal(pressed, events)
+
+    def _run_normal(self, pressed, events):
+        '''
+        Run the game.  
+        With one player in local and one player remotely controlled
+        '''
         if not self.has_init_info:
             self._get_init_info()
 
@@ -250,11 +296,8 @@ class Game:
 
             self.game_client.set_opp_state(self.players['opp'])
 
-            self.players['own'].call_script_main()
-
             self.players['opp'].run(remote_control=True)
             self.players['own'].run()
-            self.players['own'].handeln_out_ship()
 
             # send state to server
             self.game_client.send_state(self.players['own'])
@@ -270,4 +313,25 @@ class Game:
         self.interface.update()
         self.interface.display()
 
-        
+    def _run_with_bot(self, pressed, events):
+        '''
+        Run the game with a bot.
+        '''
+        if self._is_game_active:
+            CollisionSystem.run(remote_control=False)
+            BulletSystem.run(remote_control=False)
+            API.run()
+
+            self.players['opp'].run(send_data=False)
+            self.players['own'].run(send_data=False)
+
+            self.check_end_game(send_data=False)
+
+        self.players['own'].display()
+        self.players['opp'].display()
+
+        BulletSystem.display()
+
+        self.interface.react_events(pressed, events)
+        self.interface.update()
+        self.interface.display()

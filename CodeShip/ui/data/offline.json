@@ -1,0 +1,39 @@
+{
+    "title": {
+        "template": "title",
+        "text": "CodeShip"
+    },
+
+    "t username": {
+        "type": "TextBox",
+        "dim": null,
+        "pos": [100,100],
+        "font": 60,
+        "dynamic_dim": true,
+        "marge": true
+    },
+
+    "b back": {
+        "template": "back",
+        "pos": [100, 200]
+    },
+
+    "b play": {
+        "template": "basic button",
+        "pos": [360, 200],
+        "text": "Play"
+    },
+
+    "script analyser": {
+        "type": "ui.script_analyser.ScriptAnalyser",
+        "pos": [1920, 400],
+        "offline": true
+    },
+
+    "ship editor": {
+        "type": "ui.ship_editor.ShipEditor",
+        "pos": [300, 400],
+        "offline": true
+    }
+
+}

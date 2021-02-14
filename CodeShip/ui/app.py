@@ -8,7 +8,7 @@ from ui import (Connection,
                 Offline)
 
 from data.spec import Spec
-import time
+import time, numpy as np
 
 class App(Application):
 
@@ -51,10 +51,12 @@ class App(Application):
         page_menu = self.get_page(Spec.PAGE_MENU)
         page_menu.add_button_logic('b logout', self.logic_logout)
 
+        # set game reference in offline page
+        self.get_page(Spec.PAGE_OFFLINE).game = self.game
+
         # set up updater - start download
         self.updater = self.get_page(Spec.PAGE_MENU).get_component('updater')
-        #self.updater.load_server_data()
-        self.updater.ready = True
+        self.updater.load_server_data()
 
     def manage_updater(self):
         '''
@@ -106,6 +108,9 @@ class App(Application):
 
         self.client.send_logout()
 
+        # store user infos on local
+        Spec.store_local_profil(self.username, self.client)
+
         # stop game client
         self.game.game_client.stop()
         
@@ -113,8 +118,8 @@ class App(Application):
         page_menu.change_state('unlogged')
         page_menu.get_component('chat').reset()
         page_fr.reset()
-        page_profil.reset()
-        
+        page_profil.reset()     
+
     def look_comm_login(self):
         '''
         Check if the server sent a login response
@@ -132,11 +137,11 @@ class App(Application):
 
                 # set username attr in client
                 self.client.username = self.username
-                
-                # store profil infos on local
-                Spec.update_local_profil(self.username, self.client)
 
                 self.change_page(Spec.PAGE_MENU, state='logged')
+
+                # manage profil infos on local
+                self.get_page(Spec.PAGE_MENU).check_user_data()
 
             elif rlg == 0 or rsg == 0:
                 # set error msg

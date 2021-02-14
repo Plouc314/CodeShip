@@ -49,12 +49,8 @@
     },
 
     "t info": {
-        "type": "TextBox",
-        "dim": null,
-        "pos": [30, 210],
-        "font": 30,
-        "text_color": "white",
-        "dynamic_dim": true
+        "template": "text info",
+        "pos": [30, 210]
     },
 
     "title tb": {

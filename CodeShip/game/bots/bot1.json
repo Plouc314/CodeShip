@@ -1,0 +1,92 @@
+{
+    "script": [
+        "",
+        "from game.bot import (BotShip as Ship,",
+        "                      BotOpponent as Opponent,",
+        "                      Constants)",
+        "",
+        "def init():",
+        "",
+        "    shield = Ship.get_blocks('Shield')[0]",
+        "    turrets = Ship.get_blocks('Turret')",
+        "",
+        "    shield.add_block(turrets[0])",
+        "    shield.add_block(turrets[1])",
+        "",
+        "    shield.set_intensity(2)",
+        "",
+        "    Ship.rotate_angle(45)",
+        "",
+        "def main():",
+        "",
+        "    if Ship.get_speed(scalar=True) < 20:",
+        "",
+        "        Ship.set_power_engines(1)",
+        "",
+        "    shield = Ship.get_blocks(\"Shield\")[0]",
+        "",
+        "    engines = Ship.get_blocks(\"Engine\")",
+        "",
+        "    for turret in Ship.get_blocks(\"Turret\"):",
+        "        if not turret.is_rotating():",
+        "            if turret.get_orientation() == 315:",
+        "                turret.rotate(60)",
+        "            else:",
+        "                turret.rotate(315)",
+        "        ",
+        "    for engine in engines:",
+        "        if engine.get_hp() < 80:",
+        "            shield.add_block(engine)",
+        ""
+    ],
+    "ship": [
+        [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            1,
+            5,
+            5,
+            1,
+            0
+        ],
+        [
+            0,
+            3,
+            2,
+            2,
+            3,
+            0
+        ],
+        [
+            0,
+            1,
+            4,
+            4,
+            1,
+            0
+        ],
+        [
+            0,
+            1,
+            1,
+            1,
+            1,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    ]
+}

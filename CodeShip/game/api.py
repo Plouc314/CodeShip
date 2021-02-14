@@ -21,6 +21,10 @@ class API:
     # state -> 0:setup  1:runtime
     _state = 0
 
+    # static objects -> be able set other ones
+    _ship_cls = None
+    _opponent_cls = None
+
     @classmethod
     def reset(cls):
         ''' Reset API '''
@@ -43,8 +47,8 @@ class API:
             'opp': opp_player.ship,
         }
 
-        Ship._set_blocks()
-        Opponent._set_blocks()
+        cls._ship_cls._set_blocks()
+        cls._opponent_cls._set_blocks()
 
     @classmethod
     def add_action_to_cache(cls, action):
@@ -60,9 +64,9 @@ class API:
         '''
         Update API's ships to keep them synchronize to the real ships.
         '''
-        Ship._update_blocks()
-        Ship._update_rotation()
-        Opponent._update_blocks()
+        cls._ship_cls._update_blocks()
+        cls._ship_cls._update_rotation()
+        cls._opponent_cls._update_blocks()
 
     @classmethod
     def init(cls):
@@ -71,7 +75,7 @@ class API:
         Set the API's state to be at runtime.  
         Execute all blocks' actions.
         '''
-        for block in Ship.blocks:
+        for block in cls._ship_cls.blocks:
             block._exec_actions()
         
         cls._state = 1
@@ -484,7 +488,7 @@ class Ship:
     Getters: `get_speed`, `get_acceleration`, `get_orientation`, 
     `get_position`, `get_power_level`
     '''
-    
+
     # rotation
     _target_angle = None
     _path_length = None
@@ -877,3 +881,7 @@ class Opponent:
         and `[3200,1800]` (bottom right).
         '''
         return API._ships['opp'].form.get_center()
+
+# set API's classes
+API._opponent_cls = Opponent
+API._ship_cls = Ship

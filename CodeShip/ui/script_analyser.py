@@ -54,8 +54,15 @@ class ScriptAnalyser(SubPage):
         with open('script.py', 'r') as file:
             script = file.read()
 
-        self.client.send_script(script)
-        self.client.send_script_status(self.script_status)
+        if self.offline:
+            Spec.update_local_profil(self.client.username,
+                    'script', script.split('\n'))
+            Spec.update_local_profil(self.client.username,
+                    'script status', self.script_status)
+        else:
+            self.client.send_script(script)
+            self.client.send_script_status(self.script_status)
+        
         self.set_status_text()
 
         # set info text
@@ -81,7 +88,11 @@ class ScriptAnalyser(SubPage):
 
         self.reset()
 
-        success = self.analyse_cheat()
+        if self.offline:
+            success = True
+        else:
+            success = self.analyse_cheat()
+        
         success &= self.analyse_errors()
 
         self.script_status = success

@@ -23,5 +23,14 @@
         "dim": "$DIM_MEDIUM_BUTTON",
         "color": "light blue",
         "font": 35
+    },
+
+    "text info": {
+        "type": "TextBox",
+        "dim": null,
+        "font": 30,
+        "marge": true,
+        "text_color": "white",
+        "dynamic_dim": true
     }
 }
