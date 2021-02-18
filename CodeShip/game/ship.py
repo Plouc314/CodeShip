@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 from game.block import Block, Generator, Shield, Turret, Engine
 from lib.plougame import Interface, Form, Dimension, C
-from lib.counter import Counter
+from lib.perfeval import Counter
 from game.geometry import get_deg, get_rad, get_polar, get_cartesian, get_norm, to_vect
 from data.spec import Spec
 
@@ -57,15 +57,6 @@ class Ship:
         ship.set_blocks(grid)
 
         return ship
-    
-    @classmethod
-    def from_file(cls, filename, team, color=None):
-        '''
-        Create a ship given a .npy filename.
-        '''
-        grid = np.load(filename)
-
-        return cls.from_grid(grid, team, color=color)
 
     def get_block_by_coord(self, coord, blocks=None):
         '''

@@ -4,7 +4,7 @@ from lib.console import Console
 from game.bulletsystem import BulletSystem, Bullet
 from data.spec import Spec
 import numpy as np
-from lib.counter import Counter
+from lib.perfeval import Counter
 
 class GameData:
     def __init__(self, player):

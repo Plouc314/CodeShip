@@ -2,8 +2,8 @@ import numpy as np
 from comm.uiclient import UIClient
 from game.ship import Ship
 from data.spec import Spec
-from lib.counter import Counter
-import importlib, traceback
+from lib.perfeval import Counter
+import importlib, traceback, os
 
 def get_traceback(error) -> list:
     '''
@@ -31,6 +31,9 @@ class Player:
 
         # store weak ref of every actions
         self._actions_cache = []
+
+        # store traceback of in game script errors
+        self._tbs = []
 
         # for remotely controlled player
         self.str_cache = None
@@ -79,21 +82,19 @@ class Player:
         If send_data=True and an error occured, 
         send message to the server (in game purposes)
         '''
-        tb = None
+        
         # run init function
         try:
             self.script.init()
         except Exception as e:
             self.n_script_error += 1
-
+        
             if send_data:
                 self.client.send_in_game_error(self.n_script_error)
             
-            tb = get_traceback(e)
-
+            self._tbs.append(get_traceback(e))
+        
             print("[WARNING] Error occured in script initiation.")
-
-        return tb
 
     def finalize_initiation(self, send_data=True):
         '''
@@ -116,13 +117,12 @@ class Player:
         send message to the server (in game purposes)
         '''
         is_error = False
-        tb = None
 
         try:
             self.script.main()
         except Exception as e:
             is_error = True
-            tb = get_traceback(e)
+            self._tbs.append(get_traceback(e))
         
         if is_error:
             self.n_script_error += 1
@@ -130,7 +130,6 @@ class Player:
             if send_data:
                 self.client.send_in_game_error(self.n_script_error)
 
-        return tb
 
     def run(self, remote_control=False, send_data=True):
         '''
@@ -210,4 +209,3 @@ class Player:
                 
                 else:
                     self._actions_cache.pop(i)
-            

@@ -5,7 +5,7 @@ from game.block import (Block as BaseBlock,
                 Turret as BaseTurret)
 from game.geometry import get_deg, get_rad
 from data.spec import Spec
-from lib.counter import Counter
+from lib.perfeval import Counter
 import numpy as np
 import weakref
 from typing import List, Set, Dict, Tuple, Union
@@ -84,6 +84,8 @@ class Constants:
     '''
     Contain various constants used in the game.
     '''
+    _CURRENT_API_ = API
+
     size_block = Spec.SIZE_BLOCK
     power_consumption = Spec.POWER_CONS
     power_generation = Spec.POWER_ENERGIE
@@ -117,7 +119,13 @@ class Block:
     '''
     name = 'Block'
 
+    # can be set to another class (-> bot)
+    _api: API = None
+
     def __init__(self, key, team):
+        
+        self._api = Constants._CURRENT_API_
+        
         self.key = key
 
         if team in API._ships.keys():
@@ -154,7 +162,7 @@ class Block:
         self._actions.append(action)
 
         # add weakref of action -> display it on the game interface
-        API.add_action_to_cache( weakref.ref(action) )
+        self._api.add_action_to_cache( weakref.ref(action) )
 
     def _is_pending_action(self, name):
         '''
@@ -215,7 +223,7 @@ class Block:
         if self.team == 'opp':
             raise ValueError("Try to give order to opponent ship.")
 
-        self._add_action(API._ships[self.team].blocks[self.key].set_activate, True, 
+        self._add_action(self._api._ships[self.team].blocks[self.key].set_activate, True, 
                     delay=Spec.RUNTIME_DELAY, desc='activate')
 
     def deactivate(self):
@@ -223,22 +231,22 @@ class Block:
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        self._add_action(API._ships[self.team].blocks[self.key].set_activate, False,
+        self._add_action(self._api._ships[self.team].blocks[self.key].set_activate, False,
                     delay=Spec.RUNTIME_DELAY, desc='deactivate')
 
     def is_activated(self) -> bool:
         '''
         Return if the block is actived
         '''
-        return API._ships[self.team].blocks[self.key].get_activate()
+        return self._api._ships[self.team].blocks[self.key].get_activate()
 
     def get_hp(self) -> int:
         '''Return the amound of hp of the block.'''
-        return API._ships[self.team].blocks[self.key].hp
+        return self._api._ships[self.team].blocks[self.key].hp
 
     def get_power_output(self):
         '''Return the power output of the block.'''
-        return API._ships[self.team].blocks[self.key].get_power_output()
+        return self._api._ships[self.team].blocks[self.key].get_power_output()
 
     def __repr__(self):
         return f'{self.name} {self.key}'
@@ -303,8 +311,8 @@ class Shield(Block):
         `value`: int  
         A value between 1 and `Constants.shield_max_intensity`
         '''
-        self._add_action(API._ships[self.team].blocks[self.key].set_intensity, 
-            value, at_runtime=bool(API._state),
+        self._add_action(self._api._ships[self.team].blocks[self.key].set_intensity, 
+            value, at_runtime=bool(self._api._state),
             delay=Spec.SHIELD_DELAY, desc=f'set_intensity: {value}')
 
     def add_block(self, block):
@@ -322,7 +330,7 @@ class Shield(Block):
         Parameters
         ---
         `block`: Block / child object...  
-        One of the API block (of your team...)
+        One of the self._api block (of your team...)
         '''
         if block.team != self.team:
             raise ValueError("Trying to add an opponent block to a Shield block.")
@@ -333,14 +341,14 @@ class Shield(Block):
         if self._is_pending_action('add_prtc_block'):
             return
 
-        base_block = API._ships[self.team].blocks[block.key]
+        base_block = self._api._ships[self.team].blocks[block.key]
 
         # check if block already protected
-        if API._ships[self.team].blocks[self.key].is_block(base_block):
+        if self._api._ships[self.team].blocks[self.key].is_block(base_block):
             return
 
-        self._add_action(API._ships[self.team].blocks[self.key].add_prtc_block,
-            base_block, at_runtime=bool(API._state), 
+        self._add_action(self._api._ships[self.team].blocks[self.key].add_prtc_block,
+            base_block, at_runtime=bool(self._api._state), 
             delay=Spec.SHIELD_DELAY, desc=f'add_block {block}')
 
     def remove_block(self, block):
@@ -353,19 +361,19 @@ class Shield(Block):
         Parameters
         ---
         `block`: Block / child object...  
-        One of the API block (of your team...)
+        One of the self._api block (of your team...)
         '''
-        base_block = API._ships[block.team].blocks[block.key]
+        base_block = self._api._ships[block.team].blocks[block.key]
 
         if self._is_pending_action('remove_prtc_block'):
             return
 
         # check if block already protected
-        if not API._ships[self.team].blocks[self.key].is_block(base_block):
+        if not self._api._ships[self.team].blocks[self.key].is_block(base_block):
             return
 
-        self._add_action(API._ships[self.team].blocks[self.key].remove_prtc_block,
-            base_block,  at_runtime=bool(API._state),
+        self._add_action(self._api._ships[self.team].blocks[self.key].remove_prtc_block,
+            base_block,  at_runtime=bool(self._api._state),
             delay=Spec.SHIELD_DELAY, desc=f'remove_block: {block}')
 
 class Turret(Block):
@@ -394,7 +402,7 @@ class Turret(Block):
         '''
         Return if the turret is rotating.
         '''
-        if API._ships[self.team].blocks[self.key].is_rotating:
+        if self._api._ships[self.team].blocks[self.key].is_rotating:
             return True
         
         # check if a rotation order is set
@@ -417,12 +425,12 @@ class Turret(Block):
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
 
-        self._add_action(API._ships[self.team].blocks[self.key].rotate, target_angle,
+        self._add_action(self._api._ships[self.team].blocks[self.key].rotate, target_angle,
             delay=Spec.TURRET_ROTATE_DELAY, desc=f'rotate: {target_angle}°')
 
     def get_orientation(self):
         '''Return the orientation of the turret (degree)'''
-        return API._ships[self.team].blocks[self.key].orien
+        return self._api._ships[self.team].blocks[self.key].orien
 
 class Engine(Block):
     '''
@@ -456,7 +464,7 @@ class Engine(Block):
         if self.team == 'opp': 
             raise ValueError("Try to give order to opponent ship.")
         
-        API._ships[self.team].blocks[self.key].activation_per = value
+        self._api._ships[self.team].blocks[self.key].activation_per = value
 
 map_block = {
     'Block':Block, 
@@ -489,6 +497,9 @@ class Ship:
     `get_position`, `get_power_level`
     '''
 
+    # can be set to another class (-> bot)
+    _api: API = API
+
     # rotation
     _target_angle = None
     _path_length = None
@@ -510,7 +521,7 @@ class Ship:
             'Turret':[]
         }
 
-        for key, block in API._ships['own'].blocks.items():
+        for key, block in cls._api._ships['own'].blocks.items():
             api_block = map_block[block.name](key, 'own')
             
             cls.blocks.append(api_block)
@@ -524,7 +535,7 @@ class Ship:
         Run blocks actions.
         '''
         for block in cls.blocks:
-            if not block.key in API._ships['own'].blocks.keys():
+            if not block.key in cls._api._ships['own'].blocks.keys():
                 # remove block
                 cls.blocks.remove(block)
                 cls.typed_blocks[block.name].remove(block)
@@ -565,7 +576,7 @@ class Ship:
         `coord`: tuple[int, int]  
         The coordinate at which the block is placed.
         '''
-        return API._ships['own'].get_block_by_coord(coord)
+        return cls._api._ships['own'].get_block_by_coord(coord)
 
     @classmethod
     def get_speed(cls, scalar=False):
@@ -577,7 +588,7 @@ class Ship:
         `scalar`: bool  
         If False return the vector speed, else return the norm of the vector.
         '''
-        return API._ships['own'].get_speed(scalar=scalar)
+        return cls._api._ships['own'].get_speed(scalar=scalar)
     
     @classmethod
     def get_acceleration(cls, scalar=False):
@@ -589,7 +600,7 @@ class Ship:
         `scalar`: bool  
         If False return the vector acceleration, else return the norm of the vector.
         '''
-        return API._ships['own'].get_acc(scalar=scalar)
+        return cls._api._ships['own'].get_acc(scalar=scalar)
 
     @classmethod
     def get_orientation(cls):
@@ -601,7 +612,7 @@ class Ship:
         180° : West  
         270° : North
         '''
-        return get_deg(API._ship['own'].orien)
+        return get_deg(cls._api._ship['own'].orien)
 
     @classmethod
     def get_position(cls):
@@ -610,7 +621,7 @@ class Ship:
         The position coordinates will fall between `[0,0]` (upper left)
         and `[3200,1800]` (bottom right).
         '''
-        return API._ships['own'].form.get_center()
+        return cls._api._ships['own'].form.get_center()
 
     @classmethod
     def get_power_level(cls):
@@ -620,7 +631,7 @@ class Ship:
         if the power level drops bellow 0, some blocks will randomly be deactivate.  
         To change the power level of a block, call the `activate` or `deactivate` methods of the block.
         '''
-        return API._ships['own'].get_power_level()
+        return cls._api._ships['own'].get_power_level()
 
     @classmethod
     def set_power_engines(cls, value: Union[float, list]):
@@ -699,11 +710,11 @@ class Ship:
         cls._inversed = False
 
         # select the smallest path to the angle
-        orien = get_deg(API._ships['own'].orien)
+        orien = get_deg(cls._api._ships['own'].orien)
         
         acc_circular = cls._choose_rotation_path(orien)
         
-        API._ships['own'].circular_acc = acc_circular
+        cls._api._ships['own'].circular_acc = acc_circular
 
     @classmethod
     def rotate_angle(cls, angle: int):
@@ -719,7 +730,7 @@ class Ship:
         The angle of rotation in degrees, positive is clockwise,
         negative is counter-clockwise.
         '''
-        orien = get_deg(API._ships['own'].orien)
+        orien = get_deg(cls._api._ships['own'].orien)
 
         target_angle = (orien + angle) % 360
 
@@ -739,7 +750,7 @@ class Ship:
         if cls._target_angle == None:
             return
         
-        ship = API._ships['own']
+        ship = cls._api._ships['own']
         orien = get_deg(ship.orien)
 
         # check halfway through -> inv acc
@@ -775,6 +786,9 @@ class Opponent:
     `get_position`, `get_power_level`
     '''
 
+    # can be set to another class (-> bot)
+    _api: API = API
+
     @classmethod
     def _set_blocks(cls):
         '''
@@ -782,7 +796,7 @@ class Opponent:
         '''
         cls.blocks = []
 
-        for key, block in API._ships['opp'].blocks.items():
+        for key, block in cls._api._ships['opp'].blocks.items():
             api_block = map_block[block.name](key, 'opp')
             
             cls.blocks.append(api_block)
@@ -794,7 +808,7 @@ class Opponent:
         Loop through each block of the ship and remove the dead ones.
         '''
         for block in cls.blocks:
-            if not block.key in API._ships['opp'].blocks.keys():
+            if not block.key in cls._api._ships['opp'].blocks.keys():
                 # remove block
                 cls.blocks.remove(block)
 
@@ -835,7 +849,7 @@ class Opponent:
         `coord`: tuple[int, int]  
         The coordinate at which the block is placed.
         '''
-        return API._ships['opp'].get_block_by_coord(coord)
+        return cls._api._ships['opp'].get_block_by_coord(coord)
 
     @classmethod
     def get_speed(cls, scalar=False):
@@ -847,7 +861,7 @@ class Opponent:
         `scalar`: bool  
         If False return the vector speed, else return the norm of the vector.
         '''
-        return API._ships['own'].get_speed(scalar=scalar)
+        return cls._api._ships['own'].get_speed(scalar=scalar)
     
     @classmethod
     def get_acceleration(cls, scalar=False):
@@ -859,7 +873,7 @@ class Opponent:
         `scalar`: bool  
         If False return the vector acceleration, else return the norm of the vector.
         '''
-        return API._ships['own'].get_acc(scalar=scalar)
+        return cls._api._ships['own'].get_acc(scalar=scalar)
 
     @classmethod
     def get_orientation(cls):
@@ -871,7 +885,7 @@ class Opponent:
         180° : West  
         270° : North
         '''
-        return get_deg(API._ship['opp'].orien)
+        return get_deg(cls._api._ship['opp'].orien)
 
     @classmethod
     def get_position(cls):
@@ -880,7 +894,7 @@ class Opponent:
         The position coordinates will fall between `[0,0]` (upper left)
         and `[3200,1800]` (bottom right).
         '''
-        return API._ships['opp'].form.get_center()
+        return cls._api._ships['opp'].form.get_center()
 
 # set API's classes
 API._opponent_cls = Opponent

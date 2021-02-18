@@ -11,6 +11,9 @@ BotShip = type('BotShip', Ship.__bases__, dict(Ship.__dict__))
 BotAPI._ship_cls = BotShip
 BotAPI._opponent_cls = BotOpponent
 
+BotShip._api = BotAPI
+BotOpponent._api = BotAPI
+
 class BotPlayer(Player):
     '''
     Bot version of Player
@@ -19,7 +22,7 @@ class BotPlayer(Player):
     '''
 
     def __init__(self, team, botname):
-        
+
         # load bot specifications
         with open(os.path.join('game', 'bots', f'{botname}.json'), 'r') as file:
             data = json.load(file)
@@ -56,7 +59,14 @@ class BotPlayer(Player):
         Initialize the API and script,  
         given the other player
         '''
+        # set the used API object to BotAPI to creates the api's blocks
+        Constants._CURRENT_API_ = BotAPI
+
         BotAPI.set_players(self, player)
+
+        # reset default value
+        Constants._CURRENT_API_ = API
+
         self.call_script_init(send_data=False)
         BotAPI.init()
         self.finalize_initiation(send_data=False)

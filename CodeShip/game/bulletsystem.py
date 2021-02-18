@@ -3,7 +3,7 @@ import numpy as np
 from lib.plougame import Interface, Form, Dimension, C
 from game.geometry import get_deg, get_rad, get_norm
 from data.spec import Spec
-from lib.counter import Counter
+from lib.perfeval import Counter
 
 # load images
 folder = "game/imgs/"

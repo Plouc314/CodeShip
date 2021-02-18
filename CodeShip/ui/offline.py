@@ -47,9 +47,16 @@ class Offline(Page):
     def load_local_data(self):
         '''
         Load the data that is stored in local.  
+        If the client doesn't have any account,
+        create a "Unregistered" account.  
         Setup client's data.
         '''
         paths = glob.glob(os.path.join('data', 'accounts', '*.json'))
+        
+        if len(paths) == 0:
+            self._create_unregistered_account()
+            paths.append('data/accounts/unregistered.json')
+
         path = paths[0]
 
         with open(path, 'r') as file:
@@ -65,3 +72,18 @@ class Offline(Page):
         self.client.in_data['sh'] = np.array(self.user_data['ship'])
         self.client.in_data['scst'] = self.user_data['script status']
         self.client.in_data['shst'] = self.user_data['ship status']
+    
+    def _create_unregistered_account(self):
+        '''
+        Create a default account in `data/accounts/unregistered.json`
+        '''
+        
+        with open('data/accounts/unregistered.json', 'w') as file:
+            json.dump({
+                "userame": "Unregistered",
+                "updated": False,
+                "script status": False,
+                "ship status": False,
+                "ship": np.zeros(Spec.SHAPE_GRID_SHIP, dtype=int).tolist(),
+                "script": ['']
+            })

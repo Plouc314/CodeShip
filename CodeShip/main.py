@@ -13,13 +13,13 @@ import pygame
 from lib.plougame import Interface, C
 
 # first setup the interface -> to create Form objects
-Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=True)
-    #flags=pygame.HWSURFACE|pygame.DOUBLEBUF)
+Interface.setup((3200,1800), 'CodeShip', background_color=C.WHITE, fullscreen=True,
+    flags=pygame.HWSURFACE|pygame.DOUBLEBUF)
 
 from game.game import Game
 from ui.app import App
 from comm.uiclient import UIClient
-from lib.counter import Counter
+from lib.perfeval import Counter
 import sys
 
 # get addr
@@ -54,6 +54,10 @@ while Interface.running:
 
     else:
         game.run(pressed, events)
+
+# store user infos on local
+if client.connected:
+    Spec.store_local_profil(client.username, client)
 
 if show_stats:
     Counter.print_result()

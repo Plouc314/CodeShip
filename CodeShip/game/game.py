@@ -7,7 +7,7 @@ from game.interface import GameInterface
 from game.player import Player
 from game.bot import BotPlayer
 from lib.plougame import Dimension
-from lib.counter import Counter
+from lib.perfeval import Counter
 from data.spec import Spec
 import importlib, traceback, time
 import numpy as np

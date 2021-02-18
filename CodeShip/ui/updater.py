@@ -1,7 +1,7 @@
 import requests, json, threading, time, os
 from lib.plougame import SubPage, Form, TextBox, ScrollList, InputText, Button, Cadre, Font, C
 from data.spec import Spec
-from lib.counter import Counter
+from lib.perfeval import Counter
 import numpy as np
 
 DIM_CADRE = np.array([600, 200])
@@ -252,7 +252,7 @@ class Updater(SubPage):
         '''
         Update local data.json file with data from github
         '''
-        for key in self.server_data.keys():
+        for key in ['version', 'files', 'doc']:
             Spec.JSON_DATA[key] = self.server_data[key]
 
         with open('data/data.json', 'w') as file:

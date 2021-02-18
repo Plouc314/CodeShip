@@ -1,0 +1,13 @@
+{
+    "vars": {
+        "POS_CADRE1": [50, 50],
+        "POS_CADRE2": [2550, 50]
+    },
+
+    "templates": {
+        "hp bar": {
+            "type": "Form",
+            "dim": [230, 30]
+        }
+    }
+}

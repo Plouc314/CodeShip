@@ -80,14 +80,15 @@ class Formatter:
         Create all the components defined in the JSON file of the
         given path.  
         
-        Each component must specify a "type" key, with its class name or its class,  
+        Each component must specify a "type" key, with its class name,  
         for example, to create a TextBox object: `"type": "TextBox"`  
         to create a custom object of class "Foo", you have to import it first (in "imports"
-        key, see `Formatter` doc), and then: `"type": "$Foo"`  
+        key, see `Formatter` doc), and then: `"type": "Foo"`  
 
         Can use variables (see `process_variables` doc) and
         templates (see `process_templates` doc).  
-        Variables can also be defined in the same JSON file by defining a `"vars"` entry (dict).
+        Variables can be defined in the same JSON file by defining a `"vars"` entry (dict),
+        same can be said for templates (`"templates"` entry (dict)).
 
         Return
         ---
@@ -102,6 +103,16 @@ class Formatter:
         is equivalent as: 
         ```
         {
+            "vars": {
+                "font_size": 50
+            },
+
+            "templates": {
+                "test-like": {
+                    "dim": [240, 60],
+                }
+            },
+
             "title": {
                 "type": "TextBox",
                 "template": "text-like",
@@ -118,9 +129,10 @@ class Formatter:
         with open(path, 'r') as file:
             data = json.load(file)
 
-        # process variables/imports
+        # process variables/templates/imports
         self._handeln_imports(data)
         self._handeln_variables(data)
+        self._handeln_templates(data)
 
         # create components
         components = []
@@ -129,17 +141,14 @@ class Formatter:
 
             infos = self._handeln_template(infos, name=name)
 
+            # handeln type
             assert 'type' in infos.keys(), "Each component must specify a type."
 
+            _class = self._process_exp(infos.pop('type'), name, 'type')
+
+            assert inspect.isclass(_class), "'type' value must be a class."
+
             self._process_expressions(infos, name=name)
-
-            _class = infos.pop('type')
-
-            # handeln custom classes
-            if inspect.isclass(_class):
-                pass
-            else:
-                _class = map_class[_class]
 
             infos = self._process_special_attributes(infos)
 
@@ -153,9 +162,10 @@ class Formatter:
         
         return components
 
-    def process_templates(self, path):
+    def process_templates(self, path: str=None, data: dict=None):
         '''
-        Process & store the templates of the file at the given path.  
+        Process & store the templates of the file at the given path,
+        or of the data (json-like dict).  
         
         A template is a set of predefined attributes that can then
         be used to simplify the creation of component.
@@ -174,9 +184,10 @@ class Formatter:
         }
         ```
         '''
-        # load file
-        with open(path, 'r') as file:
-            data = json.load(file)
+        if path != None:
+            # load file
+            with open(path, 'r') as file:
+                data = json.load(file)
         
         # process variables/imports
         self._handeln_imports(data)
@@ -289,6 +300,18 @@ class Formatter:
         self._process_expressions(vars, name='vars')
         self._add_new_vars(vars)
 
+    def _handeln_templates(self, data: dict):
+        '''
+        Look for templates (`"templates"` entry),  
+        process & store template s 
+        '''
+        if not 'templates' in data.keys():
+            return
+        
+        templates = data.pop('templates')
+
+        self.process_templates(data=templates)
+
     def _handeln_imports(self, data: dict):
         '''
         Look for imports (`"imports"` entry),  
@@ -338,7 +361,7 @@ class Formatter:
 
         # try to eval the expression
         try:
-            exp = eval(exp, {'np':np}, self._vars)
+            exp = eval(exp, {**map_class, 'np':np}, self._vars)
         except:
             raise ValueError(self._get_error('exp', original_exp, name, key))
 

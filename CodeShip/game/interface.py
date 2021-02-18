@@ -6,7 +6,7 @@ from game.api import API
 from game.player import Player
 from game.geometry import get_deg
 from data.spec import Spec
-from lib.counter import Counter
+from lib.perfeval import Counter
 
 ### TOP BAR
 

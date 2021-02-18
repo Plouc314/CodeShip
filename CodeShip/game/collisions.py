@@ -3,7 +3,7 @@ from lib.plougame.helper import Delayer
 from lib.plougame.auxiliary import Dimension
 from game.geometry import get_deg, get_norm, to_vect, cal_direction
 from data.spec import Spec
-from lib.counter import Counter
+from lib.perfeval import Counter
 
 collision_deco = Delayer(15)
 

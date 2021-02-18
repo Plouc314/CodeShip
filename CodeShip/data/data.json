@@ -1,6 +1,6 @@
 {
     "version": 1.01,
-    "setup": false,
+    "setup": true,
     "files": [
         "comm/gameclient.py",
         "comm/uiclient.py",
