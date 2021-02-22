@@ -373,7 +373,6 @@ class Page:
 
         # run scroll lists
         for scroll_info in self._get_active_comps(self._scrolls):
-
             scroll_info['object'].run(events, pressed)
 
         # run buttons
@@ -425,7 +424,7 @@ class Page:
         iterable = []
 
         for comp_info in _dict.values():
-            if state in comp_info['active states']:
+            if state in comp_info['active states'] or comp_info['displayed']:
                 iterable.append(comp_info)
 
         return iterable

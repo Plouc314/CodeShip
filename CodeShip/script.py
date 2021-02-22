@@ -51,3 +51,4 @@ def main():
     for engine in engines:
         if engine.get_hp() < 80:
             shield.add_block(engine)
+

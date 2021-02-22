@@ -79,6 +79,9 @@ class Game:
         self.running = True
         self._is_bot = False
 
+        # update quit button state
+        self.interface.set_quit_button("online")
+
         self.players = {
             'own': Player(own_username, team, own_grid, with_script=True),
             'opp': Player(opp_username, (-team + 3), opp_grid),
@@ -107,6 +110,9 @@ class Game:
         self.reset_values()
         self.running = True
         self._is_bot = True
+
+        # add quit button to the interface
+        self.interface.set_quit_button('offline')
 
         self.players = {
             'own': Player(own_username, team, own_grid, with_script=True),

@@ -59,6 +59,8 @@ class BotPlayer(Player):
         Initialize the API and script,  
         given the other player
         '''
+        BotAPI.reset()
+
         # set the used API object to BotAPI to creates the api's blocks
         Constants._CURRENT_API_ = BotAPI
 

@@ -48,11 +48,6 @@
         "text_color": "white"
     },
 
-    "t info": {
-        "template": "text info",
-        "pos": [30, 210]
-    },
-
     "title tb": {
         "type": "TextBox",
         "dim": "$DIM_MEDIUM_TEXT",
@@ -69,6 +64,11 @@
         "font": 30,
         "marge": true,
         "continuous_text": true
+    },
+
+    "t info": {
+        "template": "text info",
+        "pos": [30, 210]
     }
 
 }

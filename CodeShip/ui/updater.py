@@ -252,8 +252,10 @@ class Updater(SubPage):
         '''
         Update local data.json file with data from github
         '''
-        for key in ['version', 'files', 'doc']:
-            Spec.JSON_DATA[key] = self.server_data[key]
+        for key in self.server_data.keys():
+
+            if not key in ['setup', 'active account']:
+                Spec.JSON_DATA[key] = self.server_data[key]
 
         with open('data/data.json', 'w') as file:
             json.dump(Spec.JSON_DATA, file, indent=4)

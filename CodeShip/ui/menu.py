@@ -76,9 +76,15 @@ class Menu(Page):
         '''
         if Spec.is_user_data(self.client.username):
             data = Spec.load_user_data(self.client.username)
-            
-            if data['updated']:
-                self.change_state('ask data')
+
+        # if the user has unregistered data -> continue with them
+        elif Spec.is_user_data("Unregistered"):
+            data = Spec.load_user_data("Unregistered")
+        else:
+            return
+        
+        if data['updated']:
+            self.change_state('ask data')
 
     def b_play(self):
         '''
@@ -122,8 +128,16 @@ class Menu(Page):
 
     def b_keep(self):
         ''' Send local data to the server '''
+        # try loading data with username
         data = Spec.load_user_data(self.client.username)
 
+        # load unregistered data
+        if data is None:
+            data = Spec.load_user_data("Unregistered")
+
+            # delete them afterward to avoid repetiting the operation
+            Spec.remove_user_data("Unregistered")
+            
         script = '\n'.join(data['script'])
         grid = np.array(data['ship'])
 

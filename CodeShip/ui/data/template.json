@@ -10,6 +10,15 @@
         "font": 80
     },
 
+    "username": {
+        "type": "TextBox",
+        "dim": null,
+        "pos": [100,100],
+        "font": 55,
+        "marge": true,
+        "dynamic_dim": true
+    },
+
     "back": {
         "type": "Button",
         "dim": "$DIM_MEDIUM_BUTTON",

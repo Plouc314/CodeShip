@@ -58,6 +58,7 @@ while Interface.running:
 # store user infos on local
 if client.connected:
     Spec.store_local_profil(client.username, client)
+    Spec.set_json_variable('active account', client.username)
 
 if show_stats:
     Counter.print_result()

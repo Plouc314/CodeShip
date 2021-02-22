@@ -5,12 +5,7 @@
     },
 
     "t username": {
-        "type": "TextBox",
-        "dim": null,
-        "pos": [100,100],
-        "font": 60,
-        "dynamic_dim": true,
-        "marge": true
+        "template": "username"
     },
 
     "b back": {
@@ -24,16 +19,36 @@
         "text": "Play"
     },
 
+    "b account": {
+        "template": "basic button",
+        "pos": [620, 200],
+        "font": 25,
+        "text": "Pick other account"
+    },
+
     "script analyser": {
         "type": "ui.script_analyser.ScriptAnalyser",
-        "pos": [1920, 400],
+        "pos": [1920, 500],
         "offline": true
     },
 
     "ship editor": {
         "type": "ui.ship_editor.ShipEditor",
-        "pos": [300, 400],
+        "pos": [300, 500],
         "offline": true
+    },
+
+    "t error": {
+        "template": "text info",
+        "pos": [100, 300],
+        "color": "dark red"
+    },
+
+    "scroll accounts": {
+        "type": "ScrollList",
+        "dim": [500, 160],
+        "pos": [620, 270],
+        "lines": []
     }
 
 }

@@ -32,6 +32,7 @@ POS_TWIN = np.array([Spec.CENTER_X-300, 200])
 DIM_TCAUSE = np.array([600, 60])
 POS_TCAUSE = POS_TWIN + np.array([0, 210])
 POS_EXIT = np.array([POS_TWIN[0]+360 , POS_TWIN[1] + 280])
+POS_EXIT_OFFLINE = POS_TIME + np.array([80, -80])
 
 DIM_CADRE_ACTIONS = np.array([400, 400])
 DIM_TITLE_ACTIONS = np.array([390, 50])
@@ -175,6 +176,21 @@ class GameInterface(Page):
         '''
         self.clock_active = True
         self.start_time = time.time()
+
+    def set_quit_button(self, state: str):
+        '''
+        Set the position and the display state of the 
+        quit button depending on whether:  
+        `state="offline"` or `state="online"`
+        '''
+        button = self.get_component('b quit')
+        
+        if state == 'offline':
+            button.set_pos(POS_EXIT_OFFLINE, scale=True)
+            self.change_display_state('b quit', True)
+        else:
+            button.set_pos(POS_EXIT, scale=True)
+            self.change_display_state('b quit', False)
 
     def set_end_game(self, has_win, cause):
         '''

@@ -170,9 +170,20 @@ class Spec:
         return data
 
     @classmethod
+    def remove_user_data(cls, username):
+        '''
+        Remove the .json file of a user
+        '''
+        filename = os.path.join('data','accounts',f'{username}.json')
+
+        if os.path.exists(filename):
+            os.remove(filename)
+
+    @classmethod
     def store_local_profil(cls, username, client):
         '''
-        Store the data of the user in local .json file
+        Store the data of the user in local .json file.  
+        Set it to be the active account (in data.json).
         '''
         filename = os.path.join('data','accounts',f'{username}.json')
         
@@ -185,6 +196,8 @@ class Spec:
                 'ship': client.in_data['sh'].tolist(),
                 'script': client.in_data['sc'].split('\n')
             }, file, indent=4)
+        
+        cls.JSON_DATA['current account'] = username
 
     @classmethod
     def update_local_profil(cls, username, key, value):

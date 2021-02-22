@@ -110,6 +110,7 @@ class App(Application):
 
         # store user infos on local
         Spec.store_local_profil(self.username, self.client)
+        Spec.set_json_variable('active account', self.username)
 
         # stop game client
         self.game.game_client.stop()

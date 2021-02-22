@@ -82,7 +82,7 @@ class Player:
         If send_data=True and an error occured, 
         send message to the server (in game purposes)
         '''
-        
+        tb = None
         # run init function
         try:
             self.script.init()
@@ -92,9 +92,12 @@ class Player:
             if send_data:
                 self.client.send_in_game_error(self.n_script_error)
             
-            self._tbs.append(get_traceback(e))
+            tb = get_traceback(e)
+            self._tbs.append(tb)
         
             print("[WARNING] Error occured in script initiation.")
+        
+        return tb
 
     def finalize_initiation(self, send_data=True):
         '''
@@ -116,13 +119,15 @@ class Player:
         If send_data=True and an error occured, 
         send message to the server (in game purposes)
         '''
+        tb = None
         is_error = False
 
         try:
             self.script.main()
         except Exception as e:
             is_error = True
-            self._tbs.append(get_traceback(e))
+            tb = get_traceback(e)
+            self._tbs.append(tb)
         
         if is_error:
             self.n_script_error += 1
@@ -130,6 +135,7 @@ class Player:
             if send_data:
                 self.client.send_in_game_error(self.n_script_error)
 
+        return tb
 
     def run(self, remote_control=False, send_data=True):
         '''

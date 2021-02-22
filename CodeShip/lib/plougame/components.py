@@ -877,12 +877,7 @@ class ScrollList(Form):
         '''
         Clear the lines of the instance.
         '''
-        self._lines = []
-        self._rel_positions = []
-        self._are_actives = []
-        self._tot_y = 0
-
-        self._update_scroll_cursor_dim()
+        self._to_removes.extend(self._lines)
 
     def set_cursor_place(self, up=False, down=False, percentage: float=None):
         '''

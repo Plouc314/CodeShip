@@ -32,10 +32,7 @@
     },
 
     "t username": {
-        "template": "text info",
-        "pos": [100,100],
-        "text_color": "black",
-        "font": 50
+        "template": "username"
     },
 
     "b friends": {
