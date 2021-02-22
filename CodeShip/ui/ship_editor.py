@@ -188,6 +188,8 @@ class ShipEditor(SubPage):
             if self.offline:
                 Spec.update_local_profil(self.client.username,
                         'ship', self.grid.tolist())
+                Spec.update_local_profil(self.client.username,
+                        'ship status', True)
             else:
                 self.client.send_ship_config(self.grid)
             
